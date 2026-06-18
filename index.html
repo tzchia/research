@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research — 技術與知識的深度拆解</title>
+<meta name="description" content="一個人的技術研究筆記：把工具、論文、概念逐檔讀過，整理成可讀的深度解說。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#d2a8ff; --accent-deep:#8957e5; --accent2:#7ee787; --blue:#79c0ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.7;font-size:16px;min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:0 22px}
+  a{color:inherit;text-decoration:none}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);
+    padding:72px 0 52px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(620px 320px at 78% -12%,rgba(210,168,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:13px;letter-spacing:.2em;
+    text-transform:uppercase;margin-bottom:16px}
+  h1{font-size:clamp(32px,6vw,54px);line-height:1.08;font-weight:800;letter-spacing:-.02em}
+  h1 .dot{color:var(--accent)}
+  .tag{margin-top:18px;font-size:18px;color:var(--muted);max-width:620px}
+  .meta{margin-top:26px;font-family:var(--mono);font-size:12.5px;color:var(--dim)}
+  .meta a{color:var(--blue)} .meta a:hover{text-decoration:underline}
+
+  main{padding:50px 0 80px}
+  .sec-label{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.12em;
+    text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:12px}
+  .sec-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+  .card{display:flex;flex-direction:column;border:1px solid var(--line);background:var(--bg2);
+    border-radius:14px;padding:22px 22px 20px;transition:border-color .18s,transform .18s,box-shadow .18s;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-deep));opacity:0;transition:opacity .18s}
+  .card:hover{border-color:var(--accent-deep);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+  .card:hover::before{opacity:1}
+  .card .kicker{font-family:var(--mono);font-size:11.5px;color:var(--accent2);
+    letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .card h2{font-size:21px;font-weight:750;letter-spacing:-.01em;margin-bottom:8px;color:#fff}
+  .card p{font-size:14.5px;color:var(--muted);flex:1}
+  .card .foot{margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card .pill{font-family:var(--mono);font-size:11.5px;padding:4px 10px;border:1px solid var(--line);
+    border-radius:999px;background:var(--bg3);color:var(--blue)}
+  .card .arrow{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--accent);
+    opacity:.6;transition:opacity .18s,transform .18s}
+  .card:hover .arrow{opacity:1;transform:translateX(3px)}
+
+  .soon{border-style:dashed;opacity:.62}
+  .soon:hover{transform:none;border-color:var(--line);box-shadow:none}
+  .soon::before{display:none}
+  .soon .arrow{color:var(--dim)}
+
+  footer{padding:40px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);
+    border-top:1px solid var(--line)}
+  footer a{color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">tzchia · research notes</div>
+    <h1>Research<span class="dot">.</span></h1>
+    <p class="tag">技術與知識的深度拆解。把工具、論文、概念逐檔讀過、查證過，整理成讀得下去的解說頁——不抄行銷話術，附上反面數據。</p>
+    <div class="meta">作者 tzchia　|　原始碼 <a href="https://github.com/tzchia/research">github.com/tzchia/research</a></div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="sec-label">已發佈</div>
+    <div class="grid">
+
+      <a class="card" href="ponytail.html">
+        <div class="kicker">AI Agent · Tooling</div>
+        <h2>Ponytail：讓 AI agent 像最懶的資深工程師那樣思考</h2>
+        <p>一個強迫 coding agent「能不寫就不寫、但紅線不退」的 plugin。逐檔讀過 repo 原始碼整理：六階梯、兩條紅線、三檔強度、跨 11 種 host 的架構，以及誠實的實測數據（Claude 省 42–75%，但 GPT-5.5 反而貴 38.7%）。</p>
+        <div class="foot">
+          <span class="pill">plugin</span>
+          <span class="pill">prompt engineering</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+      <div class="card soon">
+        <div class="kicker">Coming soon</div>
+        <h2>下一篇分析</h2>
+        <p>更多技術/知識深度拆解陸續加入。</p>
+        <div class="foot">
+          <span class="pill">tba</span>
+          <span class="arrow">—</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    © tzchia · research notes　·　逐檔閱讀、查證、附反面數據　·　原始碼 <a href="https://github.com/tzchia/research">github.com/tzchia/research</a>
+  </div>
+</footer>
+</body>
+</html>
