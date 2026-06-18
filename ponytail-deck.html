@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ponytail · 簡報 — 讓 AI agent 像最懶的資深工程師那樣思考</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#d2a8ff; --accent-deep:#8957e5; --accent2:#7ee787; --warn:#ffa657; --red:#ff7b72; --blue:#79c0ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#05070b;overflow:hidden}
+  body{font-family:var(--sans);color:var(--fg);display:grid;place-items:center}
+
+  /* ── scaling stage ── */
+  #viewport{position:fixed;inset:0;display:grid;place-items:center}
+  #stage{width:1280px;height:720px;position:relative;transform-origin:center center;
+    background:radial-gradient(900px 500px at 78% -12%,rgba(210,168,255,.12),transparent 60%),
+               linear-gradient(165deg,#161b22,#0d1117 62%);
+    border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.6)}
+
+  .slide{position:absolute;inset:0;padding:62px 76px 58px;display:none;flex-direction:column}
+  .slide.on{display:flex;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* chrome */
+  .topbar{position:absolute;top:0;left:0;right:0;height:4px;background:var(--bg3);z-index:5}
+  .topbar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-deep));transition:width .35s ease}
+  .brand{position:absolute;left:30px;bottom:22px;font-family:var(--mono);font-size:13px;color:var(--dim);z-index:4}
+  .brand b{color:var(--accent)}
+  .pageno{position:absolute;right:30px;bottom:20px;font-family:var(--mono);font-size:13px;color:var(--dim);z-index:4}
+  .pageno b{color:var(--fg)}
+
+  .kicker{font-family:var(--mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .kicker .nbox{font-weight:700;color:var(--bg);background:var(--accent);border-radius:8px;padding:3px 11px;font-size:15px}
+  h1{font-size:62px;line-height:1.06;font-weight:800;letter-spacing:-.02em}
+  h1 .tilde{color:var(--accent)}
+  h2{font-size:40px;line-height:1.15;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+  h2 .hl{color:var(--accent)}
+  .sub{font-size:21px;color:var(--muted);margin-top:14px;max-width:920px;line-height:1.55}
+  p{font-size:20px;line-height:1.6;color:#c9d1d9}
+  strong{color:#fff;font-weight:700}
+  em{color:var(--accent);font-style:normal}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);padding:2px 7px;border-radius:6px;color:var(--accent2);border:1px solid var(--line)}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .lead-row{margin-top:6px}
+
+  /* cover */
+  .cover{justify-content:center}
+  .cover .quote{margin-top:22px;font-size:23px;color:var(--muted);line-height:1.6;max-width:880px}
+  .pills{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+  .pill{font-family:var(--mono);font-size:17px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--bg2);color:var(--accent2)}
+  .pill.b{color:var(--blue)} .pill.w{color:var(--warn)} .pill.d{color:var(--dim)}
+  .src{position:absolute;left:76px;bottom:58px;font-family:var(--mono);font-size:14px;color:var(--dim)}
+
+  /* generic helpers */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:8px}
+  .panel{border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:24px 26px}
+  .panel.bad{border-color:rgba(255,123,114,.35)}
+  .panel.good{border-color:rgba(126,231,135,.35)}
+  .panel h3{font-size:19px;margin-bottom:14px;font-family:var(--mono);display:flex;align-items:center;gap:10px}
+  .panel.bad h3{color:var(--red)} .panel.good h3{color:var(--accent2)}
+  ul.clean{list-style:none}
+  ul.clean li{position:relative;padding:9px 0 9px 26px;font-size:18px;line-height:1.5;color:#c9d1d9;border-bottom:1px solid rgba(48,54,61,.55)}
+  ul.clean li:last-child{border-bottom:none}
+  ul.clean li::before{content:"›";position:absolute;left:4px;color:var(--accent);font-weight:700}
+  ul.clean.g li::before{color:var(--accent2)} ul.clean.r li::before{color:var(--red)}
+  ul.clean li b{color:#fff}
+
+  pre{background:#010409;border:1px solid var(--line);border-radius:12px;padding:20px 22px;font-family:var(--mono);font-size:17px;line-height:1.65;color:#c9d1d9;overflow:hidden}
+  .c-com{color:var(--dim)} .c-key{color:var(--red)} .c-str{color:var(--blue)} .c-fn{color:var(--accent)}
+
+  .note{border-left:4px solid var(--accent);background:var(--bg2);padding:18px 22px;border-radius:0 12px 12px 0;font-size:18px;line-height:1.55;margin-top:20px}
+  .note.warn{border-color:var(--warn)} .note.red{border-color:var(--red)}
+  .note b{color:var(--accent)} .note.warn b{color:var(--warn)} .note.red b{color:var(--red)}
+
+  /* big statement */
+  .big{font-size:48px;font-weight:800;line-height:1.18;letter-spacing:-.01em;max-width:1000px}
+  .big .a{color:var(--accent)} .big .g{color:var(--accent2)} .big .r{color:var(--red)}
+
+  /* ladder staircase */
+  .ladder{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+  .rung{display:flex;align-items:center;gap:16px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 18px}
+  .rung .n{flex:0 0 auto;width:34px;height:34px;border-radius:8px;background:var(--accent);color:var(--bg);font-family:var(--mono);font-weight:700;font-size:17px;display:grid;place-items:center}
+  .rung .t{font-size:18.5px;font-weight:700;color:#fff}
+  .rung .d{font-size:15px;color:var(--muted);margin-left:auto;text-align:right;max-width:520px}
+  .rung.last{border-color:rgba(126,231,135,.4);background:rgba(126,231,135,.06)}
+  .rung.last .n{background:var(--accent2)}
+  .rung.last .t{color:var(--accent2)}
+  .stairmark{font-family:var(--mono);font-size:14px;color:var(--dim);text-align:center;margin:2px 0}
+
+  /* intensity */
+  .levels{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:10px}
+  .lv{border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:22px 22px;display:flex;flex-direction:column}
+  .lv .nm{font-family:var(--mono);font-weight:700;font-size:22px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .lv.lite .nm{color:var(--blue)} .lv.full .nm{color:var(--accent2)} .lv.ultra .nm{color:var(--warn)}
+  .lv .badge{font-size:13px;background:var(--bg3);border:1px solid var(--line);color:var(--muted);padding:2px 9px;border-radius:6px;font-weight:400}
+  .lv p{font-size:17px;line-height:1.5}
+  .lv .ex{margin-top:14px;font-family:var(--mono);font-size:14px;color:var(--muted);background:#010409;border:1px solid var(--line);border-radius:9px;padding:13px 14px;line-height:1.55}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:18px;margin-top:8px}
+  th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:14px;letter-spacing:.05em;color:var(--accent);text-transform:uppercase;background:var(--bg3)}
+  td{color:#c9d1d9} tr:last-child td{border-bottom:none}
+  td code{font-size:15px}
+  .num{font-family:var(--mono);text-align:right}
+  .win{color:var(--accent2);font-weight:700} .lose{color:var(--red);font-weight:700}
+  table.box{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+
+  /* cards row */
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:18px}
+  .card{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:16px 16px}
+  .card h4{font-family:var(--mono);font-size:16px;color:var(--accent2);margin-bottom:7px}
+  .card p{font-size:14.5px;color:var(--muted);line-height:1.45}
+
+  /* hook flow */
+  .flow{display:flex;flex-direction:column;gap:18px;margin-top:10px}
+  .frow{display:flex;align-items:center;gap:20px}
+  .ftag{flex:0 0 auto;width:230px;font-family:var(--mono);font-weight:700;font-size:18px;color:var(--blue);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;text-align:center}
+  .farrow{flex:0 0 auto;font-size:28px;color:var(--accent)}
+  .fdesc{font-size:18px;line-height:1.5}
+  .fdesc b{color:#fff}
+
+  /* bar chart */
+  .bars{margin-top:14px;display:flex;flex-direction:column;gap:22px}
+  .bar{}
+  .bar .lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:17px;margin-bottom:9px}
+  .bar .lab .mdl{color:#fff;font-weight:700} .bar .lab .save{color:var(--accent2)}
+  .track{position:relative;height:34px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .track .base{position:absolute;inset:0;background:rgba(255,123,114,.18)}
+  .track .pony{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent2),#3fb950);border-radius:7px 0 0 7px;display:flex;align-items:center;padding-left:12px;font-family:var(--mono);font-size:13px;color:#04130a;font-weight:700;transition:width .6s ease}
+  .barkey{display:flex;gap:24px;margin-top:18px;font-family:var(--mono);font-size:14px;color:var(--muted)}
+  .barkey i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+  .metrics{display:flex;gap:26px;margin-top:8px}
+  .metric{flex:1;border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:24px;text-align:center}
+  .metric .v{font-size:46px;font-weight:800;letter-spacing:-.02em;color:var(--accent2)}
+  .metric.b .v{color:var(--blue)} .metric.w .v{color:var(--fg)}
+  .metric .k{font-size:15px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
+
+  /* nav hint + buttons */
+  .nav{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:30;transition:opacity .4s ease}
+  .nav button{font-family:var(--mono);font-size:13px;color:var(--muted);background:rgba(22,27,34,.85);border:1px solid var(--line);border-radius:8px;padding:7px 13px;cursor:pointer;backdrop-filter:blur(6px)}
+  .nav button:hover{color:var(--accent);border-color:var(--accent)}
+  .hint{position:fixed;top:14px;right:16px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:30;transition:opacity .4s ease}
+  body.idle .nav,body.idle .hint{opacity:0;pointer-events:none}
+
+  @media print{
+    @page{size:1280px 720px;margin:0}
+    html,body{height:auto;overflow:visible;background:#fff}
+    #viewport{position:static;display:block}
+    #stage{transform:none!important;width:1280px;height:720px;border-radius:0;box-shadow:none;page-break-after:always;margin:0}
+    .slide{display:flex!important;position:relative;inset:auto;animation:none}
+    .nav,.hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <div class="topbar"><i id="prog"></i></div>
+
+    <!-- 1 · COVER -->
+    <section class="slide cover on">
+      <div class="kicker">DietrichGebert / ponytail · v4.7.0 · MIT</div>
+      <h1>Ponytail <span class="tilde">~</span></h1>
+      <p class="sub" style="font-size:27px;color:var(--fg);margin-top:20px;max-width:1000px">讓 AI coding agent 像房裡<strong>最懶的那位資深工程師</strong>那樣思考。</p>
+      <p class="quote">「他什麼都沒說。他寫了一行。它就動了。」<br>把那位綁馬尾、戴橢圓眼鏡、比版控還資深的老工程師，塞進你的 AI agent 裡。</p>
+      <div class="pills">
+        <span class="pill">少寫 80–94% 程式碼</span>
+        <span class="pill b">快 3–6×</span>
+        <span class="pill w">省 42–75% 成本</span>
+        <span class="pill d">＊省錢僅限 Claude 模型</span>
+      </div>
+      <div class="src">SOURCE · github.com/DietrichGebert/ponytail　|　逐檔閱讀 README + AGENTS.md + skills/ + hooks/ + benchmarks/ 整理</div>
+    </section>
+
+    <!-- 2 · 是什麼 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">01</span>一句話：它是什麼</div>
+      <div class="body">
+        <p style="font-size:25px;line-height:1.6">Ponytail 是一個 <strong>plugin</strong>——裡面打包了一份 <em>skill 規則集</em> + 兩個生命週期 hook + <code>/ponytail</code> 系列指令。</p>
+        <p style="margin-top:16px">它<strong>不是函式庫、不是框架，也不會改你的程式碼</strong>。它在每一輪對話把那份精簡守則重新注入 agent，逼它在動手之前先停下來問一句：</p>
+        <div class="note" style="font-size:24px"><b>這段程式，到底需不需要寫？</b></div>
+        <div class="two" style="margin-top:24px">
+          <div class="panel"><h3>plugin 這一層</h3><p style="font-size:17px;color:var(--muted)">負責「安裝與常駐」：marketplace、hook、<code>/ponytail</code> 指令切換。</p></div>
+          <div class="panel"><h3 style="color:var(--accent2)">skill 這一層</h3><p style="font-size:17px;color:var(--muted)">真正的「行為核心」：<code>skills/*/SKILL.md</code>。到只吃指令檔的 host（Cursor/Windsurf）就降級成純規則檔。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · 核心信念 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">02</span>核心信念</div>
+      <div class="body">
+        <p class="big">最好的程式，<br>是你<span class="a">根本沒寫</span>的那段。</p>
+        <p style="margin-top:14px;color:var(--muted);font-family:var(--mono);font-size:17px">The best code is the code never written.</p>
+        <p style="margin-top:26px">它對抗 LLM 的天生壞習慣：你要一個日期選擇器，它幫你裝 flatpickr、包一層 wrapper、加張 stylesheet，再開一場時區的哲學討論。Ponytail 模式下，答案是——</p>
+        <pre style="margin-top:16px"><span class="c-com">&lt;!-- ponytail: browser has one --&gt;</span>
+<span class="c-key">&lt;input</span> <span class="c-fn">type</span>=<span class="c-str">"date"</span><span class="c-key">&gt;</span></pre>
+      </div>
+    </section>
+
+    <!-- 4 · Lazy ≠ Careless -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">02</span>關鍵分辨</div>
+      <div class="body">
+        <p class="big">Lazy <span class="g">≠</span> Careless<br><span style="font-size:30px;color:var(--muted);font-weight:600">懶，不等於草率。</span></p>
+        <p style="margin-top:24px">「懶」指的是<strong>效率</strong>——能不寫就不寫，砍的是過度設計。但有四條紅線<strong>永遠不准砍</strong>：</p>
+        <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-top:22px">
+          <div class="card"><h4>① 輸入驗證</h4><p>信任邊界上的把關</p></div>
+          <div class="card"><h4>② 錯誤處理</h4><p>防資料遺失</p></div>
+          <div class="card"><h4>③ 資安</h4><p>security 不打折</p></div>
+          <div class="card"><h4>④ 無障礙</h4><p>a11y 不犧牲</p></div>
+        </div>
+        <div class="note red" style="margin-top:24px"><b>它砍的是過度設計，不是該做的工。</b></div>
+      </div>
+    </section>
+
+    <!-- 5 · 六階梯 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">03</span>運作核心：六階梯（The Ladder）</div>
+      <div class="body" style="justify-content:flex-start;margin-top:4px">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:10px">寫任何程式前，agent 從上往下走這道梯子，<strong style="color:#fff">停在第一個成立的階梯就動手</strong>，不再往下。這是反射動作，不是研究專案。</p>
+        <div class="ladder">
+          <div class="rung"><span class="n">1</span><span class="t">這東西需不需要存在？</span><span class="d">投機需求 → 直接跳過（YAGNI）</span></div>
+          <div class="rung"><span class="n">2</span><span class="t">標準函式庫做得到嗎？</span><span class="d">做得到就用，別手刻 stdlib 已有的</span></div>
+          <div class="rung"><span class="n">3</span><span class="t">平台原生功能涵蓋嗎？</span><span class="d">原生 input ＞ 套件、CSS ＞ JS、DB constraint ＞ 應用層</span></div>
+          <div class="rung"><span class="n">4</span><span class="t">已裝的相依套件能解嗎？</span><span class="d">能就用，絕不為幾行新增相依</span></div>
+          <div class="rung"><span class="n">5</span><span class="t">能一行解決嗎？</span><span class="d">那就一行</span></div>
+          <div class="rung last"><span class="n">6</span><span class="t">到這步才開始寫</span><span class="d">寫「剛好能動」的最小程式碼</span></div>
+        </div>
+        <div class="note" style="margin-top:16px;font-size:16px;padding:13px 18px"><b>梯子的精神：</b>第一個能動的懶解法，就是對的解法。比起加程式碼先想能不能刪；比起聰明先求無聊——無聊的程式不會在凌晨三點被叫起來解讀。</div>
+      </div>
+    </section>
+
+    <!-- 6 · 規則 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">04</span>規則：該砍的 vs 紅線</div>
+      <div class="body">
+        <div class="two">
+          <div class="panel"><h3 style="color:var(--accent)">該砍的（懶的部分）</h3>
+            <ul class="clean">
+              <li><b>沒被要求的抽象一律不做</b>：沒有單一實作的 interface、沒有只生一種產品的 factory</li>
+              <li>不寫「為了以後」的 boilerplate / scaffolding</li>
+              <li><b>刪除優先於新增</b>，最短可動的 diff 獲勝</li>
+              <li>遇複雜需求：直接出懶版本，同一則回覆反問「你真需要 X 嗎？」絕不卡住等答案</li>
+            </ul>
+          </div>
+          <div class="panel good"><h3>絕不偷懶的（紅線）</h3>
+            <ul class="clean g">
+              <li><b>輸入驗證、錯誤處理、資安、無障礙</b>——永遠不上砧板</li>
+              <li><b>硬體校準</b>：時鐘會漂、感測器會偏，留下校準旋鈕</li>
+              <li>兩寫法一樣短時，選<b>邊界情況正確</b>的那個</li>
+              <li><b>沒檢查的懶程式 = 未完成</b>：留一個能跑的最小 assert / 小 test</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · ponytail: 註解 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">04</span>把「簡單」標記成「刻意」</div>
+      <div class="body">
+        <p style="font-size:23px">每一個刻意的簡化，都用 <code>ponytail:</code> 註解標記——讓「簡單」被讀成<strong>刻意</strong>而非無知。</p>
+        <p style="margin-top:16px">若這個捷徑有已知天花板（全域鎖、O(n²) 掃描、naïve 啟發法），註解要寫出<strong>天花板與升級路徑</strong>：</p>
+        <pre style="margin-top:16px"><span class="c-com"># ponytail: global lock, per-account locks if throughput matters</span></pre>
+        <div class="note" style="margin-top:22px"><b>這就是技術債顯性化的關鍵。</b>後面 <code>/ponytail-debt</code> 指令能把散落各處的 <code>ponytail:</code> 捷徑一網打盡，收成一本帳本——讓「以後」不會變成「永遠不」。</div>
+      </div>
+    </section>
+
+    <!-- 8 · 實例 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">05</span>實例：同模型、同 prompt</div>
+      <div class="body">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:14px">任務：「寫一個 Python 函式驗證 email。」（Claude Haiku 4.5，benchmark 真實逐字輸出）</p>
+        <div class="two">
+          <div class="panel bad"><h3>✗ 沒有 Ponytail — 75 行</h3>
+            <pre style="font-size:14.5px;line-height:1.55"><span class="c-com"># regex 版 validate_email…</span>
+<span class="c-com"># …再一個「更 robust」advanced 版</span>
+<span class="c-com">#   (回傳 tuple、長度/local part/</span>
+<span class="c-com">#    雙點檢查…)</span>
+<span class="c-com"># …再一個 email_validator 第三方</span>
+<span class="c-com">#   「production 推薦」版</span>
+<span class="c-com"># …外加三方比較表 + 一段長篇大論</span>
+
+<span class="c-com"># → 3 種實作、1 張表、N 段散文</span></pre>
+          </div>
+          <div class="panel good"><h3>✓ 有 Ponytail — 3 行</h3>
+            <pre style="font-size:15.5px;line-height:1.7"><span class="c-key">import</span> re
+
+<span class="c-key">def</span> <span class="c-fn">is_valid_email</span>(email: str) -&gt; bool:
+    <span class="c-key">return</span> bool(re.match(
+      r<span class="c-str">'^[^@]+@[^@]+\.[^@]+$'</span>, email))</pre>
+          </div>
+        </div>
+        <div class="note" style="margin-top:18px;font-size:16px;padding:13px 18px"><b>75 → 3 行。</b>重點不是字最少，而是<strong>只寫任務需要的、且絕不砍驗證</strong>。程式碼變小是因為「必要」，不是被硬擠（golfed）。</div>
+      </div>
+    </section>
+
+    <!-- 9 · 三檔強度 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">06</span>三檔強度</div>
+      <div class="body">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:6px">用 <code>/ponytail lite|full|ultra|off</code> 切換，預設 <strong style="color:#fff">full</strong>。</p>
+        <div class="levels">
+          <div class="lv lite"><div class="nm">lite <span class="badge">輕</span></div><p>照你要求做，但用一行點出更懶的替代，由你決定。</p><div class="ex">「Done。FYI：<code>functools.lru_cache</code> 一行就能搞定，不用自己養 cache class。」</div></div>
+          <div class="lv full"><div class="nm">full <span class="badge">預設</span></div><p>梯子強制執行。stdlib／原生優先、最短 diff、最短解釋。</p><div class="ex"><code>@lru_cache(maxsize=1000)</code> 掛 fetch。Skipped：自訂 cache，等不夠用再加。</div></div>
+          <div class="lv ultra"><div class="nm">ultra <span class="badge">極端</span></div><p>YAGNI 基本教義派。先丟一行解法，同一口氣質疑剩下需求。</p><div class="ex">「profiler 開口前不加 cache。手刻 TTL cache 是附帶命中率的 bug 農場。」</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 · 指令 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">07</span>指令</div>
+      <div class="body">
+        <table class="box">
+          <tr><th style="width:38%">指令</th><th>作用</th></tr>
+          <tr><td><code>/ponytail [lite｜full｜ultra｜off]</code></td><td>設定強度或關閉；不帶參數則回報目前等級</td></tr>
+          <tr><td><code>/ponytail-review</code></td><td>只針對「過度設計」審查目前 diff → 回一張<b>刪除清單</b></td></tr>
+          <tr><td><code>/ponytail-audit</code></td><td>同上但掃<b>整個 repo</b>，依「能砍最多」排序</td></tr>
+          <tr><td><code>/ponytail-debt</code></td><td>把散落的 <code>ponytail:</code> 捷徑收成<b>技術債帳本</b></td></tr>
+          <tr><td><code>/ponytail-help</code></td><td>速查表</td></tr>
+        </table>
+        <p style="font-size:16px;color:var(--muted);margin-top:18px">review／audit 的 finding 標籤（每行：位置、砍什麼、用什麼取代）：</p>
+        <div class="cards">
+          <div class="card"><h4>delete:</h4><p>死碼、用不到的彈性</p></div>
+          <div class="card"><h4>stdlib:</h4><p>手刻了 stdlib 已有的</p></div>
+          <div class="card"><h4>native:</h4><p>做平台本來就會的事</p></div>
+          <div class="card"><h4>yagni:</h4><p>單一實作的抽象</p></div>
+          <div class="card"><h4>shrink:</h4><p>同邏輯更少行</p></div>
+        </div>
+        <p style="margin-top:16px;font-size:17px">結尾只給唯一指標：<code>net: -N lines possible.</code>　沒得砍就 <code>Lean already. Ship.</code></p>
+      </div>
+    </section>
+
+    <!-- 11 · 架構 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">08</span>架構：薄轉接層 + 共用核心</div>
+      <div class="body">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:12px">行為全在 <code>skills/</code> 與 <code>AGENTS.md</code>；每個 host 專屬檔只是把同一份行為塞進該 agent 的<strong style="color:#fff">薄轉接層（adapter）</strong>。adapter 越薄越好。</p>
+        <pre style="font-size:16px;line-height:1.6">ponytail/
+├── <span class="c-fn">AGENTS.md</span>              <span class="c-com"># 26 行核心守則（無 skill 支援時的 always-on 版）</span>
+├── <span class="c-fn">skills/</span>               <span class="c-com"># ★ 真正的行為核心</span>
+│   ├── ponytail/        <span class="c-com"># 懶資深工程師模式（梯子、規則、三檔強度）</span>
+│   ├── ponytail-review/ ponytail-audit/ ponytail-debt/ ponytail-help/
+├── <span class="c-fn">hooks/</span>               <span class="c-com"># 兩個 Node.js 生命週期 hook</span>
+├── <span class="c-fn">commands/</span>            <span class="c-com"># /ponytail* 指令（.toml）</span>
+├── <span class="c-fn">benchmarks/</span>          <span class="c-com"># promptfoo 設定 + 可重現實測</span>
+└── <span class="c-fn">各 host 轉接檔</span>        <span class="c-com"># .claude-plugin/ .codex-plugin/ .cursor/ …</span></pre>
+        <div class="note" style="margin-top:18px;font-size:16px;padding:13px 18px"><b>一句話定位：</b>agent 可攜的 skill 散佈包，host 專屬檔只是 adapter。</div>
+      </div>
+    </section>
+
+    <!-- 12 · 怎麼常駐 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">08</span>它怎麼「常駐」？兩個 hook</div>
+      <div class="body">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:6px">Claude Code／Codex 版跑兩個極小的 Node.js hook（所以 <code>node</code> 要在 PATH；不在則安靜略過，不報錯）。</p>
+        <div class="flow">
+          <div class="frow"><div class="ftag">SessionStart</div><div class="farrow">→</div><div class="fdesc">跑 <code>ponytail-activate.js</code>，<b>載入目前模式</b>（startup／resume／clear／compact）</div></div>
+          <div class="frow"><div class="ftag" style="color:var(--accent)">UserPromptSubmit</div><div class="farrow">→</div><div class="fdesc">每次送出 prompt，跑 <code>ponytail-mode-tracker.js</code>，<b>每一輪重新注入守則</b>，防 agent 飄回過度設計</div></div>
+        </div>
+        <div class="note warn" style="margin-top:26px"><b>這就是「成本可能反而變高」的根因：</b>守則每一輪都當 input 重新送進去。在會「想很多」的 reasoning 模型上，這份固定 input + 額外 thinking token，可能比省下的程式碼還貴。（見實測）</div>
+      </div>
+    </section>
+
+    <!-- 13 · 安裝 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">09</span>安裝：支援的 agent</div>
+      <div class="body">
+        <p style="font-size:18px;color:var(--muted);margin-bottom:8px">分兩級：<span class="win">plugin 級</span>（有模式切換 + hook）與 <span style="color:var(--muted);font-weight:700">instruction 級</span>（只有 always-on 守則）。</p>
+        <table class="box" style="font-size:17px">
+          <tr><th>Host</th><th>等級</th><th>安裝（節錄）</th></tr>
+          <tr><td>Claude Code</td><td class="win">plugin</td><td><code>/plugin marketplace add DietrichGebert/ponytail</code></td></tr>
+          <tr><td>Codex · Copilot CLI · OpenCode · Gemini CLI · pi</td><td class="win">plugin</td><td>各自 marketplace / extensions install</td></tr>
+          <tr><td>OpenClaw</td><td class="win">skill</td><td><code>clawhub install ponytail</code></td></tr>
+          <tr><td>Cursor / Windsurf / Cline / Kiro</td><td>instruction</td><td>複製對應 <code>.cursor/rules/</code> … 規則檔</td></tr>
+          <tr><td>任意 agent</td><td>instruction</td><td>直接複製 <code>AGENTS.md</code> 或載入 <code>skills/*/SKILL.md</code></td></tr>
+        </table>
+        <p style="margin-top:18px;font-size:18px;color:var(--muted)">設計哲學一句話：<em>「ponytail 會跟你要的最大努力。」</em></p>
+      </div>
+    </section>
+
+    <!-- 14 · 實測 Claude -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">10</span>實測數據：在 Claude 上</div>
+      <div class="body">
+        <div class="metrics">
+          <div class="metric"><div class="v">42–75%</div><div class="k">成本下降</div></div>
+          <div class="metric b"><div class="v">3.1–5.8×</div><div class="k">速度加快</div></div>
+          <div class="metric w"><div class="v">100%</div><div class="k">正確率</div></div>
+        </div>
+        <p style="font-size:15px;color:var(--muted);margin-top:18px">5 個任務合計成本（USD，pooled 30 reps）。長條＝baseline 100%，綠色＝ponytail 實際花費。</p>
+        <div class="bars">
+          <div class="bar"><div class="lab"><span class="mdl">Haiku</span><span class="save">省 63.1%　$0.0299 → $0.0110</span></div><div class="track"><div class="base"></div><div class="pony" style="width:36.8%">ponytail</div></div></div>
+          <div class="bar"><div class="lab"><span class="mdl">Sonnet</span><span class="save">省 74.5%　$0.1367 → $0.0348</span></div><div class="track"><div class="base"></div><div class="pony" style="width:25.5%">ponytail</div></div></div>
+          <div class="bar"><div class="lab"><span class="mdl">Opus</span><span class="save">省 42.3%　$0.1368 → $0.0789</span></div><div class="track"><div class="base"></div><div class="pony" style="width:57.7%">ponytail</div></div></div>
+        </div>
+        <div class="barkey"><span><i style="background:rgba(255,123,114,.4)"></i>baseline（無 skill）</span><span><i style="background:var(--accent2)"></i>ponytail</span><span style="color:var(--dim)">baseline 在 Sonnet 正確率掉到 76%（回傳 dict 而非 bool 的過度設計 bug）</span></div>
+      </div>
+    </section>
+
+    <!-- 15 · 跨供應商翻盤 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">10</span>誠實版：跨供應商會翻盤</div>
+      <div class="body">
+        <p class="big" style="font-size:38px">省錢效果是 <span class="a">Claude 特有的</span>。</p>
+        <p style="margin-top:16px;color:var(--muted)">同一套測試搬到 OpenAI（10 reps）——在 reasoning 模型上反而<strong style="color:var(--red)">更貴</strong>：</p>
+        <table class="box" style="margin-top:14px">
+          <tr><th>模型</th><th class="num">vs baseline</th><th class="num">延遲</th><th class="num">正確率</th></tr>
+          <tr><td>gpt-4.1-mini</td><td class="num win">省 39.6%</td><td class="num">快 2.5×</td><td class="num">100%</td></tr>
+          <tr><td>gpt-5.4-mini</td><td class="num lose">貴 26.2%</td><td class="num">快 1.5×</td><td class="num">100%</td></tr>
+          <tr><td>gpt-5.5（最新旗艦）</td><td class="num lose">貴 38.7%</td><td class="num lose">慢 0.9×</td><td class="num">100%</td></tr>
+        </table>
+        <div class="note red" style="margin-top:20px;font-size:16px;padding:14px 18px"><b>原因：</b>reasoning 模型上，每輪重送的守則（大量 input + 額外 reasoning token）超過省下的程式碼。而且 benchmark 只測 single-shot 一輪——真實 session 會每輪重注入，<strong>實際成本兩個方向都可能</strong>。別把「省 42–75%」當跨模型承諾。</div>
+      </div>
+    </section>
+
+    <!-- 16 · 評價 -->
+    <section class="slide">
+      <div class="kicker"><span class="nbox">11</span>怎麼看它（評價）</div>
+      <div class="body">
+        <div class="two">
+          <div class="panel good"><h3>值得用</h3>
+            <ul class="clean g">
+              <li>你主力用 <b>Claude</b>，常被 agent 過度設計、亂裝套件、長篇散文煩到</li>
+              <li>你要的是<b>可維護性</b>而非炫技——把「少即是多」變成每輪強制反射</li>
+              <li><code>ponytail:</code> 註解 + <code>/ponytail-debt</code> 把<b>技術債顯性化</b>，比偷偷簡化健康</li>
+              <li>它<b>不碰你怎麼說話</b>，只管你建什麼，邊界乾淨</li>
+            </ul>
+          </div>
+          <div class="panel"><h3 style="color:var(--warn)">留意</h3>
+            <ul class="clean">
+              <li><b>省錢非普世</b>：GPT-5.5 等 reasoning 模型上反而更貴更慢</li>
+              <li>它是 <b>always-on 規則注入</b>，短 prompt 上固定 overhead 可能大於收益</li>
+              <li>本質是 <b>prompt／skill 工程</b>，不是魔法，效果取決於模型多會聽話</li>
+              <li>數據是<b>作者自測</b>（可重現），非第三方驗證；但反面數據也誠實寫進 repo，加分</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17 · 總結 -->
+    <section class="slide cover">
+      <div class="kicker">一句總結</div>
+      <div class="body" style="justify-content:center">
+        <p class="big" style="font-size:42px">Ponytail 把「資深工程師的克制」，<br>產品化成一份<span class="a">跨 agent 可攜、每輪強制執行</span>的守則。</p>
+        <p style="margin-top:26px;font-size:21px;line-height:1.6;color:#c9d1d9;max-width:1000px">它最大的價值不是 benchmark 那幾個百分比（會隨模型翻盤），而是把<strong>「能不寫就不寫、但紅線不退」這個判斷，從你腦中搬進 agent 的反射裡</strong>。</p>
+        <p style="margin-top:24px;font-family:var(--mono);font-size:16px;color:var(--dim)">github.com/DietrichGebert/ponytail　·　v4.7.0　·　MIT　|　FAQ：「它能 scale 嗎？」——「你從沒寫過的程式碼可以無限 scale。零 bug、零 CVE、100% uptime。」</p>
+      </div>
+    </section>
+
+    <div class="brand"><b>ponytail ~</b>　懶資深工程師模式</div>
+    <div class="pageno"><b id="cur">1</b> / <span id="tot">17</span></div>
+  </div>
+</div>
+
+<div class="hint">← → 翻頁　·　F 全螢幕　·　P 列印/PDF</div>
+<div class="nav">
+  <button id="bPrev">← 上一頁</button>
+  <button id="bFull">⛶ 全螢幕</button>
+  <button id="bPrint">列印 / PDF</button>
+  <button id="bNext">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total  = slides.length;
+  var stage  = document.getElementById('stage');
+  var prog   = document.getElementById('prog');
+  var curEl  = document.getElementById('cur');
+  document.getElementById('tot').textContent = total;
+
+  var i = parseInt(localStorage.getItem('ponytail-deck-slide')||'0',10);
+  if(isNaN(i)||i<0||i>=total) i=0;
+
+  function show(n){
+    i = Math.max(0, Math.min(total-1, n));
+    slides.forEach(function(s,k){ s.classList.toggle('on', k===i); });
+    curEl.textContent = i+1;
+    prog.style.width = (total>1 ? (i/(total-1))*100 : 100) + '%';
+    localStorage.setItem('ponytail-deck-slide', i);
+  }
+  function next(){ show(i+1); }
+  function prev(){ show(i-1); }
+
+  function fit(){
+    var pad = 0;
+    var s = Math.min((window.innerWidth-pad)/1280, (window.innerHeight-pad)/720);
+    stage.style.transform = 'scale('+s+')';
+  }
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ next(); e.preventDefault(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ prev(); e.preventDefault(); }
+    else if(e.key==='Home'){ show(0); }
+    else if(e.key==='End'){ show(total-1); }
+    else if(e.key==='f'||e.key==='F'){ toggleFull(); }
+    else if(e.key==='p'||e.key==='P'){ window.print(); }
+  });
+
+  function toggleFull(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+    else { document.exitFullscreen && document.exitFullscreen(); }
+  }
+
+  document.getElementById('bNext').onclick = next;
+  document.getElementById('bPrev').onclick = prev;
+  document.getElementById('bFull').onclick = toggleFull;
+  document.getElementById('bPrint').onclick = function(){ window.print(); };
+
+  // click right/left half of stage to navigate
+  stage.addEventListener('click', function(e){
+    if(e.target.closest('a,button,code,pre')) return;
+    var r = stage.getBoundingClientRect();
+    if(e.clientX - r.left > r.width*0.5) next(); else prev();
+  });
+
+  // auto-hide nav/hint when mouse is idle (clean for presenting & screenshots)
+  var idleT;
+  function wake(){
+    document.body.classList.remove('idle');
+    clearTimeout(idleT);
+    idleT = setTimeout(function(){ document.body.classList.add('idle'); }, 2500);
+  }
+  ['mousemove','keydown','click','touchstart'].forEach(function(ev){ document.addEventListener(ev, wake, {passive:true}); });
+  wake();
+
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>

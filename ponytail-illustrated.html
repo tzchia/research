@@ -105,6 +105,66 @@
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:680px){.two{grid-template-columns:1fr}}
 
+  /* ───── 圖解元件（fig-）：流程圖 / 階梯 / 架構 / 長條 ───── */
+  figure{margin:24px 0}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:10px;text-align:center}
+
+  /* 核心信念對照圖（裝套件地獄 vs 一行） */
+  .fig-belief{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;margin:22px 0}
+  @media(max-width:680px){.fig-belief{grid-template-columns:1fr;text-align:center}.fig-belief .arrow{transform:rotate(90deg)}}
+  .fig-belief .arrow{font-size:30px;color:var(--accent2);font-weight:700}
+  .blob{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--bg2)}
+  .blob.no{border-color:rgba(255,123,114,.35)}
+  .blob.yes{border-color:rgba(126,231,135,.4)}
+  .blob .bt{font-family:var(--mono);font-size:12.5px;font-weight:700;margin-bottom:10px}
+  .blob.no .bt{color:var(--red)} .blob.yes .bt{color:var(--accent2)}
+  .stack-item{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding:5px 9px;border:1px dashed var(--line);border-radius:6px;margin:5px 0;background:#010409}
+  .blob.yes .one{font-family:var(--mono);font-size:14px;color:var(--accent2);background:#010409;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+
+  /* 六階梯立體圖 */
+  .fig-ladder{counter-reset:st;margin:22px 0;display:flex;flex-direction:column;gap:0}
+  .step{counter-increment:st;display:flex;align-items:stretch;gap:0;position:relative}
+  .step .riser{flex:0 0 auto;width:calc(20px + var(--lvl)*52px);display:flex;align-items:flex-end}
+  .step .tread{flex:1;background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0;padding:13px 16px;margin:3px 0;position:relative}
+  .step .num{position:absolute;left:-15px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:7px;
+    background:var(--accent);color:var(--bg);font-family:var(--mono);font-weight:700;display:grid;place-items:center;font-size:14px;border:2px solid var(--bg)}
+  .step .tread b{color:#fff;font-size:15px} .step .tread span{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+  .step.last .tread{border-left-color:var(--accent2);background:rgba(126,231,135,.06)}
+  .step.last .num{background:var(--accent2)} .step.last .tread b{color:var(--accent2)}
+  .ladder-axis{font-family:var(--mono);font-size:11.5px;color:var(--dim);display:flex;justify-content:space-between;margin:6px 4px 0;text-transform:uppercase;letter-spacing:.06em}
+
+  /* 架構分層圖 */
+  .fig-arch{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:22px 0;background:var(--bg2)}
+  .arch-layer{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .arch-layer:last-child{border-bottom:none}
+  .arch-layer .lh{font-family:var(--mono);font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+  .arch-row{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:12.5px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:#010409;color:var(--muted)}
+  .chip.core{border-color:var(--accent2);color:var(--accent2);background:rgba(126,231,135,.07)}
+  .chip.host{border-color:rgba(121,192,255,.3);color:var(--blue)}
+  .arch-layer.center{background:rgba(126,231,135,.05)}
+  .arch-glue{text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--accent);padding:8px;letter-spacing:.04em}
+
+  /* hook 時間軸流程 */
+  .fig-flow{margin:22px 0;display:flex;flex-direction:column;gap:14px}
+  .flowstep{display:flex;align-items:center;gap:14px}
+  .flowstep .tk{flex:0 0 168px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--blue);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;text-align:center}
+  .flowstep .ar{flex:0 0 auto;color:var(--accent);font-size:20px}
+  .flowstep .ds{font-size:14px;color:#c9d1d9;line-height:1.5}
+  .flowstep .ds b{color:#fff}
+  .flowstep.loop .tk{color:var(--accent);border-color:rgba(210,168,255,.35)}
+  .loopnote{font-family:var(--mono);font-size:12px;color:var(--accent);text-align:center;border:1px dashed rgba(210,168,255,.4);border-radius:8px;padding:7px;margin-top:2px}
+
+  /* benchmark 長條 */
+  .fig-bars{margin:18px 0;display:flex;flex-direction:column;gap:16px}
+  .gbar .gl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;margin-bottom:6px}
+  .gbar .gl b{color:#fff} .gbar .gl .sv{color:var(--accent2)}
+  .gtrack{position:relative;height:26px;background:rgba(255,123,114,.16);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .gtrack > i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent2),#3fb950);border-radius:6px 0 0 6px;display:flex;align-items:center;padding-left:10px;font-family:var(--mono);font-size:11px;color:#04130a;font-weight:700}
+  .bars-key{display:flex;gap:18px;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+  .bars-key i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
   /* ───── html-reading-progress-nav skill（深色紫主題；class 前綴 rpn-） ───── */
   :root{
     --rpn-accent:#d2a8ff; --rpn-accent-deep:#8957e5; --rpn-track:#21262d;
@@ -213,6 +273,24 @@
     <p class="lead">Ponytail 是一個 <strong>plugin</strong>（在 Claude Code / Codex / Copilot 等 host 都用 <code>/plugin install</code> 安裝），plugin 裡打包了一份 <strong>skill 規則集</strong> + 兩個生命週期 hook + <code>/ponytail</code> 系列指令——它不是函式庫、不是框架，也不會改你的程式碼。它在每一輪對話把那份精簡守則重新注入 AI coding agent，逼它在<strong>動手寫程式之前先停下來問：這段到底需不需要寫？</strong></p>
     <div class="note"><b>plugin 還是 skill？兩層都有：</b><strong>plugin</strong> 是「安裝與常駐」這一層（marketplace、hook、<code>/ponytail</code> 指令）；它打包的 <strong>skill</strong>（<code>skills/*/SKILL.md</code>）才是真正的「行為核心」。repo 自己定位為「agent-portable skill distribution，host 專屬檔只是 adapter」。到 Cursor / Windsurf 這種只吃專案指令的 host，就降級成一份純規則檔（instruction 級，沒有 <code>/ponytail</code> 切換與 hook）。</div>
     <p>核心信念只有一句 —— <em>The best code is the code never written.</em>（最好的程式，是你根本沒寫的那段。）它對抗的是 LLM 的天生壞習慣：你要一個日期選擇器，它幫你裝 flatpickr、包一層 wrapper、加一張 stylesheet，再開一場時區的哲學討論。Ponytail 模式下，答案是：</p>
+    <figure>
+      <div class="fig-belief">
+        <div class="blob no">
+          <div class="bt">✗ LLM 的預設反射</div>
+          <div class="stack-item">npm install flatpickr</div>
+          <div class="stack-item">+ wrapper component</div>
+          <div class="stack-item">+ 一張 stylesheet</div>
+          <div class="stack-item">+ 時區哲學長文…</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="blob yes">
+          <div class="bt">✓ Ponytail 的反射</div>
+          <div class="one">&lt;input type="date"&gt;</div>
+          <div class="stack-item" style="border-style:solid;color:var(--accent2);border-color:rgba(126,231,135,.3)">瀏覽器原生就有，0 相依</div>
+        </div>
+      </div>
+      <figcaption>同一個需求，兩種反射 — 一個堆出整座套件塔，一個用平台原生的一行</figcaption>
+    </figure>
     <pre><code><span class="c-com">&lt;!-- ponytail: browser has one --&gt;</span>
 <span class="c-key">&lt;input</span> <span class="c-fn">type</span>=<span class="c-str">"date"</span><span class="c-key">&gt;</span></code></pre>
     <div class="note"><b>關鍵分辨：</b>它叫「懶」，但 <strong>Lazy ≠ Careless（懶 ≠ 草率）</strong>。懶是指「效率」——能不寫就不寫；但<strong>輸入驗證、防資料遺失的錯誤處理、資安、無障礙（a11y）這四條紅線，永遠不准砍</strong>。它砍的是過度設計，不是該做的工。</div>
@@ -223,14 +301,18 @@
   <div class="wrap">
     <h2><span class="n">02</span>運作核心：六階梯（The Ladder）</h2>
     <p class="lead">寫任何程式之前，agent 從上往下走這道梯子，<strong>停在第一個成立的階梯就動手</strong>，不再往下。這是一個反射動作，不是研究專案——兩階都行就取較高階、立刻收工。</p>
-    <ol class="ladder">
-      <li><div><b>這東西到底需不需要存在？</b><span>投機性的需求 → 直接跳過，用一句話說明。（YAGNI：You Aren't Gonna Need It）</span></div></li>
-      <li><div><b>標準函式庫做得到嗎？</b><span>做得到就用它。不要手刻一個 stdlib 已經有的東西。</span></div></li>
-      <li><div><b>平台原生功能涵蓋嗎？</b><span><code>&lt;input type="date"&gt;</code> 勝過選擇器套件；CSS 勝過 JS；DB constraint 勝過應用層程式碼。</span></div></li>
-      <li><div><b>已安裝的相依套件能解嗎？</b><span>能就用。絕不為了幾行能搞定的事，新增一個相依套件。</span></div></li>
-      <li><div><b>能一行解決嗎？</b><span>那就一行。</span></div></li>
-      <li><div><b>到這步才開始：</b><span>寫「剛好能動」的最小程式碼。</span></div></li>
-    </ol>
+    <figure>
+      <div class="fig-ladder">
+        <div class="step" style="--lvl:0"><div class="riser"></div><div class="tread"><span class="num">1</span><b>這東西到底需不需要存在？</b><span>投機性需求 → 直接跳過，用一句話說明（YAGNI）</span></div></div>
+        <div class="step" style="--lvl:1"><div class="riser"></div><div class="tread"><span class="num">2</span><b>標準函式庫做得到嗎？</b><span>做得到就用它，不要手刻 stdlib 已有的東西</span></div></div>
+        <div class="step" style="--lvl:2"><div class="riser"></div><div class="tread"><span class="num">3</span><b>平台原生功能涵蓋嗎？</b><span>原生 input ＞ 選擇器套件；CSS ＞ JS；DB constraint ＞ 應用層</span></div></div>
+        <div class="step" style="--lvl:3"><div class="riser"></div><div class="tread"><span class="num">4</span><b>已安裝的相依套件能解嗎？</b><span>能就用，絕不為了幾行新增一個相依</span></div></div>
+        <div class="step" style="--lvl:4"><div class="riser"></div><div class="tread"><span class="num">5</span><b>能一行解決嗎？</b><span>那就一行</span></div></div>
+        <div class="step last" style="--lvl:5"><div class="riser"></div><div class="tread"><span class="num">6</span><b>到這步才開始寫</b><span>寫「剛好能動」的最小程式碼</span></div></div>
+      </div>
+      <div class="ladder-axis"><span>↑ 越上面越懶（越優先）</span><span>越往下走，寫的程式越多 ↓</span></div>
+      <figcaption>The Ladder — 由上往下走，停在第一個成立的階梯</figcaption>
+    </figure>
     <div class="note"><b>梯子的精神：</b>第一個能動的懶解法，就是對的解法。「比起加程式碼，先想能不能刪；比起聰明，先求無聊（無聊的程式不會在凌晨三點被叫起來解讀）。」</div>
   </div>
 </section>
@@ -357,12 +439,45 @@
 ├── <span class="c-fn">commands/</span>            <span class="c-com"># /ponytail* 指令（.toml）</span>
 ├── <span class="c-fn">benchmarks/</span>          <span class="c-com"># promptfoo 設定 + 可重現的實測結果</span>
 └── <span class="c-fn">各 host 轉接檔</span>        <span class="c-com"># .claude-plugin/ .codex-plugin/ .cursor/ .windsurf/ …</span></code></pre>
+    <figure>
+      <div class="fig-arch">
+        <div class="arch-layer center">
+          <div class="lh">★ 共用核心（真正的行為）</div>
+          <div class="arch-row">
+            <span class="chip core">AGENTS.md（26 行守則）</span>
+            <span class="chip core">skills/ponytail</span>
+            <span class="chip core">skills/ponytail-review</span>
+            <span class="chip core">skills/ponytail-audit</span>
+            <span class="chip core">skills/ponytail-debt</span>
+            <span class="chip core">skills/ponytail-help</span>
+          </div>
+        </div>
+        <div class="arch-glue">▲ 每個 host 專屬檔都只是把同一份核心，塞進該 agent 的薄轉接層（adapter） ▲</div>
+        <div class="arch-layer">
+          <div class="lh">薄轉接層 · 各 host adapter</div>
+          <div class="arch-row">
+            <span class="chip host">.claude-plugin/</span>
+            <span class="chip host">.codex-plugin/</span>
+            <span class="chip host">copilot</span>
+            <span class="chip host">.opencode/</span>
+            <span class="chip host">gemini ext</span>
+            <span class="chip host">.cursor/rules/</span>
+            <span class="chip host">.windsurf/rules/</span>
+          </div>
+        </div>
+      </div>
+      <figcaption>同一份行為核心，靠薄 adapter 散佈到各家 agent — adapter 越薄越好</figcaption>
+    </figure>
     <h3>它怎麼「常駐」？</h3>
     <p>Claude Code / Codex 版會跑兩個極小的 Node.js hook（所以 <code>node</code> 要在 PATH 上；不在的話 skill 照樣能用，只是 always-on 啟動會安靜地略過而非報錯）：</p>
-    <ul class="clean">
-      <li><b>SessionStart</b>（matcher：startup｜resume｜clear｜compact）→ 跑 <code>ponytail-activate.js</code> 載入目前模式。</li>
-      <li><b>UserPromptSubmit</b>（每次你送出 prompt）→ 跑 <code>ponytail-mode-tracker.js</code>，<strong>每一輪重新注入守則</strong>，防止 agent 飄回過度設計。</li>
-    </ul>
+    <figure>
+      <div class="fig-flow">
+        <div class="flowstep"><div class="tk">SessionStart<br><span style="font-weight:400;color:var(--muted);font-size:11px">startup｜resume｜clear｜compact</span></div><div class="ar">→</div><div class="ds">跑 <code>ponytail-activate.js</code>，<b>載入目前模式</b>（lite／full／ultra）。整個 session 開場一次。</div></div>
+        <div class="flowstep loop"><div class="tk">UserPromptSubmit<br><span style="font-weight:400;color:var(--muted);font-size:11px">每次你送出 prompt</span></div><div class="ar">↻</div><div class="ds">跑 <code>ponytail-mode-tracker.js</code>，<b>每一輪重新注入守則</b>，防止 agent 飄回過度設計。</div></div>
+      </div>
+      <div class="loopnote">↻ 這個 re-inject 每一輪都發生 — 正是下面「成本可能反而變高」的根因</div>
+      <figcaption>兩個生命週期 hook：一次性啟動 + 每輪重注入</figcaption>
+    </figure>
     <div class="note"><b>這就是「成本可能反而變高」的根因：</b>守則每一輪都當成 input 重新送進去。在會跟著「想很多」的 reasoning 模型上，這份固定 input + 額外 thinking token，可能比省下的程式碼還貴（見下節實測）。</div>
   </div>
 </section>
@@ -399,6 +514,15 @@
       <tr><td>Opus</td><td class="num">0.1368</td><td class="num">0.0724</td><td class="num">0.0789</td><td class="num win">省 42.3%</td></tr>
     </table>
     <p>在 Claude 上：<strong>省 42–75% 成本、快 3.1–5.8×、正確率 100%</strong>。（值得一提：無 skill 的 baseline 在 Sonnet 上正確率掉到 76%——一個貨真價實的過度設計 bug：回傳了 dict 而不是 bool。）</p>
+    <figure>
+      <div class="fig-bars">
+        <div class="gbar"><div class="gl"><b>Haiku</b><span class="sv">省 63.1%　$0.0299 → $0.0110</span></div><div class="gtrack"><i style="width:36.8%">ponytail</i></div></div>
+        <div class="gbar"><div class="gl"><b>Sonnet</b><span class="sv">省 74.5%　$0.1367 → $0.0348</span></div><div class="gtrack"><i style="width:25.5%">ponytail</i></div></div>
+        <div class="gbar"><div class="gl"><b>Opus</b><span class="sv">省 42.3%　$0.1368 → $0.0789</span></div><div class="gtrack"><i style="width:57.7%">ponytail</i></div></div>
+      </div>
+      <div class="bars-key"><span><i style="background:rgba(255,123,114,.45)"></i>baseline（無 skill）= 滿格</span><span><i style="background:var(--accent2)"></i>ponytail 實際花費</span></div>
+      <figcaption>Claude 三模型成本對照 — 綠條越短代表省越多（5 任務合計 USD，pooled 30 reps）</figcaption>
+    </figure>
 
     <div class="note red"><b>但跨供應商會翻盤 ——</b> 這個省錢效果是 <strong>Claude 特有的</strong>。作者自己在 <code>benchmarks/results/</code> 裡誠實記錄：</div>
     <h3>OpenAI：同一套測試（10 reps）</h3>
