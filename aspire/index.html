@@ -118,6 +118,44 @@
   .figgrid figure{margin:0}
   @media(max-width:640px){.figgrid{grid-template-columns:1fr}}
 
+  /* ===== appendix deep-dive ===== */
+  pre.code{background:#0a0e14;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c9d1d9;margin:18px 0}
+  pre.code .c{color:var(--dim)} pre.code .k{color:var(--red)} pre.code .s{color:var(--green)} pre.code .f{color:var(--blue)}
+  .dual{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
+  @media(max-width:640px){.dual{grid-template-columns:1fr}}
+  .rulecard{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--bg2)}
+  .rulecard.deny{border-top:3px solid var(--red)} .rulecard.allow{border-top:3px solid var(--green)}
+  .rulecard h5{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  .rulecard.deny h5{color:var(--red)} .rulecard.allow h5{color:var(--green)}
+  .rulecard ul{margin:0 0 0 18px;font-size:13.5px}
+  .rulecard li{margin-bottom:6px;color:var(--muted)}
+  .rulecard li code{color:var(--fg)}
+  .proto{display:grid;grid-template-columns:1fr auto 1fr;gap:0;margin:24px 0;align-items:stretch}
+  .proto .stage{border:1px solid var(--line);border-radius:12px;background:var(--bg2);padding:18px}
+  .proto .stage h4{font-size:15px;margin-bottom:10px}
+  .proto .stage.s1 h4{color:var(--blue)} .proto .stage.s2 h4{color:var(--green)}
+  .proto .stage ul{margin:0 0 0 18px;font-size:13px}
+  .proto .stage li{margin-bottom:6px;color:var(--muted)}
+  .proto .gate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 14px;font-family:var(--mono);font-size:11px;color:var(--orange);text-align:center;gap:6px}
+  .proto .gate .lock{font-size:22px}
+  @media(max-width:640px){.proto{grid-template-columns:1fr}.proto .gate{padding:10px 0}}
+  .anatomy{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:22px 0;font-size:13.5px}
+  .anatomy .row{display:grid;grid-template-columns:170px 1fr;border-bottom:1px solid var(--line)}
+  .anatomy .row:last-child{border-bottom:none}
+  .anatomy .lbl{background:var(--bg3);padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--accent);display:flex;align-items:center}
+  .anatomy .val{padding:10px 14px;color:var(--muted);background:var(--bg2)}
+  .anatomy .val b{color:#fff}
+  @media(max-width:560px){.anatomy .row{grid-template-columns:1fr}.anatomy .lbl{padding-bottom:2px}}
+  .iterchart{display:grid;gap:8px;margin:18px 0}
+  .iterrow{display:grid;grid-template-columns:210px 1fr;gap:10px;align-items:center;font-size:12.5px}
+  .iterrow .nm{color:var(--muted);text-align:right;font-family:var(--mono);font-size:11.5px;line-height:1.35}
+  .iterrow .cells{display:flex;gap:6px}
+  .iterrow .cell{flex:1;text-align:center;font-family:var(--mono);font-size:11.5px;padding:6px 2px;border-radius:6px;background:var(--bg3);border:1px solid var(--line);color:var(--dim)}
+  .iterrow .cell.v{color:var(--fg)}
+  .iterrow .cell.best{background:#173324;border-color:var(--green);color:var(--green);font-weight:700}
+  .iterrow .cell.drop{color:var(--red)}
+  @media(max-width:560px){.iterrow{grid-template-columns:1fr}.iterrow .nm{text-align:left}}
+
   /* toc */
   nav.toc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:44px;font-size:14px}
   nav.toc .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
@@ -155,6 +193,7 @@
     <li><a href="#results">實驗結果</a></li>
     <li><a href="#real">模擬技能搬到真實機器人</a></li>
     <li><a href="#gallery">技能庫長什麼樣（原圖集）</a></li>
+    <li><a href="#appendix">附錄深讀：數據全表 + Agent 工程原始碼級細節</a></li>
     <li><a href="#limits">侷限</a></li>
     <li><a href="#takeaway">我的重點筆記</a></li>
   </ol>
@@ -351,9 +390,159 @@
   </div>
 </section>
 
+<!-- ============ APPENDIX DEEP DIVE ============ -->
+<section id="appendix">
+  <h2><span class="num">07</span>附錄深讀：數據全表 + Agent 工程原始碼級細節</h2>
+  <p class="sec-sub">Appendix A–E（p.17–43，佔全文 27 頁）— 這裡是論文真正的含金區：完整數據表揭露了正文沒說的細節，Appendix E 更直接把整套 multi-agent 系統的 prompt / CLAUDE.md / SKILL.md 攤開給你抄</p>
+
+  <h3>A｜技能條目的標準解剖（每條技能長這樣）</h3>
+  <p>Appendix A 把 Figure 3 的代表性條目展開成完整分類法。每條技能都是同一個四段式結構：</p>
+
+  <div class="anatomy">
+    <div class="row"><div class="lbl">① Problem</div><div class="val">從觸發失敗的 trace 提煉的問題描述。例：<b>「酒瓶在夾取時傾倒」</b>——夾爪以任意 yaw 閉合，斜角接觸圓柱面，瓶子滾出。</div></div>
+    <div class="row"><div class="lbl">② When to Apply</div><div class="val">情境檢索條件（guard）。例：<b>高瘦圓柱物（酒瓶、高罐、噴瓶）＋長寬比 &gt; 2.0</b>。這是讓未來 actor 知道「什麼時候該翻出這條」的關鍵。</div></div>
+    <div class="row"><div class="lbl">③ Strategy</div><div class="val">修復策略的文字版。例：<b>夾爪 yaw 對齊 OBB 主軸</b>，讓夾指橫跨圓柱直徑；兩段式閉合——50% 探測、70% 坐實、再慢速上提。</div></div>
+    <div class="row"><div class="lbl">④ Validated Code</div><div class="val">驗證過的程式碼草圖 ＋ 出處任務。<b>不是完整程式</b>，是可嵌入未來程式的模式。</div></div>
+  </div>
+
+  <p>對應的實際程式碼（Figure 10「Bottle」條目原文）：</p>
+  <pre class="code"><span class="c"># 高瘦圓柱抓取：OBB 對齊 + 兩段式閉合</span>
+obb = compute_obb(bottle_points)
+major = obb.axes[0]
+grasp_yaw = np.arctan2(major[1], major[0])
+goto_pose(bottle.centroid, yaw=grasp_yaw)
+set_gripper_width(0.5 * MAX_WIDTH)  <span class="c"># scout（探測）</span>
+set_gripper_width(0.7 * MAX_WIDTH)  <span class="c"># seat（坐實）</span>
+lift_slowly(dz=0.15, speed=0.05)</pre>
+
+  <p>其他值得記的條目：<strong>Push 原語</strong>的適用條件是「物高 &lt; 2 cm ＋ pick-and-place 已失敗 ≥1 次」——薄扁物夾不起來就改推的；<strong>Failure Pattern 除錯技能</strong>明訂「同一症狀 ≥2 個 trial 才成 pattern，單次失敗是雜訊」——防止對單一 trial 過擬合；<strong>Multi-Angle Approach</strong> 的精確觸發條件是「navigate_to_pose 回報成功但機器人離目標 &gt;1 m ＋ log 出現 PLANNING_ERROR ＋ 物體貼近牆/家具」。</p>
+
+  <h3>B + D｜完整數據表：正文圖表沒告訴你的事</h3>
+
+  <p><strong>Table 2 的殘酷對照</strong>：OpenVLA 和 π0 在 LIBERO-Pro 全部擾動軸上是<em>全零</em>（0.00 across the board）——不是低，是零。π0.5 平均 0.13、CaP-Agent0 0.18、ASPIRE 0.72。端到端 VLA 在擾動下的崩潰程度比正文長條圖看起來更徹底。</p>
+
+  <p><strong>Table 3 的誠實數字</strong>：Robosuite 上 ASPIRE 也有輸的——<code>two_arm_lift</code> 0.71 vs baseline 0.74、<code>spill_wipe</code> 0.99 vs 1.00，而 <code>nut_assembly</code> 兩邊都爛（0.00 vs 0.09）。贏面集中在 handover（0.20→0.92）和 restack（0.89→1.00）。</p>
+
+  <p><strong>Table 5–6：零樣本遷移的非單調真相</strong>。宏觀平均確實隨庫變大單調上升（N=0→90：Pos 0→23%、Task 9.4%→38%），但逐任務看就不是了：</p>
+
+  <table>
+    <thead><tr><th>任務（Task 擾動軸）</th><th>N=0</th><th>N=25</th><th>N=50</th><th>N=90</th></tr></thead>
+    <tbody>
+      <tr><td>Stove + moka pot（Pos 軸）</td><td class="neutral">0.00</td><td class="neutral">0.30</td><td class="neutral">0.84</td><td class="good">1.00</td></tr>
+      <tr><td>Both mokas on stove</td><td class="neutral">0.00</td><td class="neutral">0.00</td><td class="neutral">0.84</td><td class="good">1.00</td></tr>
+      <tr><td>Soup + tomato sauce</td><td class="neutral">0.78</td><td class="neutral">0.68</td><td class="bad">0.02</td><td class="good">0.70</td></tr>
+      <tr><td>Mug on two plates</td><td class="neutral">0.16</td><td class="good">0.28</td><td class="neutral">0.08</td><td class="bad">0.00</td></tr>
+      <tr><td>Bowl in drawer / Mug in microwave</td><td class="bad">0.00</td><td class="bad">0.00</td><td class="bad">0.00</td><td class="bad">0.00</td></tr>
+    </tbody>
+  </table>
+
+  <p>「Soup + tomato sauce」在 N=50 時從 0.68 崩到 0.02、N=90 又回到 0.70；「Mug on two plates」隨庫變大反而歸零——<strong>這就是正文侷限第 4 條說的「過時/誤導條目」的實證</strong>。技能庫不是永遠的正資產，會互相干擾。另外兩個任務（抽屜、微波爐）四種庫大小全零：涉及鉸接物件的長程任務，零樣本還是完全解不了。</p>
+
+  <p><strong>Table 7–8：消融的逐任務細節</strong>還藏了一個工程決策——最終 ASPIRE 分數是「修復程式 vs 演化搜尋結果」<em>在另一組 held-out 驗證 seeds（66–80）上逐任務挑贏家</em>，不是無腦取 max。所以會出現演化搜尋單項比最終分數高的情況（如 spatial 的 From table center：Evo 0.82 但最終選了 0.32 的修復版）——因為在驗證集上修復版更穩。zero-shot Claude Opus 4.6 裸寫（無引擎無搜尋）在 object 套件平均只有 0.24 / 0.17，加引擎直接跳到 0.98 / 0.95。</p>
+
+  <p><strong>Table 9：演化搜尋不是單調爬升</strong>。逐輪 held-out 成功率：</p>
+
+  <div class="iterchart">
+    <div class="iterrow"><div class="nm">Bowl → plate（goal_swap）</div><div class="cells"><div class="cell v">.62</div><div class="cell v">.60</div><div class="cell v">.60</div><div class="cell drop">.18</div><div class="cell best">.86</div></div></div>
+    <div class="iterrow"><div class="nm">Wine bottle → rack</div><div class="cells"><div class="cell v">.40</div><div class="cell best">.76</div><div class="cell v">.74</div><div class="cell">—</div><div class="cell">—</div></div></div>
+    <div class="iterrow"><div class="nm">Push plate → stove（goal_task）</div><div class="cells"><div class="cell drop">.00</div><div class="cell best">.80</div><div class="cell">—</div><div class="cell">—</div><div class="cell">—</div></div></div>
+    <div class="iterrow"><div class="nm">Bowl on cookie → plate</div><div class="cells"><div class="cell v">.26</div><div class="cell drop">.04</div><div class="cell best">.70</div><div class="cell">—</div><div class="cell">—</div></div></div>
+    <div class="iterrow"><div class="nm">Bowl next to cookie → plate</div><div class="cells"><div class="cell v">.16</div><div class="cell v">.20</div><div class="cell drop">.04</div><div class="cell drop">.04</div><div class="cell best">.40</div></div></div>
+  </div>
+  <p style="font-size:13px;color:var(--dim)">每列 = 一個任務，格子 = Iter 0→4 的最佳候選 held-out 成功率。注意 .62→.18→.86 這種劇烈震盪——中間輪可能整批候選走錯方向，撐完預算才翻盤。「Push plate → stove」則是一輪翻身：0 → 0.80。</p>
+
+  <h3>E｜真正的寶藏：整套 agent 系統的原始碼級細節</h3>
+
+  <div class="callout green">
+    <span class="tag">為什麼這段含金量最高</span>
+    Appendix E 不是「我們的方法很棒」的摘要，而是直接貼出 <strong>CLAUDE.md、MEMORY.md、coordinator.md、subagent.md、初始 SKILL.md 模板</strong>的實際內容。這等於公開了一套經過 150+ 任務實戰驗證的 multi-agent 工程手冊——任何在做 agentic system 的人都能直接借鑑。
+  </div>
+
+  <h4 style="font-size:17px;margin:26px 0 8px;color:#fff">E.2　CLAUDE.md：agent 的「憲法」＋ 防作弊紅線</h4>
+  <p>ASPIRE 用 Claude Code 原生機制管理 agent：repo 根目錄放 CLAUDE.md（每 session 必讀）、<code>.claude/memory/MEMORY.md</code>（跨 session 專案記憶）、<code>.claude/skills/&lt;name&gt;/SKILL.md</code>（自動發現的技能）。最關鍵的設計是<strong>用 API 白名單/黑名單防止 agent 作弊</strong>：</p>
+
+  <div class="dual">
+    <div class="rulecard deny">
+      <h5>⛔ FORBIDDEN（用了就作廢）</h5>
+      <ul>
+        <li><code>env.handle.env.sim</code> — 禁碰 MuJoCo sim 物件</li>
+        <li><code>sim.data.body_xpos</code> — 禁讀 ground-truth 物體位置</li>
+        <li>讀 <code>.bddl</code> / <code>.xml</code> / <code>.urdf</code> 資產檔推斷幾何或成功條件</li>
+        <li><code>set_joint_qpos</code>「瞬移」夾爪或強開抽屜</li>
+        <li>硬編碼像素座標、跨 seed 快取物體位置</li>
+      </ul>
+    </div>
+    <div class="rulecard allow">
+      <h5>✅ ALLOWED（真機器人做得到的）</h5>
+      <ul>
+        <li><code>get_observation()</code> — RGB、深度、內外參、機器人狀態</li>
+        <li><code>segment_sam3_text_prompt(rgb, text)</code> — SAM3 文字分割</li>
+        <li><code>plan_grasp()</code> / <code>solve_ik()</code> — 抓取規劃與 IK</li>
+        <li><code>move_to_joints()</code> / 夾爪開合 / 回 home</li>
+        <li>幾何工具：OBB、mask→世界座標點雲</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>判斷準則一句話：<em>「有相機的真機器人做得到的就允許；讀物理引擎內部狀態的就禁止。」</em>MEMORY.md 裡還有幾條工程慣例值得抄：<strong>絕不自動 git commit</strong>、<strong>可重用分析一律寫成 script 而非 inline python -c</strong>、每次重要工作後 append 到 <code>docs/logs/YYYY-MM-DD.md</code>（含 trial 編號、成功率、錯誤訊息、檔案路徑）。</p>
+
+  <h4 style="font-size:17px;margin:26px 0 8px;color:#fff">E.3　修復迴圈：coordinator / subagent 的分工契約</h4>
+  <p><strong>Coordinator 五條鐵律</strong>（原文照列）：① 只派工不親自除錯；② 派完就 idle，等完成通知、不輪詢不干預；③ 讓每個空閒運算裝置都有工作；④ 不碰任務層除錯產物（trace、程式、keyframe 是 subagent 的事，只讀最終 findings.md）；⑤ 絕不重派已完成任務——重複 trial 目錄會汙染統計。</p>
+
+  <p><strong>Subagent 的兩階段協定＋評測集封鎖</strong>——這是整個 benchmark 可信度的支柱：</p>
+
+  <div class="proto">
+    <div class="stage s1">
+      <h4>Stage 1：只准碰 debug seeds</h4>
+      <ul>
+        <li>Fast path：先看 baseline 有沒有已成功的 seed，有就直接萃取其程式測試</li>
+        <li>逐 seed 讀 trace.json / code.py / keyframes / summary.txt 診斷</li>
+        <li>讀技能庫 → 寫 fix.py → 只在 debug seeds 上重放迭代</li>
+        <li><b>硬上限：每個 debug seed 最多 3 次重放</b>，超過就寫 BLOCKED.md 移交</li>
+        <li>合成單一 fix_code.py——禁止 seed-specific 分支</li>
+      </ul>
+    </div>
+    <div class="gate"><div class="lock">🔒</div>held-out seeds<br>debug 期間鎖死<br>違者結果作廢</div>
+    <div class="stage s2">
+      <h4>Stage 2：held-out 一次定生死</h4>
+      <ul>
+        <li>驗證 seeds <b>只跑一次</b>，寫入官方輸出目錄</li>
+        <li>不准用 Stage 2 結果回頭改程式</li>
+        <li>回報前先確認輸出真的落在預期目錄</li>
+        <li>最後動作：跑共享 progress script（原子更新、並行安全）</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>trace 診斷的「讀症狀」對照表也直接寫在 prompt 裡：<code>夾爪閉合後寬度大 → 可能抓到了；寬度小 → 可能抓空；零 masks → prompt 爛或遮擋；IK 無解 → 目標出工作空間；早期 crash → 看 stdout/stderr</code>。findings.md 有固定 schema（根因 / 修法 / 有效感知 prompts 表 / 可泛化模式 / 任務特有怪癖 / Stage 2 成功率），coordinator 只把「可泛化模式」升入共享技能庫。</p>
+
+  <h4 style="font-size:17px;margin:26px 0 8px;color:#fff">E.4　演化搜尋 subagent：task_analysis.md 是靈魂</h4>
+  <p>每個演化搜尋任務維護一份跨輪次的 <code>task_analysis.md</code>，內含：(i) 場景描述（物體形狀、目標幾何、障礙、被擋的接近方向，從初始 snapshot 建立一次）；(ii) 進行中的假設＋測試它們的候選 metadata；(iii) <strong>「已淘汰方向」與「被擋但未測方向」的帳本</strong>——後者的存在讓新技術出現時（例如學會手腕旋轉）可以回頭重試之前被擋的分支，而不會重測已被證偽的分支。</p>
+
+  <p>寫候選的紀律直接寫死在 prompt：<em>每個候選必須測試不同假設；任何兩個候選不得在同一階段因同一原因失敗；每個候選要有 docstring 說明假設、與先前候選的差異、若假設錯誤預期的失敗模式。</em>還有一段反過擬合訓詞：debug seeds 是小樣本，<strong>「為 held-out seeds 寫程式，不是為 debug seeds 寫」</strong>——偏好機制上成立的策略，禁止從 debug 失敗擬合出來的硬編碼閾值、影像遮罩、偏移量。停滯時的指令也很反直覺：撞到高原（plateau）不代表任務無解，代表<em>當前方法家族可能是錯的</em>，剩餘預算要拿去探索結構性新方法而不是提早停。</p>
+
+  <h4 style="font-size:17px;margin:26px 0 8px;color:#fff">E.5　初始技能模板：只給骨架，參數留白等實驗長出來</h4>
+  <p>系統出廠只帶四個「結構模板」技能——grasp / localize / manipulation / transport——刻意<strong>不含任何任務特定參數</strong>。每個模板底部都有一張空的 Registry 表（per-object 抓取參數、SAM3 prompt 註冊表、鉸接物件參數、waypoint 模式），由 coordinator 在審核 findings.md 後逐行填入。所有權寫得很清楚：<em>「Coordinator 增補可泛化模式，Subagent 不得編輯此檔。」</em></p>
+
+  <p>幾個模板裡的實戰細節，每條都是被失敗教出來的：</p>
+  <ul>
+    <li><strong>三段航點</strong>（上提 → 平移 → 下降）而非直線 goto：直線會斜切撞到高物、籃壁、抽屜口。上提高度用 <code>grasp_pos[2] + 0.15</code> 場景相對值，禁絕對 z。</li>
+    <li><strong>子任務間 home reset</strong>：放完第一個物體先開爪回 home、連取 3 幀讓物理沉降——否則第二個子任務會「透過還在畫面裡的手臂」做感知。</li>
+    <li><strong>遠工作空間用 solve_ik + move_to_joints</strong>，goto_pose 在檯面深處不可靠；IK 無解時先降 2 cm 再試。</li>
+    <li><strong>SAM3 的 area_pct 欄位對所有 mask 都固定回 99.00</strong>（隱藏地雷）——要用 bbox 自己算面積。SAM3 全空時 fallback 到 Molmo 點定位再轉 SAM3 point prompt。</li>
+    <li><strong>OBB 中心優於點雲平均</strong>：細長/被遮擋物體的 <code>pts.mean()</code> 會偏，OBB center 穩。</li>
+    <li>每個模板都有 <strong>Anti-Patterns 區</strong>＋<strong>症狀→原因→檢查法</strong>的除錯表（抓空 → z 太高，印 grasp_pos[2] 對 surface_z；上提時掉 → 換垂直 yaw…）。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">跟 Hermes/Claude Code 生態的既視感</span>
+    這套設計——CLAUDE.md 憲法、SKILL.md 自動發現、coordinator 派 subagent、findings 審核後入庫、registry 隨經驗成長——就是把 Claude Code 的 skills/memory 機制當成機器人學習系統的基礎設施。論文等於示範了「agent 工程」本身可以是研究貢獻：Appendix E 的 prompt 設計（評測集封鎖、3 次重放上限、假設多樣性強制、淘汰帳本）每一條都在防某種具體的失敗模式，全部可以移植到非機器人的 agent 系統。
+  </div>
+</section>
+
 <!-- ============ LIMITS ============ -->
 <section id="limits">
-  <h2><span class="num">07</span>侷限（論文自己承認的）</h2>
+  <h2><span class="num">08</span>侷限（論文自己承認的）</h2>
   <p class="sec-sub">§5 Limitations — 五條，都很誠實</p>
 
   <div class="limits">
@@ -367,7 +556,7 @@
 
 <!-- ============ TAKEAWAY ============ -->
 <section id="takeaway">
-  <h2><span class="num">08</span>我的重點筆記</h2>
+  <h2><span class="num">09</span>我的重點筆記</h2>
   <p class="sec-sub">給趕時間的人</p>
 
   <ol>
