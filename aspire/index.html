@@ -163,6 +163,27 @@
   nav.toc li{margin-bottom:4px}
 
   footer{padding:36px 0 60px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+
+  /* appendix deep-dive */
+  pre.block{font-family:var(--mono);font-size:12.5px;background:#0a0d12;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;color:#c9d1d9;line-height:1.62;margin:14px 0}
+  pre.block .c{color:var(--dim)} pre.block .k{color:var(--accent)} pre.block .g{color:var(--green)} pre.block .r{color:var(--red)} pre.block .o{color:var(--orange)}
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+  @media(max-width:640px){.duo{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--bg2);padding:16px 18px}
+  .panel h4{font-size:14px;margin-bottom:10px;font-family:var(--mono);letter-spacing:.04em}
+  .panel.ok h4{color:var(--green)} .panel.no h4{color:var(--red)}
+  .panel ul{margin:0 0 0 18px;font-size:13.5px}
+  .panel li{margin-bottom:6px;color:var(--muted)}
+  .panel li code{color:var(--fg)}
+  .appmap{display:grid;gap:12px;margin:22px 0}
+  .appmap .row{display:grid;grid-template-columns:56px 1fr 118px;gap:14px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+  .appmap .aid{font-family:var(--mono);font-size:22px;color:var(--accent);font-weight:700}
+  .appmap .desc{font-size:14px;color:var(--muted)} .appmap .desc b{color:#fff}
+  .appmap .gold{font-family:var(--mono);font-size:12px;color:var(--orange);text-align:right;line-height:1.5}
+  @media(max-width:560px){.appmap .row{grid-template-columns:44px 1fr}.appmap .gold{display:none}}
+  table.mini td,table.mini th{padding:7px 10px;font-size:13px}
+  .spark{font-family:var(--mono);letter-spacing:.5px;white-space:nowrap}
+  .up{color:var(--green)} .dn{color:var(--red)}
 </style>
 </head>
 <body>
@@ -417,6 +438,32 @@ lift_slowly(dz=0.15, speed=0.05)</pre>
 
   <p>其他值得記的條目：<strong>Push 原語</strong>的適用條件是「物高 &lt; 2 cm ＋ pick-and-place 已失敗 ≥1 次」——薄扁物夾不起來就改推的；<strong>Failure Pattern 除錯技能</strong>明訂「同一症狀 ≥2 個 trial 才成 pattern，單次失敗是雜訊」——防止對單一 trial 過擬合；<strong>Multi-Angle Approach</strong> 的精確觸發條件是「navigate_to_pose 回報成功但機器人離目標 &gt;1 m ＋ log 出現 PLANNING_ERROR ＋ 物體貼近牆/家具」。</p>
 
+  <h3>Algorithm 1｜演化搜尋偽代碼逐行讀</h3>
+  <p>正文 §2.3 的 Algorithm 1 是整個「跳出局部修補」機制的形式化。值得逐行讀，因為<strong>好幾個關鍵工程決策直接寫死在演算法簽名裡</strong>：</p>
+
+  <pre class="code"><span class="c">Require: 任務 τ, 初始程式 P⁰, seed 集 S_dbg / S_val, 技能庫 L,</span>
+<span class="c">         agent M, 預算 (K 候選 × T 輪), 門檻 θ</span>
+<span class="c">Notation: EXECUTE(P, S) → (分數 r, trace 包 Z)</span>
+
+ 1  (r*, Z⁰) ← <span class="f">EXECUTE</span>(P⁰, S_dbg);  P* ← P⁰      <span class="c">← baseline 先跑，當第一個「存活者」</span>
+ 2  H ← {(P⁰, r*, Z⁰)}                        <span class="c">← H = 完整歷史：程式+分數+trace 都留</span>
+ 3  <span class="k">for</span> i = 1 .. T:
+ 4      {P_i^k} ← <span class="f">PROPOSEREPAIRS</span>(M, τ, <span class="s">Top3(H)</span>, L, H)   <span class="c">← 只給前 3 名當條件，但完整 H 可查</span>
+ 5      <span class="k">for</span> k = 1 .. K: (r_i^k, Z_i^k) ← <span class="f">EXECUTE</span>(P_i^k, <span class="s">S_dbg</span>)  <span class="c">← 迭代永遠只碰 debug seeds</span>
+ 8      H ← H ∪ 全部候選;  k* ← argmax r_i^k
+ 9      <span class="k">if</span> r_i^{k*} &gt; r*: (P*, r*) ← 換人          <span class="c">← 全域最佳，不是本輪最佳</span>
+12      <span class="k">if</span> r* ≥ θ: <span class="k">break</span>                          <span class="c">← 夠好就停，省預算</span>
+16  (r_val, Z_val) ← <span class="f">EXECUTE</span>(P*, <span class="s">S_val</span>)          <span class="c">← held-out 只在最後跑一次</span>
+17  G ← <span class="f">EXTRACTVALIDATEDPATTERNS</span>(H, P*, r_val, Z_val)  <span class="c">← 技能萃取在搜尋「結束後」做</span>
+18  <span class="k">return</span> (P*, r_val, G)</pre>
+
+  <div class="steps">
+    <div class="step"><div><b>評測集封鎖是「結構」不是「紀律」</b><p>S_dbg 和 S_val 分開出現在演算法簽名裡：第 5 行迭代只用 S_dbg，第 16 行 S_val 只執行一次且結果不回流。防作弊不是靠 prompt 叮嚀，是流程上根本沒有回頭路。</p></div></div>
+    <div class="step"><div><b>Top3(H) 條件化 = 多樣性的來源</b><p>下一代以「前三名存活者＋其殘餘失敗 trace」為條件，而不是只精修第一名——這就是它跳出「反覆修同一招」的機制。</p></div></div>
+    <div class="step"><div><b>技能萃取放在第 17 行（搜尋後、驗證後）</b><p>只有拿 held-out 成績驗過的 P* 才有資格貢獻 pattern，而且萃取時可以回看整個 H（包括失敗候選）——失敗分支也是知識（「這條路試過，不通」）。</p></div></div>
+    <div class="step"><div><b>θ 提早停損</b><p>解掉 debug 配置就停，剩餘預算留給別的任務。對照 Table 9：多數任務 1–2 輪就收斂，難任務才會跑滿 5 輪。</p></div></div>
+  </div>
+
   <h3>B + D｜完整數據表：正文圖表沒告訴你的事</h3>
 
   <p><strong>Table 2 的殘酷對照</strong>：OpenVLA 和 π0 在 LIBERO-Pro 全部擾動軸上是<em>全零</em>（0.00 across the board）——不是低，是零。π0.5 平均 0.13、CaP-Agent0 0.18、ASPIRE 0.72。端到端 VLA 在擾動下的崩潰程度比正文長條圖看起來更徹底。</p>
@@ -521,18 +568,99 @@ lift_slowly(dz=0.15, speed=0.05)</pre>
 
   <p>寫候選的紀律直接寫死在 prompt：<em>每個候選必須測試不同假設；任何兩個候選不得在同一階段因同一原因失敗；每個候選要有 docstring 說明假設、與先前候選的差異、若假設錯誤預期的失敗模式。</em>還有一段反過擬合訓詞：debug seeds 是小樣本，<strong>「為 held-out seeds 寫程式，不是為 debug seeds 寫」</strong>——偏好機制上成立的策略，禁止從 debug 失敗擬合出來的硬編碼閾值、影像遮罩、偏移量。停滯時的指令也很反直覺：撞到高原（plateau）不代表任務無解，代表<em>當前方法家族可能是錯的</em>，剩餘預算要拿去探索結構性新方法而不是提早停。</p>
 
+  <p><strong>演化搜尋版 coordinator 的完整主迴圈</strong>（p.34 原文）簡潔到可以直接背：</p>
+
+  <pre class="code"><span class="c"># coordinator.md「The Loop」原文</span>
+read progress → assign free devices → dispatch subagents → go idle
+                                                              ↑
+on notification: redispatch freed device to next pending task ─┘
+
+<span class="c"># 一個任務 = 一個 subagent = 一台運算裝置</span>
+<span class="c"># subagent 自己跑完 Stage 1（debug 迭代）+ Stage 2（held-out 驗證）才回報</span>
+<span class="c"># 收到完成通知時，該裝置已是空閒 → 立刻派下一個任務</span></pre>
+
+  <p>派工用的正是 Claude Code 的 <code>Agent()</code> 呼叫（<code>subagent_type="general-purpose"</code>、<code>run_in_background=True</code>、模型欄位填實驗選定的高階推理模型），一次訊息把所有空閒裝置派滿然後停手。停止條件三選一：最佳候選在 debug seeds 達標、輪數用盡、或任務被判 blocked——<strong>blocked 就跳過 Stage 2 直接返回</strong>，不浪費 held-out 配額。</p>
+
+  <p><strong>演化搜尋 subagent 的 Stage 1 標準作業（p.35–36，七步）</strong>：</p>
+  <div class="steps">
+    <div class="step"><div><b>Step 0＋0b：先查有沒有現成答案、再查任務語言</b><p><code>evosearch_best_code.py</code> 已存在就直接跳到回報。另一個地雷檢查：benchmark 檔名可能跟實際目標不符，<em>runtime task language 才是 ground truth</em>，不一致時以 runtime 為準並記錄。</p></div></div>
+    <div class="step"><div><b>Step 1：讀技能庫＋接收 baseline</b><p>讀 grasping / localization / transport / manipulation 相關技能；若 actor pipeline 留有修復程式，原封不動當 <code>candidate_A</code> 種子——演化不從零開始。</p></div></div>
+    <div class="step"><div><b>Step 2：建 run 目錄＋場景快照</b><p>寫程式前先在一個 debug seed 上拍場景快照（廣角＋腕視角），把物體形狀、抓取策略、目標幾何、第一輪假設寫進 <code>task_analysis.md</code>。</p></div></div>
+    <div class="step"><div><b>Step 3：寫 K 個候選，強制假設多樣</b><p>每個候選測不同假設、不得在同一階段因同一原因失敗、docstring 要寫「假設是什麼／跟前輩差在哪／假設錯了預期怎麼掛」。</p></div></div>
+    <div class="step"><div><b>Step 4：固定 debug seed 集上評測</b><p>所有輪次用同一組 debug seeds——跨輪比較才公平。跑完讀 leaderboard＋trace 分析，盯手臂卡住、夾爪寬度訊號、感知失敗、IK 失敗。</p></div></div>
+    <div class="step"><div><b>Step 5：迭代，高原≠放棄</b><p>每輪更新 task_analysis.md（新幾何、淘汰假設、未解問題），以本輪最佳存活者為種子再寫 K 個。停滯時把剩餘預算拿去換「方法家族」而不是提早停。</p></div></div>
+    <div class="step"><div><b>Step 6：存最佳＋fallback 保底</b><p>最佳候選若沒贏過 baseline 種子，<em>退回較強的 baseline</em>——Stage 2 永遠用手上最強的程式。全滅則標 blocked、跳過 Stage 2。</p></div></div>
+  </div>
+
+  <p><strong>findings.md 回報 schema</strong>（p.37）——這是技能入庫流水線的「原料格式」，欄位設計本身就是知識管理：</p>
+
+  <div class="anatomy">
+    <div class="row"><div class="lbl">頭四行硬數字</div><div class="val">任務名 / baseline 成功率 / <b>debug seeds 上最佳成功率</b> / <b>held-out（Stage 2）成功率</b>——debug 與 held-out 分數並排放，過擬合一眼可見。</div></div>
+    <div class="row"><div class="lbl">What Fixed It</div><div class="val">相對 baseline 的<b>關鍵策略改變</b>（不是 diff，是因果敘述）。</div></div>
+    <div class="row"><div class="lbl">Perception Prompts That Worked</div><div class="val">表格：物體 × 有效 prompts × 備註——之後由 coordinator 審核，逐行升入 localize 技能的 Prompt Registry。</div></div>
+    <div class="row"><div class="lbl">Failure Modes Eliminated</div><div class="val">「試過且不通」的方法＋原因——<b>負知識也入帳</b>，未來 actor 不必重踩。</div></div>
+    <div class="row"><div class="lbl">Generalizable Patterns</div><div class="val">值得進共享技能庫的候選——只有這一欄有資格被 coordinator 升庫，其餘都留在任務層。</div></div>
+  </div>
+
   <h4 style="font-size:17px;margin:26px 0 8px;color:#fff">E.5　初始技能模板：只給骨架，參數留白等實驗長出來</h4>
   <p>系統出廠只帶四個「結構模板」技能——grasp / localize / manipulation / transport——刻意<strong>不含任何任務特定參數</strong>。每個模板底部都有一張空的 Registry 表（per-object 抓取參數、SAM3 prompt 註冊表、鉸接物件參數、waypoint 模式），由 coordinator 在審核 findings.md 後逐行填入。所有權寫得很清楚：<em>「Coordinator 增補可泛化模式，Subagent 不得編輯此檔。」</em></p>
 
-  <p>幾個模板裡的實戰細節，每條都是被失敗教出來的：</p>
-  <ul>
-    <li><strong>三段航點</strong>（上提 → 平移 → 下降）而非直線 goto：直線會斜切撞到高物、籃壁、抽屜口。上提高度用 <code>grasp_pos[2] + 0.15</code> 場景相對值，禁絕對 z。</li>
-    <li><strong>子任務間 home reset</strong>：放完第一個物體先開爪回 home、連取 3 幀讓物理沉降——否則第二個子任務會「透過還在畫面裡的手臂」做感知。</li>
-    <li><strong>遠工作空間用 solve_ik + move_to_joints</strong>，goto_pose 在檯面深處不可靠；IK 無解時先降 2 cm 再試。</li>
-    <li><strong>SAM3 的 area_pct 欄位對所有 mask 都固定回 99.00</strong>（隱藏地雷）——要用 bbox 自己算面積。SAM3 全空時 fallback 到 Molmo 點定位再轉 SAM3 point prompt。</li>
-    <li><strong>OBB 中心優於點雲平均</strong>：細長/被遮擋物體的 <code>pts.mean()</code> 會偏，OBB center 穩。</li>
-    <li>每個模板都有 <strong>Anti-Patterns 區</strong>＋<strong>症狀→原因→檢查法</strong>的除錯表（抓空 → z 太高，印 grasp_pos[2] 對 surface_z；上提時掉 → 換垂直 yaw…）。</li>
-  </ul>
+  <p>每份模板的固定骨架：<strong>Purpose ＋ Ownership 聲明 → 可直接複用的 helper 程式碼 → 空白 Registry 表 → Anti-Patterns → 症狀對照除錯表</strong>。以下逐份拆（p.38–43 原始碼級內容）：</p>
+
+  <p style="margin-top:24px"><strong style="color:var(--green)">▍grasp — 抓取骨架與除錯表</strong></p>
+  <p>核心 helper 是 top-down 四元數建構（含一個藏在註解裡的座標慣例地雷——scipy 回 xyzw、solve_ik 要 wxyz）：</p>
+  <pre class="code"><span class="k">def</span> <span class="f">make_topdown_quat</span>(yaw_deg=0):
+    <span class="s">"""Build a top-down end-effector quaternion (xyzw→wxyz convention used by solve_ik)."""</span>
+    R = Rotation.from_euler(<span class="s">'z'</span>, yaw_deg, degrees=<span class="k">True</span>).as_matrix() @ \
+        np.array([[1,0,0],[0,-1,0],[0,0,-1]])
+    q = Rotation.from_matrix(R).as_quat()  <span class="c"># scipy returns xyzw</span>
+    <span class="k">return</span> np.array([q[3], q[0], q[1], q[2]])  <span class="c"># reorder to wxyz</span></pre>
+  <p>標準 pick-and-place 骨架固定八步：<em>plan grasp（用物體 mask）→ pre-grasp 懸停 → 下降閉爪 → 上提（避免側拖撞鄰物）→ 平移到目標上方（同上提高度）→ 下降到釋放高度（surface_z＋餘裕）→ 開爪 → 讓物理沉降</em>（最後一步關係到 drop-success 判定的讀值正確性）。<code>select_top_down_grasp</code> 存在的理由也寫明：plan_grasp 回的是相機座標系、常是斜角或側面抓取，桌面任務要轉世界座標再過濾出「z 軸大致對抗重力」的候選，全空時 fallback 到分數最高者。模板也明說<strong>什麼時候不該用它</strong>：抽屜/微波爐（用 manipulation）、堆疊（要 stack 專用 surface_z 邏輯）、有壁窄容器（yaw 要避壁、釋放高度要在籃緣上）。除錯表直接給「症狀→原因→檢查法」：</p>
+  <table>
+    <thead><tr><th>症狀</th><th>可能原因</th><th>檢查法</th></tr></thead>
+    <tbody>
+      <tr><td>夾爪對空氣閉合</td><td>z 太高（沒降到物面）</td><td>印 <code>grasp_pos[2]</code> 對 <code>surface_z</code>；用 OBB <code>extent[2]/2</code> 以下</td></tr>
+      <tr><td>抓到但上提時掉</td><td>滑面/細長物半閉合</td><td>換垂直 yaw（90°）或改沿長軸夾</td></tr>
+      <tr><td>plan_grasp 回空</td><td>mask 太小或低於門檻</td><td>膨脹 mask；log <code>mask.sum()</code>——應 &gt;200 px</td></tr>
+      <tr><td>solve_ik 回 None</td><td>位姿出工作空間</td><td>z 降 5 cm 重試；從機器人基座重查 x/y 可達性</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:24px"><strong style="color:var(--green)">▍localize — 多 prompt fallback 與消歧</strong></p>
+  <p>標準定位 helper 把「prompt 不穩」工程化成依序嘗試的迴圈——每個 prompt 要過三關（有 mask、mask 轉點雲 ≥10 點、OBB 中心可算）才算命中：</p>
+  <pre class="code"><span class="k">def</span> <span class="f">localize_object</span>(rgb, depth, K, E, prompts):
+    <span class="s">"""Try prompts in order, return (center, pts, mask) for first hit with >=10 points."""</span>
+    <span class="k">for</span> prompt <span class="k">in</span> prompts:
+        masks = segment_sam3_text_prompt(rgb, prompt)
+        <span class="k">if not</span> masks: <span class="k">continue</span>
+        best = max(masks, key=<span class="k">lambda</span> d: d[<span class="s">"score"</span>])
+        mask = best[<span class="s">"mask"</span>].astype(np.uint8)          <span class="c"># 忘了轉型 → 下游靜默失敗</span>
+        pts = mask_to_world_points(mask, depth_img, K, E)
+        <span class="k">if</span> pts <span class="k">is None or</span> len(pts) &lt; 10: <span class="k">continue</span>
+        center = get_oriented_bounding_box_from_3d_points(pts)[<span class="s">"center"</span>]
+        <span class="k">return</span> center, pts, mask
+    <span class="k">return</span> <span class="k">None</span>, <span class="k">None</span>, <span class="k">None</span></pre>
+  <p>三層防線：①OBB 中心優於 <code>pts.mean()</code>（細長／被遮擋物體點雲平均會偏）；②SAM3 全空時 fallback 到 <strong>Molmo 像素定位</strong>再轉 SAM3 point prompt；③場景有兩個同類物體時 <code>max(score)</code> 常挑錯——改用「最小 bbox 面積」或「bbox y 座標」（畫面越上方越遠）消歧。隱藏地雷原文照抄：<em>「SAM3 結果的 area_pct 欄位對所有 mask 一律回 99.00——面積要從 box 自己算。」</em>Prompt Registry 的入庫規則（coordinator 專屬）有一條很成熟的取捨：<strong>prompt 若只對單一任務有效，留在該任務的 task_code.py 裡，不進共享庫</strong>——避免庫被過度特化的條目汙染。</p>
+
+  <p style="margin-top:24px"><strong style="color:var(--green)">▍manipulation — 鉸接物件與非抓取動作</strong></p>
+  <p>涵蓋抽屜開關、旋鈕/開關撥轉、鉸鏈門、非抓取推移——都是「非 top-down、要弧線運動、接觸但不夾持」的動作家族。參數 Registry 按物件類型累積（拉距、角度、offset、接近方向）。Anti-Patterns 三條全是紅線：禁 <code>set_joint_qpos</code> 硬開抽屜（必須物理操作）、禁讀 BDDL 拿拉距/旋角（要靠 OBB 或試錯發現）、<strong>操作完必須 retreat</strong>——手臂留在抽屜/微波爐裡會擋住下一步感知。</p>
+
+  <p style="margin-top:24px"><strong style="color:var(--green)">▍transport — 三段航點與遠工作空間</strong></p>
+  <pre class="code"><span class="c"># Waypoint 1: 垂直上提（避免側拖）</span>
+lift_z = grasp_pos[2] + 0.15                    <span class="c"># 場景相對值，禁絕對 z</span>
+joints = solve_ik([grasp_pos[0], grasp_pos[1], lift_z], quat.tolist())
+<span class="k">if</span> joints <span class="k">is not None</span>: move_to_joints(joints)
+<span class="c"># Waypoint 2: 同高度平移（避免撞檯面其他物體）</span>
+joints = solve_ik([tgt_center[0], tgt_center[1], lift_z], quat.tolist())
+<span class="c"># Waypoint 3: 下降到釋放高度</span>
+release_z = surface_z + 0.05
+joints = solve_ik([tgt_center[0], tgt_center[1], release_z], quat.tolist())</pre>
+  <p>為什麼三段而非直線 goto，原文一句話講完：<em>直線會走對角線，削到高物、籃壁、抽屜口；三段直角航點（上→平→下）讓物體全程在無障礙空域</em>。另外兩個 helper：<strong>子任務間 home reset</strong>（開爪→回 home→連取 3 幀讓物理沉降，否則下一子任務會「透過還在畫面裡的手臂」做感知）；<strong>遠工作空間一律 <code>solve_ik</code>＋<code>move_to_joints</code></strong>（goto_pose 在檯面深處不可靠），IK 無解先把 z 降 2 cm 再試、還是無解就明確 raise。</p>
+
+  <div class="callout orange">
+    <span class="tag">Registry 所有權模型（四份模板共通）</span>
+    出廠只有<strong>骨架＋空表</strong>：Per-Object Grasp Registry、Prompt Registry、Parameter Registry、Waypoint Registry 全部從零開始。填表權限單向：<em>subagent 在 findings.md 提報 → coordinator 審核「≥2 任務可望通用」才逐行填入 → subagent 禁止直接編輯 SKILL.md</em>。經驗成長被設計成有守門員的單行道——這就是它跟「agent 自己亂寫 memory」系統的本質差異。
+  </div>
 
   <div class="callout">
     <span class="tag">跟 Hermes/Claude Code 生態的既視感</span>
