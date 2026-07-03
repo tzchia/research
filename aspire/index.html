@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASPIRE 速覽 — 會自己寫程式、越修越強的機器人系統（NVIDIA GEAR）</title>
+<meta name="description" content="NVIDIA GEAR 的 ASPIRE 論文中文速覽：讓 coding agent 自己寫機器人控制程式、從失敗 trace 除錯、把修好的招式存進技能庫，越用越強。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#d2a8ff; --accent-deep:#8957e5; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(210,168,255,.13),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,46px);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17.5px;color:var(--muted);max-width:660px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  /* key number cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard .big{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--green);line-height:1.1}
+  .kcard .big small{font-size:15px;color:var(--dim);font-weight:400}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  /* callout */
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.orange{border-left-color:var(--orange)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.orange .tag{color:var(--orange)}
+
+  /* loop diagram */
+  .loop{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .loop .node{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .loop .node .icon{font-size:26px;margin-bottom:8px}
+  .loop .node h4{font-size:15px;color:#fff;margin-bottom:6px}
+  .loop .node p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
+  .loop .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-family:var(--mono);font-size:18px;padding:0 8px}
+  .loop-back{text-align:center;font-family:var(--mono);color:var(--dim);font-size:12.5px;margin-top:10px;letter-spacing:.05em}
+  @media(max-width:640px){.loop{grid-template-columns:1fr}.loop .arr{transform:rotate(90deg);padding:6px 0}}
+
+  /* bar chart */
+  .chart{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px 22px 16px;margin:24px 0}
+  .chart h4{font-size:15px;color:#fff;margin-bottom:4px}
+  .chart .src{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-bottom:16px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 64px;align-items:center;gap:12px;margin-bottom:10px;font-size:13.5px}
+  .bar-row .name{color:var(--muted);text-align:right;line-height:1.3}
+  .bar-row .name b{color:#fff}
+  .bar-track{background:var(--bg3);border-radius:6px;height:22px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#3d2d63,var(--accent-deep));display:flex;align-items:center}
+  .bar-fill.hero{background:linear-gradient(90deg,#1f5130,var(--green))}
+  .bar-row .val{font-family:var(--mono);font-size:13px;color:var(--fg)}
+  @media(max-width:560px){.bar-row{grid-template-columns:105px 1fr 52px}}
+
+  /* skill taxonomy chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 8px}
+  .chip{font-family:var(--mono);font-size:12.5px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg3)}
+  .chip b{color:var(--accent);font-weight:600}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:center}
+  th{background:var(--bg3);font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  tr:last-child td{border-bottom:none}
+  .good{color:var(--green);font-family:var(--mono);font-weight:600}
+  .bad{color:var(--red);font-family:var(--mono)}
+  .neutral{font-family:var(--mono);color:var(--fg)}
+
+  /* algo steps */
+  .steps{counter-reset:s;margin:22px 0}
+  .step{display:flex;gap:16px;margin-bottom:14px;align-items:flex-start}
+  .step::before{counter-increment:s;content:counter(s);flex:0 0 30px;height:30px;border-radius:50%;background:var(--bg3);border:1px solid var(--accent-deep);color:var(--accent);font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .step div{flex:1}
+  .step b{color:#fff}
+  .step p{font-size:14px;color:var(--muted);margin:2px 0 0}
+
+  /* limitations */
+  .limits{display:grid;gap:12px;margin:22px 0}
+  .limit{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;font-size:14.5px}
+  .limit .t{color:var(--orange);font-weight:700;margin-right:8px}
+
+  /* fig grid for skill gallery */
+  .figgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  .figgrid figure{margin:0}
+  @media(max-width:640px){.figgrid{grid-template-columns:1fr}}
+
+  /* toc */
+  nav.toc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:44px;font-size:14px}
+  nav.toc .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  nav.toc ol{margin:0 0 0 20px}
+  nav.toc li{margin-bottom:4px}
+
+  footer{padding:36px 0 60px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Paper Digest · NVIDIA GEAR · 2026-06-30</div>
+    <h1>ASPIRE：會自己寫程式、<br>越修越強的機器人系統</h1>
+    <p class="subtitle">Agentic Skill Programming through Iterative Robot Exploration — 讓 coding agent 幫機器人寫控制程式、從執行紀錄找出失敗原因、把修好的招式存進「技能庫」，做過的任務越多就越強。</p>
+    <div class="meta">
+      作者：Runyu Lu, Yubo Wu, Ethan Kou 等（NVIDIA / UMich / UIUC / UC Berkeley / CMU）<br>
+      計畫主持：Yuke Zhu · Linxi "Jim" Fan · Guanzhi Wang<br>
+      原文：<a href="https://research.nvidia.com/labs/gear/aspire/assets/Aspire.pdf">PDF</a> ·
+      <a href="https://research.nvidia.com/labs/gear/aspire/">Project Page</a> ·
+      整理：<a href="https://github.com/tzchia/research">tzchia/research</a>
+    </div>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<nav class="toc">
+  <div class="t">目錄</div>
+  <ol>
+    <li><a href="#tldr">30 秒速覽</a></li>
+    <li><a href="#problem">要解什麼問題</a></li>
+    <li><a href="#method">方法：三大元件</a></li>
+    <li><a href="#results">實驗結果</a></li>
+    <li><a href="#real">模擬技能搬到真實機器人</a></li>
+    <li><a href="#gallery">技能庫長什麼樣（原圖集）</a></li>
+    <li><a href="#limits">侷限</a></li>
+    <li><a href="#takeaway">我的重點筆記</a></li>
+  </ol>
+</nav>
+
+<!-- ============ TLDR ============ -->
+<section id="tldr">
+  <h2><span class="num">01</span>30 秒速覽</h2>
+  <p class="sec-sub">TL;DR — 把「軟體工程 agent 的 debug 迴圈」搬進機器人</p>
+
+  <p>寫機器人程式很難：要同時搞定感知、路徑規劃、抓取、接觸力學，而且一次失敗你根本不知道是哪一環壞掉。ASPIRE 的做法是——讓 LLM coding agent（實驗用 Claude Opus 4.6，1M context）<strong>自己寫機器人 Python 程式、自己看執行紀錄除錯、自己把驗證過的修法存成可重用技能</strong>。三個關鍵設計：逐步驟多模態 trace、共享技能庫、演化式搜尋。</p>
+
+  <div class="cards">
+    <div class="kcard"><div class="big">+77<small> 分</small></div><div class="lbl">LIBERO-Pro Object 擾動套件上，較最強 baseline 的成功率提升</div></div>
+    <div class="kcard"><div class="big">20→92<small> %</small></div><div class="lbl">Robosuite 雙臂 handover 任務成功率（vs 先前 coding agent）</div></div>
+    <div class="kcard"><div class="big">31<small> % vs 4%</small></div><div class="lbl">零樣本遷移到沒看過的長程任務（LIBERO-Pro Long）</div></div>
+    <div class="kcard"><div class="big">~10×<small> 省 token</small></div><div class="lbl">模擬學到的技能帶到真實機器人，除錯 token 從 61.9M 降到 6.6M（lift soda can）</div></div>
+  </div>
+
+  <div class="callout green">
+    <span class="tag">一句話</span>
+    以前的機器人 coding agent 解完第 100 個任務時，跟解第 1 個任務一樣「沒經驗」。ASPIRE 讓經驗會複利：任務做越多 → 技能庫越大 → 新任務適應越快。
+  </div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <h2><span class="num">02</span>要解什麼問題</h2>
+  <p class="sec-sub">§1 Introduction</p>
+
+  <p>「code-as-policy」路線（用 LLM 寫程式來組合感知、規劃、控制 API）已經存在，但有兩個根本缺陷：</p>
+  <ul>
+    <li><strong>回饋太粗</strong>：既有系統只告訴 agent「任務失敗了」，不告訴它是感知錯、抓取不穩、規劃失誤、還是後續復原失敗。沒有細粒度證據，agent 無從對症下藥。</li>
+    <li><strong>經驗不累積</strong>：任務解完，發現的修法和復原策略就被丟掉。每個新任務都從零開始。</li>
+  </ul>
+
+  <p>對照組是<strong>人類機器人工程師</strong>的工作方式：重播執行過程、檢查感知輸出和運動軌跡、定位壞掉的子系統、修程式，然後<em>把可重用的復原策略內化成經驗</em>。ASPIRE 就是把這整套工作流自動化。</p>
+
+  <figure>
+    <img src="figs/fig1.png" alt="ASPIRE 系統總覽：coordinator 派出 actor coding agent，透過 robot execution engine 迭代除錯，驗證過的修法寫入共享技能庫">
+    <figcaption><b>Figure 1（原圖）</b>系統總覽。Coordinator（協調者）為每個任務派出一個 actor coding agent 平行學習；每個 actor 透過「機器人執行引擎」的逐步驟多模態 trace 來除錯與驗證程式；演化式搜尋讓每一代候選程式以「存活程式＋殘餘失敗 trace」為條件演化。驗證過的修法由 coordinator 寫入共享技能庫，未來的 actor 以 in-context 提示取用；模擬中發現的技能也能跨形體引導真實機器人程式撰寫。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section id="method">
+  <h2><span class="num">03</span>方法：三大元件</h2>
+  <p class="sec-sub">§2 Method — 開放式學習迴圈</p>
+
+  <div class="loop">
+    <div class="node"><div class="icon">🤖</div><h4>① 機器人執行引擎</h4><p>逐 primitive 記錄多模態 trace：RGB 關鍵幀、覆疊圖、抓取候選、規劃結果、回傳狀態</p></div>
+    <div class="arr">→</div>
+    <div class="node"><div class="icon">📚</div><h4>② 技能庫</h4><p>驗證過的修法蒸餾成可重用技能：失敗特徵 + 適用條件 + 修復策略 + 程式碼片段</p></div>
+    <div class="arr">→</div>
+    <div class="node"><div class="icon">🧬</div><h4>③ 演化式搜尋</h4><p>每輪產生 K 個候選程式，以最佳存活者＋失敗 trace 為條件繼續演化，跳出局部修補迴圈</p></div>
+  </div>
+  <div class="loop-back">└──────── 任務越多 → 技能庫越大 → 適應越快（複利迴圈）────────┘</div>
+
+  <h3>3.1 機器人執行引擎：把「除錯環境」開放給 agent</h3>
+  <p>先前方法用固定的人工介面餵回饋（場景摘要、預設觀測），證據太少會藏住失敗的 primitive，太多原始畫面又會淹沒因果鏈。ASPIRE 的引擎<strong>為每一次感知／規劃／抓取／控制呼叫記錄：呼叫的 API、輸入輸出、回傳狀態、對應的視覺證據</strong>。agent 不收完整影片，只拿每個 primitive 呼叫前後的關鍵幀＋覆疊圖＋回傳值，自己決定要檢查哪些證據。</p>
+
+  <figure>
+    <img src="figs/fig2.png" alt="BEHAVIOR-1K 撿收音機任務的 trace 除錯實例">
+    <figcaption><b>Figure 2（原圖）</b>執行引擎實戰：BEHAVIOR-1K「導航去撿紅色收音機」。(a) 自我視角關鍵幀顯示機器人找到收音機卻一直靠近失敗。(b) primitive trace 把失敗定位到重複出現的 <code>PLANNING_ERROR</code>——候選導航目標全落在桌子的碰撞緩衝區內。(c) agent 補上「多角度接近」程式：換方向繞到桌子另一側、重新感知、完成抓取。驗證後這個修法被收錄為可重用的 Multi-Angle Approach 技能。</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="tag">關鍵洞察</span>
+    失敗不是「偵測不到收音機」也不是「抓不住」，而是<strong>目標位姿在桌子碰撞約束下不可行</strong>（距桌緣約 20 cm 內）。有了逐步驟 trace，agent 才能把診斷做到這個粒度，然後寫出針對性的修法——而不是瞎改感知 prompt 或抓取 primitive。
+  </div>
+
+  <h3>3.2 技能庫：存「修法模式」而非「整包程式」</h3>
+  <p>失敗會跨任務重複出現，但可重用的知識很少是整個任務程式。每條技能存成精簡的 in-context 提示：<strong>失敗特徵（signature）→ 何時適用（when-to-apply）→ 修復策略 → 代表性程式碼草圖</strong>。收錄有審核流程：actor 回報結構化發現 → coordinator 稽核、驗證 API 合規 → 只有通過 debug 驗證的可重用模式才進庫。</p>
+
+  <div class="chips">
+    <div class="chip"><b>Localization</b> 定位／多物體消歧</div>
+    <div class="chip"><b>Navigation</b> 導航復原</div>
+    <div class="chip"><b>Motion Primitives</b> 運動原語</div>
+    <div class="chip"><b>Grasping</b> 物體層級抓取</div>
+    <div class="chip"><b>Scene Understanding</b> 場景理解</div>
+    <div class="chip"><b>Debugging</b> 除錯工作流</div>
+  </div>
+  <p style="font-size:13.5px;color:var(--dim)">↑ 六大類別不是預先設計的分類法，而是從 agent 自己的除錯經驗中「長」出來的。</p>
+
+  <figure>
+    <img src="figs/fig3.png" alt="技能庫：定位消歧、運動原語、導航復原等代表性技能，以及 150+ 模擬任務學到的技能遷移到真實機器人">
+    <figcaption><b>Figure 3（原圖）</b>技能庫。上：代表性技能——多物體消歧（「前面那個碗」按空間軸排序）、線性推移原語、多角度接近。中：技能庫跨六大異質類別成長（150+ 模擬任務）。下：部分模擬發現的技能作為真實機器人程式撰寫的 in-context 指引，證明可跨形體遷移。</figcaption>
+  </figure>
+
+  <h3>3.3 演化式搜尋：跳出「一直修同一招」的死胡同</h3>
+  <p>只靠 trace 除錯容易陷入局部修補迴圈——agent 反覆修補同一個失敗策略，而不是嘗試根本不同的解法。ASPIRE 用演化式搜尋擴大探索：</p>
+
+  <div class="steps">
+    <div class="step"><div><b>提案</b><p>每輪由 coding agent 基於技能庫 + 前幾名程式 + 失敗 trace，提出 K 個候選程式</p></div></div>
+    <div class="step"><div><b>執行</b><p>每個候選丟進執行引擎跑，得到任務結果 + 新的診斷 trace</p></div></div>
+    <div class="step"><div><b>選擇</b><p>下一輪以表現最好的程式＋其殘餘失敗模式為條件——鼓勵探索不同策略而非重複精修同一解</p></div></div>
+    <div class="step"><div><b>收斂</b><p>候選解掉 debug 配置或預算用盡即終止；能跨環境變化泛化的修法才收進技能庫</p></div></div>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results">
+  <h2><span class="num">04</span>實驗結果</h2>
+  <p class="sec-sub">§3 Experiments — 三大 benchmark 家族 + 零樣本遷移 + 消融</p>
+
+  <p><strong>設定</strong>：模擬實驗全部用 Claude Code + Claude Opus 4.6（1M token context）當 coding agent，在 CaP-X 框架（MuJoCo Playground）寫可執行的 Python 機器人程式。agent、環境、API 全程固定。主要對手是 CaP-Agent0（前一代 coding agent，靠測試時推理＋重試），以及端到端 VLA 模型（OpenVLA、π0、π0.5）。</p>
+
+  <div class="callout">
+    <span class="tag">評測協定（重要）</span>
+    ASPIRE 在小的 debug seed 上學習，之後<strong>每個任務只交一支固定程式</strong>在大量 held-out seed 上評測；CaP-Agent0 則是每個 seed 都重新生成程式＋測試時重試。ASPIRE 是用更嚴格的條件贏的。
+  </div>
+
+  <figure>
+    <img src="figs/fig4.png" alt="三大 benchmark 主結果：LIBERO-Pro、Robosuite、BEHAVIOR-1K">
+    <figcaption><b>Figure 4（原圖）</b>主結果。(a) LIBERO-Pro：10 任務 × 50 個 held-out seed，Object / Goal / Spatial 三種擾動 × Pos / Task 兩軸。(b) Robosuite：每任務 100 次 held-out 試驗，2A 開頭為雙臂任務。(c) BEHAVIOR-1K：長程家務移動操作，導航與任務成功率分開計。多項結果超越人類專家寫的程式。</figcaption>
+  </figure>
+
+  <h3>逐 benchmark 重點（數字皆出自論文正文）</h3>
+  <ul>
+    <li><strong>LIBERO-Pro</strong>（短程操作、抗擾動）：三個套件全勝所有 baseline。對各套件最強對手的平均增益：Object <em>+77 分</em>、Goal <em>+41.5 分</em>、Spatial <em>+42.5 分</em>。π0.5 在部分位置擾動上比 OpenVLA / π0 強，但在任務改寫（paraphrase）下大幅崩潰。</li>
+    <li><strong>Robosuite</strong>（接觸密集操作）：簡單任務維持近飽和，<em>雙臂 handover 從 20% → 92%</em>。</li>
+    <li><strong>BEHAVIOR-1K</strong>（長程家務）：導航與任務成功率同時超越人類專家程式與 CaP-Agent0，最大單項增益在撿收音機任務：<em>56% → 88%</em>。</li>
+  </ul>
+
+  <h3>零樣本遷移：技能庫是會生利息的資產</h3>
+  <p>把 LIBERO-90 上累積的技能庫直接拿去解<strong>沒看過的</strong> LIBERO-Pro Long 長程任務——不重新除錯、不重試、不更新庫：</p>
+
+  <div class="chart">
+    <h4>LIBERO-Pro Long 零樣本成功率</h4>
+    <div class="src">出處：論文 §3.5 / Figure 5(a)，macro-average over 10 tasks</div>
+    <div class="bar-row"><div class="name"><b>ASPIRE</b>（Task 擾動）</div><div class="bar-track"><div class="bar-fill hero" style="width:38%"></div></div><div class="val">38%</div></div>
+    <div class="bar-row"><div class="name"><b>ASPIRE</b>（Pos 擾動）</div><div class="bar-track"><div class="bar-fill hero" style="width:23%"></div></div><div class="val">23%</div></div>
+    <div class="bar-row"><div class="name">先前方法（飽和值）</div><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div><div class="val">4%</div></div>
+  </div>
+
+  <figure>
+    <img src="figs/fig5.png" alt="零樣本遷移：技能庫越大成功率越高">
+    <figcaption><b>Figure 5（原圖）</b>跨任務零樣本遷移。(a) 完整 N=90 技能庫 vs baseline。(b) 技能庫從 N=0 → 25 → 50 → 90 成長時，零樣本成功率<strong>單調上升</strong>——短程任務學到的修法真的能重用在長程組合任務上。</figcaption>
+  </figure>
+
+  <h3>消融：哪個元件貢獻最大？</h3>
+  <div class="chart">
+    <h4>LIBERO-Pro macro-average 成功率（元件疊加）</h4>
+    <div class="src">出處：論文 §3.7 / Figure 6</div>
+    <div class="bar-row"><div class="name">基礎系統（皆無）</div><div class="bar-track"><div class="bar-fill" style="width:14%"></div></div><div class="val">14%</div></div>
+    <div class="bar-row"><div class="name">＋執行引擎</div><div class="bar-track"><div class="bar-fill" style="width:62%"></div></div><div class="val">62%</div></div>
+    <div class="bar-row"><div class="name"><b>＋演化式搜尋</b></div><div class="bar-track"><div class="bar-fill hero" style="width:72%"></div></div><div class="val">72%</div></div>
+  </div>
+  <p><strong>執行引擎（細粒度 trace）是最大功臣</strong>（14→62），演化式搜尋再把剩下的硬任務往上推（62→72）。搜尋輪次前幾輪進步快、之後報酬遞減。</p>
+
+  <figure>
+    <img src="figs/fig6.png" alt="消融實驗：執行引擎與演化式搜尋的疊加貢獻">
+    <figcaption><b>Figure 6（原圖）</b>消融。(a)(b) Pos / Task 擾動下的堆疊貢獻；(c) 低表現任務隨演化搜尋輪次的平均進步曲線。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ REAL ROBOT ============ -->
+<section id="real">
+  <h2><span class="num">05</span>模擬技能搬到真實機器人</h2>
+  <p class="sec-sub">§3.6 — 跨形體（cross-embodiment）技能遷移</p>
+
+  <p>這不是直接部署 policy：真實機器人（雙臂 YAM 操作平台，agent 換成 OpenAI Codex GPT-5.5 reasoning-xhigh）有<strong>自己的感知、校正、控制堆疊，連 API 都不同</strong>。問題是：把 Franka 模擬中發現的技能當 in-context 提示給真機 coding agent，能不能省下真實世界的除錯成本？</p>
+
+  <table>
+    <thead>
+      <tr><th>任務</th><th colspan="2">總 Token（M）↓</th><th colspan="2">成功率 ↑</th></tr>
+      <tr><th></th><th>無技能</th><th>有技能</th><th>無技能</th><th>有技能</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>碗放到盤子上</td><td class="neutral">8.65</td><td class="good">5.11</td><td class="neutral">20/20</td><td class="good">20/20</td></tr>
+      <tr><td>拿起汽水罐</td><td class="neutral">61.94</td><td class="good">6.58</td><td class="neutral">13/20</td><td class="good">19/20</td></tr>
+      <tr><td>開／推抽屜</td><td class="bad">334.9（未成功）</td><td class="good">81.67</td><td class="bad">0/20</td><td class="good">11/20</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout green">
+    <span class="tag">怎麼讀這張表</span>
+    汽水罐任務：token 省近一個數量級（61.9M→6.6M）、成功率 13/20→19/20。抽屜任務更狠——<strong>沒有技能提示時燒光 334.9M token 還是寫不出一支能通過評測的程式</strong>；有技能提示 81.7M 就達到 11/20。證明技能學到的是可跨形體的「修法模式」，不是死背模擬器程式碼。
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section id="gallery">
+  <h2><span class="num">06</span>技能庫長什麼樣（原圖集）</h2>
+  <p class="sec-sub">Appendix A — 每條技能：問題 → 適用時機 → 策略 → 驗證過的程式碼</p>
+
+  <div class="figgrid">
+    <figure><img src="figs/fig7.png" alt="除錯技能"><figcaption><b>Figure 7</b>除錯技能：例如「同一症狀出現 ≥2 次才收錄，避免對單一 trial 過擬合」。</figcaption></figure>
+    <figure><img src="figs/fig8.png" alt="定位技能"><figcaption><b>Figure 8</b>定位技能：把「前面那個碗」這種語言，落地成穩健的感知＋排序程序。</figcaption></figure>
+    <figure><img src="figs/fig9.png" alt="導航技能"><figcaption><b>Figure 9</b>導航技能：從運動規劃失敗中復原、選擇避開碰撞的接近位姿。</figcaption></figure>
+    <figure><img src="figs/fig10.png" alt="策略性抓取技能"><figcaption><b>Figure 10</b>策略性抓取：依物體幾何與場景脈絡選抓取點（瓶子、把手、碗緣…）。</figcaption></figure>
+    <figure><img src="figs/fig11.png" alt="運動原語技能"><figcaption><b>Figure 11</b>運動原語：可重用的低階運動模式、接觸密集對位、執行期復原。</figcaption></figure>
+    <figure><img src="figs/fig12.png" alt="場景推理技能"><figcaption><b>Figure 12</b>場景推理：空間關係、支撐面、遮擋、場景層級任務約束。</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ LIMITS ============ -->
+<section id="limits">
+  <h2><span class="num">07</span>侷限（論文自己承認的）</h2>
+  <p class="sec-sub">§5 Limitations — 五條，都很誠實</p>
+
+  <div class="limits">
+    <div class="limit"><span class="t">真實世界迴圈沒閉合</span>模擬裡成功判定和場景重置都便宜；真實部署還需要可靠的成功偵測、安全重置、安全監控、校正維護。目前還不是全自主的真實世界終身學習者。</div>
+    <div class="limit"><span class="t">綁死前沿 LLM</span>整套迴圈依賴 Claude Opus 4.6（1M context）判讀多模態 trace、寫修法、提演化候選。更小或更弱的模型能否撐住同樣的除錯迴圈，未驗證。</div>
+    <div class="limit"><span class="t">API 天花板</span>agent 只能用預定義的感知／規劃／控制 primitive 寫程式。任務需要的能力超出 API 時，只能低效逼近或等人類擴充 API。</div>
+    <div class="limit"><span class="t">技能庫的長期記憶管理未解</span>庫變大後，部分條目會過時、過度特化、冗餘、甚至誤導新任務——這能解釋零樣本遷移的非單調現象。需要更強的檢索、修剪、排序、再驗證機制。</div>
+    <div class="limit"><span class="t">計算成本高</span>除錯＋演化搜尋每個任務要燒大量 LLM 呼叫和模擬／真機 rollout。要擴到超大任務集，需要更便宜的推理、更省樣本的搜尋、或更強的既有修法重用。</div>
+  </div>
+</section>
+
+<!-- ============ TAKEAWAY ============ -->
+<section id="takeaway">
+  <h2><span class="num">08</span>我的重點筆記</h2>
+  <p class="sec-sub">給趕時間的人</p>
+
+  <ol>
+    <li><strong>本質是 SWE-agent 思維移植到機器人</strong>：write → execute → inspect trace → repair → validate，再加一層「經驗結晶成技能庫」。跟 Voyager（同作者群 Jim Fan / Guanzhi Wang 的 Minecraft agent）一脈相承，但這次 trace 是多模態的物理執行證據。</li>
+    <li><strong>最有價值的元件是「可除錯性」不是「搜尋」</strong>：消融顯示執行引擎貢獻 14→62，演化搜尋只再加 10 分。給 agent 好的觀測介面比給它更多嘗試次數重要。</li>
+    <li><strong>技能 = 失敗簽名 + 適用條件 + 修法 + 程式碼草圖</strong>，且要通過「跨 trial 重現 + coordinator 審核」才入庫——這個 admission 流程是它跟一般 memory/reflection 系統的分水嶺。</li>
+    <li><strong>評測協定值得注意</strong>：ASPIRE 每任務只交一支固定程式打 held-out seeds，baseline 卻可以每 seed 重新生成＋重試——是在更嚴格條件下贏的。</li>
+    <li><strong>跨形體遷移的證據等級</strong>：只有 3 個任務、每任務 20 trials、換了 agent（Codex GPT-5.5），論文自己也說是 initial evidence。方向誘人，但樣本還小。</li>
+  </ol>
+</section>
+
+</div></main>
+
+<footer>
+  <div class="wrap">
+    翻譯與整理：tzchia · 數據皆註明論文出處，原圖版權屬 © 2026 NVIDIA ·
+    <a href="https://github.com/tzchia/research">github.com/tzchia/research</a> ·
+    <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+</body>
+</html>
