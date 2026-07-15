@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC-IL 速覽 — 別把回饋壓成一個分數：用「語言批評」直接當 loss 的模仿學習（NTU × Utah × NYCU）</title>
+<meta name="description" content="Language-Critique Imitation Learning 論文中文速覽：從混雜品質示範學控制策略，不再把監督訊號壓成純量，而是讓 policy 直接對「任務進度＋動作好壞＋修正建議」的結構化語言負責，附 performance gap 理論保證。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.13),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,46px);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17.5px;color:var(--muted);max-width:680px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:520px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard .big{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--green);line-height:1.1}
+  .kcard .big small{font-size:15px;color:var(--dim);font-weight:400}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.orange{border-left-color:var(--orange)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.orange .tag{color:var(--orange)}
+
+  .loop{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .loop .node{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .loop .node .icon{font-size:26px;margin-bottom:8px}
+  .loop .node h4{font-size:15px;color:#fff;margin-bottom:6px}
+  .loop .node p{font-size:12.5px;color:var(--muted);margin:0;line-height:1.55}
+  .loop .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-family:var(--mono);font-size:18px;padding:0 8px}
+  @media(max-width:640px){.loop{grid-template-columns:1fr}.loop .arr{transform:rotate(90deg);padding:6px 0}}
+
+  /* equations */
+  .eq{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:18px 0;font-family:var(--mono);font-size:15px;text-align:center;overflow-x:auto;line-height:2;color:#dbe4ee}
+  .eq .l{color:var(--accent)} .eq .g{color:var(--green)} .eq .o{color:var(--orange)} .eq .r{color:var(--red)} .eq .d{color:var(--dim)}
+  .eq sub,.eq sup{font-size:.68em}
+  .eqnote{font-size:13px;color:var(--muted);text-align:center;margin-top:-10px;margin-bottom:18px;font-family:var(--mono)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 8px}
+  .chip{font-family:var(--mono);font-size:12.5px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg3)}
+  .chip b{color:var(--accent);font-weight:600}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  tr:last-child td{border-bottom:none}
+  td{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  td:first-child{color:var(--fg);font-family:var(--sans);font-size:13.5px}
+  .good{color:var(--green);font-family:var(--mono);font-weight:700}
+  .second{color:var(--blue);font-family:var(--mono);text-decoration:underline;text-underline-offset:3px}
+  .bad{color:var(--red);font-family:var(--mono)}
+  tr.oursrow{background:rgba(31,111,235,.07)}
+  tr.grouphead td{background:var(--bg3);color:var(--accent);font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:6px 12px}
+
+  .steps{counter-reset:s;margin:22px 0}
+  .step{display:flex;gap:16px;margin-bottom:14px;align-items:flex-start}
+  .step::before{counter-increment:s;content:counter(s);flex:0 0 30px;height:30px;border-radius:50%;background:var(--bg3);border:1px solid var(--accent-deep);color:var(--accent);font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .step div{flex:1}
+  .step b{color:#fff}
+  .step p{font-size:14px;color:var(--muted);margin:2px 0 0}
+
+  .limits{display:grid;gap:12px;margin:22px 0}
+  .limit{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;font-size:14.5px}
+  .limit .t{color:var(--orange);font-weight:700;margin-right:8px}
+
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+  @media(max-width:640px){.duo{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--bg2);padding:16px 18px}
+  .panel h4{font-size:14px;margin-bottom:10px;font-family:var(--mono);letter-spacing:.04em}
+  .panel.ok h4{color:var(--green)} .panel.no h4{color:var(--red)}
+  .panel ul{margin:0 0 0 18px;font-size:13.5px}
+  .panel li{margin-bottom:6px;color:var(--muted)}
+  .panel li code{color:var(--fg)}
+
+  pre.block{font-family:var(--mono);font-size:12.5px;background:#0a0d12;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;color:#c9d1d9;line-height:1.62;margin:14px 0}
+  pre.block .c{color:var(--dim)} pre.block .k{color:var(--accent)} pre.block .g{color:var(--green)} pre.block .r{color:var(--red)} pre.block .o{color:var(--orange)} pre.block .p{color:var(--purple)}
+
+  .chart{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px 22px 16px;margin:24px 0}
+  .chart h4{font-size:15px;color:#fff;margin-bottom:4px}
+  .chart .src{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-bottom:16px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 64px;align-items:center;gap:12px;margin-bottom:10px;font-size:13.5px}
+  .bar-row .name{color:var(--muted);text-align:right;line-height:1.3}
+  .bar-row .name b{color:#fff}
+  .bar-track{background:var(--bg3);border-radius:6px;height:22px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#173a63,var(--accent-deep));display:flex;align-items:center}
+  .bar-fill.hero{background:linear-gradient(90deg,#1f5130,var(--green))}
+  .bar-fill.fail{background:linear-gradient(90deg,#58272b,var(--red))}
+  .bar-row .val{font-family:var(--mono);font-size:13px;color:var(--fg)}
+  @media(max-width:560px){.bar-row{grid-template-columns:105px 1fr 52px}}
+
+  nav.toc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:44px;font-size:14px}
+  nav.toc .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  nav.toc ol{margin:0 0 0 20px}
+  nav.toc li{margin-bottom:4px}
+
+  .lbl-t{color:#4a9eff;font-weight:600}
+  .lbl-a{color:#7ee787;font-weight:600}
+  .lbl-m{color:#ffa657;font-weight:600}
+
+  footer{padding:36px 0 60px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Paper Digest · NTU × Utah × NYCU · 2026-07-01</div>
+    <h1>別把回饋壓成一個分數：<br>用「語言批評」直接當 loss</h1>
+    <p class="subtitle">Language-Critique Imitation Learning from Suboptimal Demonstrations — 從混雜品質的示範資料學控制策略，過去的方法都把監督訊號壓成純量（分數、權重、reward）；這篇讓 policy 直接對「任務進度＋動作好壞＋修正建議」的結構化語言負責，BC 和 diffusion policy 都能接，還附 performance gap 的理論保證。</p>
+    <div class="meta">
+      作者：Chih-Han Yang, Dai-Jie Wu*, Yun-Ping Huang*, Ping-Chun Hsieh, Kenneth Marino, Shao-Hua Sun（台大電信 / Utah / 陽明交大 / NTU AI 中心）<br>
+      原文：<a href="https://arxiv.org/abs/2607.01225">arXiv 2607.01225</a> ·
+      整理：<a href="https://github.com/tzchia/research">tzchia/research</a>
+    </div>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<nav class="toc">
+  <div class="t">目錄</div>
+  <ol>
+    <li><a href="#tldr">30 秒速覽</a></li>
+    <li><a href="#problem">要解什麼問題</a></li>
+    <li><a href="#method">方法：三步管線</a></li>
+    <li><a href="#lcloss">LC-loss：語言怎麼變成可微分的 loss</a></li>
+    <li><a href="#theory">理論保證：語言差距 bound 住表現差距</a></li>
+    <li><a href="#lcdp">接上 diffusion policy 的細節工程</a></li>
+    <li><a href="#results">實驗結果：四張表</a></li>
+    <li><a href="#ablation">Ablation：拆解語言標籤，順便打臉 VLM</a></li>
+    <li><a href="#qualitative">質性結果：看 loss 逐步抓出偏差</a></li>
+    <li><a href="#appendix">附錄深讀：演算法、資料、超參數</a></li>
+    <li><a href="#limits">侷限</a></li>
+    <li><a href="#takeaway">我的重點筆記</a></li>
+  </ol>
+</nav>
+
+<!-- ============ TLDR ============ -->
+<section id="tldr">
+  <h2><span class="num">01</span>30 秒速覽</h2>
+  <p class="sec-sub">TL;DR — 監督訊號的資訊量，決定你能從爛資料裡撈回多少東西</p>
+
+  <p>設定是 offline imitation learning：手上有一小包 expert 示範 <code>D_E</code>、一大包良莠不齊的雜牌示範 <code>D_G</code>，不能跟環境互動。以往的方法都把「這筆資料多像 expert」壓成一個純量——confidence、discriminator 分數、importance weight、reward——能排序，但說不出<em>哪裡錯、下一步該做什麼、怎麼修</em>。這篇的做法：</p>
+
+  <div class="loop">
+    <div class="node">
+      <div class="icon">🏷️</div>
+      <h4>µ<sub>g</sub> 規則產生語言標籤</h4>
+      <p>對每個 (s, a) 生成「任務進度 + 動作好壞 + 移動修正」三段式語言批評</p>
+    </div>
+    <div class="arr">→</div>
+    <div class="node">
+      <div class="icon">🧠</div>
+      <h4>蒸餾成 LLM-Captioner µ<sub>ϕ</sub></h4>
+      <p>135M 小 LLM 學會「看 (s,a) 說批評」，變成可微分、凍結的評論員</p>
+    </div>
+    <div class="arr">→</div>
+    <div class="node">
+      <div class="icon">🎯</div>
+      <h4>LC-loss 訓練 policy</h4>
+      <p>policy 的動作必須讓 expert 的語言批評「說得通」，說不通就罰</p>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="kcard"><div class="big">34.4→47.2<small>%</small></div><div class="lbl">多模態任務 BLOCKPUSH 上 LC-BC 對 BC 的提升；同任務 DemoDICE 崩到 3.6%</div></div>
+    <div class="kcard"><div class="big">8<small> tasks</small></div><div class="lbl">導航、駕駛、機械臂、靈巧手全譜系；LC-BC 在 feedforward 組全部 8 項最佳（vs offline RL）</div></div>
+    <div class="kcard"><div class="big">135M</div><div class="lbl">SmolLM2-135M-Instruct 當「會講話的 loss function」，推論時完全不需要它——測試零開銷</div></div>
+    <div class="kcard"><div class="big">18.8<small>%</small></div><div class="lbl">o4-mini 生成的「移動修正」標籤與規則版一致率——現役 VLM 還接不了這活</div></div>
+  </div>
+
+  <div class="callout green">
+    <span class="tag">One-liner</span>
+    語言標籤不是拿來「轉成 reward」的原料，它本身就能當 loss——透過一個凍結的小 LLM 算 cross-entropy，梯度直通 policy，而且理論上 bound 住 expert performance gap。
+  </div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <h2><span class="num">02</span>要解什麼問題</h2>
+  <p class="sec-sub">Imitation learning from suboptimal demonstrations — 純量監督的天花板</p>
+
+  <p>Expert 示範太貴，所以實務上會補一大包便宜的雜牌資料 <code>D_G</code>（expert 級、次佳、隨機的軌跡都混在裡面），期望從中撈出有用的行為，改善 state-action 覆蓋率與魯棒性。核心難題：<strong>怎麼從混雜資料裡辨認「哪些行為值得學」？</strong></p>
+
+  <p>既有方法的答案全是純量：confidence 估計、discriminator 分數（DWBC）、importance weight / 分布匹配（DemoDICE）、或把問題轉成 offline RL 用 reward。論文的批評很直接——純量<em>能排序、不能解釋</em>。它說不出三件事：</p>
+
+  <div class="duo">
+    <div class="panel no">
+      <h4>✗ 純量監督（以往）</h4>
+      <ul>
+        <li>「這步 0.3 分」——然後呢？</li>
+        <li>長程任務裡，不同階段的錯誤被壓成同一個數字</li>
+        <li>多模態任務裡，「不像 expert 的合法策略」被誤殺（DemoDICE 在 BLOCKPUSH 崩到 3.6% 就是這個病）</li>
+        <li>錯在哪、下個 subgoal 是什麼、怎麼修——全部丟失</li>
+      </ul>
+    </div>
+    <div class="panel ok">
+      <h4>✓ 語言批評（本文）</h4>
+      <ul>
+        <li>「你該去拿盒蓋了」——<b>進度</b></li>
+        <li>「這步不對，因為 gripper 正在遠離 peg」——<b>好壞＋原因</b></li>
+        <li>「往下輕推一點」——<b>修正方向</b></li>
+        <li>結構化、逐步、可歸因——正是長程／多模態任務需要的 stage-specific 訊號</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>但語言當監督有兩個現實障礙，也是這篇真正的工程貢獻所在：（1）continuous control 的 offline 資料集<strong>根本沒有語言標籤</strong>；（2）過去用語言的工作最後都把它<strong>又壓回純量</strong>（轉 reward、轉 preference），描述力全丟。這篇的回答分別是 µ<sub>g</sub>（自動產標籤）和 LC-loss（語言直接當 loss，不過純量這一關）。</p>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section id="method">
+  <h2><span class="num">03</span>方法：三步管線</h2>
+  <p class="sec-sub">µ_g 產標籤 → 蒸餾成 µ_ϕ → LC-loss 訓 policy</p>
+
+  <h3>Step 1 — 語言標籤產生器 µ<sub>g</sub>：規則生成，不靠 VLM</h3>
+
+  <figure>
+    <img src="figs/fig1.png" alt="Language label generator µg 架構圖">
+    <figcaption><b>Fig 1</b>µ<sub>g</sub> 的產生流程：從 (s, a) 抽出任務相關的 heuristic 特徵（物體距離、目標距離、gripper 開合、朝向差…），餵給三個選擇器——任務進度 <span class="lbl-t">&lt;T&gt;</span>、動作好壞 <span class="lbl-a">&lt;A&gt;</span>、移動修正 <span class="lbl-m">&lt;M&gt;</span>——各自從語句池抽一句，串接成最終標籤 l。</figcaption>
+  </figure>
+
+  <p>每個標籤固定三段式，設計靈感來自 reward design 原則：</p>
+  <div class="chips">
+    <span class="chip"><b>&lt;T&gt;</b> Task progress — 現在到哪個階段、當前 subgoal 是什麼</span>
+    <span class="chip"><b>&lt;A&gt;</b> Action optimality — 這步是幫忙還是幫倒忙，附原因</span>
+    <span class="chip"><b>&lt;M&gt;</b> Movement guidance — 方向級的修正建議</span>
+  </div>
+
+  <p>實際長什麼樣（<code>Table 5</code>，µ<sub>g</sub> 生成）：</p>
+  <pre class="block"><span class="c">// PEGINSERT，expert 樣本</span>
+<span class="g">Insert the peg into the hole.</span> <span class="k">Furthermore, the action is good for the state
+because the peg is being pushed into the hole.</span> <span class="o">Also, take a move to the bottom gently.</span>
+
+<span class="c">// PEGINSERT，suboptimal 樣本</span>
+<span class="g">Go to the peg.</span> <span class="r">Yet, the action is not right for the state, since the gripper
+moves away from the peg.</span> <span class="o">Plus, make a move toward the right gently.
+Furthermore, make a move to the bottom softly.</span></pre>
+
+  <p>為什麼用規則而不是直接 prompt VLM？<strong>便宜、一致、可重現</strong>——不受模型版本、prompt 模板、decoding 隨機性影響。µ<sub>g</sub> 基於 LLF-Bench 客製：加上 &lt;T&gt;&lt;A&gt;&lt;M&gt; 結構化拆解（原版只說好壞、語言變異大），並把管線擴到 MAZE、BLOCKPUSH、PEGINSERT、Adroit 等原版沒有的任務。代價是需要 state 的幾何資訊來算 heuristics（論文在 Limitations 承認這是 privileged state information）。第 08 節的 ablation 會證明：現在就換成 VLM，還不行。</p>
+
+  <h3>Step 2 — LLM-Captioner µ<sub>ϕ</sub>：把規則蒸餾成可微分的評論員</h3>
+
+  <figure class="narrow">
+    <img src="figs/fig5.png" alt="LLM-Captioner 模型架構">
+    <figcaption><b>Fig 5</b>LLM-Captioner 架構：MLP projector W 把 (s, a) 打進 transformer 的 hidden space 當一顆 token，跟指令「Please describe the state-action pair.」的 embedding 串接，餵進 SmolLM2-135M-Instruct 解碼出語言標籤。</figcaption>
+  </figure>
+
+  <p>µ<sub>g</sub> 是規則程式，不可微分——梯度過不去。所以把它蒸餾成 µ<sub>ϕ</sub>：一顆 <strong>SmolLM2-135M-Instruct</strong> 加一個 MLP projector，在標好的 <code>D_G^lang</code> 上用 token-level cross-entropy fine-tune（兩階段：先只練 projector、再全模型 end-to-end），然後<strong>凍結</strong>。關鍵：因為 µ<sub>ϕ</sub> 是在「expert＋雜牌」的完整 <code>D_G</code> 上訓練的，它學到的是<em>分辨好壞行為的映射</em>——雜牌資料的知識全部濃縮在這顆凍結的小模型裡。</p>
+
+  <h3>Step 3 — 全家福</h3>
+
+  <figure>
+    <img src="figs/fig2.png" alt="LLM-Captioner、LC-BC、LC-DP 三張架構圖">
+    <figcaption><b>Fig 2</b>(a) LLM-Captioner 的訓練；(b) LC-BC：feedforward policy 用 MSE 的 BC loss ＋ LC-loss；(c) LC-DP：diffusion policy 用噪聲預測 loss ＋ 重加權的 LC-loss（先從預測噪聲重建動作 â⁰ 再算）。µ<sub>ϕ</sub> 只在訓練期出場，推論時 policy 單飛——測試零開銷。</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step"><div><b>µ<sub>g</sub> 掃過 D_E 和 D_G</b><p>每個 (s, a) 配上一句三段式批評 → <code>D_E^lang</code>、<code>D_G^lang</code></p></div></div>
+    <div class="step"><div><b>在 D_G^lang 上 fine-tune µ<sub>ϕ</sub>，然後凍結</b><p>它現在是一個「看動作講評語」的可微分函數</p></div></div>
+    <div class="step"><div><b>只在 D_E^lang 上訓 policy：L = L_BC + λ·L_LC</b><p>BC loss 學動作本身；LC-loss 透過凍結的 µ<sub>ϕ</sub> 把 D_G 學到的好壞判準灌進 policy</p></div></div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">分工的巧思</span>
+    雜牌資料 D_G 從頭到尾<strong>沒有直接餵給 policy</strong>——它的價值全部走「µ<sub>ϕ</sub> 學會分辨好壞 → LC-loss 轉交 policy」這條間接通道。爛動作不會被模仿，但爛動作教會 captioner 什麼叫爛，這個判準再回頭雕塑 policy。附錄 Table 14 直接驗證了這條通道：把 µ<sub>ϕ</sub> 改成只在 expert 資料上訓練（拿掉對照組），LC-BC 從 80.4 崩到 59.2、LC-DP 從 69.2 崩到 56.0——<strong>比不加語言的 DP（64.8）還糟</strong>。沒見過爛動作的評論員，不只沒用，還有害。
+  </div>
+</section>
+
+<!-- ============ LC-LOSS ============ -->
+<section id="lcloss">
+  <h2><span class="num">04</span>LC-loss：語言怎麼變成可微分的 loss</h2>
+  <p class="sec-sub">核心公式只有三行，關鍵是那個 hinge</p>
+
+  <p>對一句標籤 l<sub>t</sub>（token 序列長 N<sub>t</sub>），先定義 token 平均的 cross-entropy——「這個 (s, a) 有多能解釋這句批評」：</p>
+
+  <div class="eq">ℓ<sup>ϕ</sup><sub>CE</sub>(l<sub>t</sub>, s<sub>t</sub>, a<sub>t</sub>) = −(1/N<sub>t</sub>) Σ<sub>n</sub> log µ<sub>ϕ</sub>(l<sub>t,n</sub> | l<sub>t,&lt;n</sub>, s<sub>t</sub>, a<sub>t</sub>)</div>
+  <div class="eqnote">Eq. 5 — 等價於序列 log-likelihood 除以長度（Eq. 36）</div>
+
+  <p>然後在 expert 資料 <code>D_E^lang</code> 上，分別用 <em>policy 的動作</em>和 <em>expert 的動作</em>去解釋同一句 expert 標籤：</p>
+
+  <div class="eq"><span class="l">L<sub>CE</sub>(π<sub>θ</sub>)</span> = E<sub>(s,l)∼D_E^lang, â∼π<sub>θ</sub></sub>[ℓ<sup>ϕ</sup><sub>CE</sub>(l, s, <span class="l">â</span>)]&nbsp;&nbsp;&nbsp;&nbsp;<span class="g">L<sub>CE</sub>(π<sub>E</sub>)</span> = E<sub>(s,a<sup>E</sup>,l)∼D_E^lang</sub>[ℓ<sup>ϕ</sup><sub>CE</sub>(l, s, <span class="g">a<sup>E</sup></span>)]</div>
+  <div class="eqnote">Eq. 7, 8</div>
+
+  <div class="eq"><span class="o">L<sub>LC</sub>(π<sub>θ</sub>, π<sub>E</sub>) = [ L<sub>CE</sub>(π<sub>θ</sub>) − sg(L<sub>CE</sub>(π<sub>E</sub>)) ]<sub>+</sub></span></div>
+  <div class="eqnote">Eq. 9 — [x]₊ = max(x, 0)，sg = stop-gradient</div>
+
+  <p>讀法：<strong>policy 的動作，必須讓 expert 的批評「說得通」的程度不輸 expert 本人的動作</strong>。三個設計細節都有講究：</p>
+
+  <ul>
+    <li><strong>Clip 在 expert loss 上（hinge）</strong>：不要求 policy 把語言 loss 壓到 0——expert 自己也解釋不到 0（µ<sub>ϕ</sub> 有蒸餾殘差）。只要追平 expert 就停止懲罰，避免 over-regularization 把 policy 拖去過度擬合 captioner。</li>
+    <li><strong>stop-gradient</strong>：expert 那邊只當基準線，梯度不回流。</li>
+    <li><strong>µ<sub>ϕ</sub> 凍結</strong>：policy 訓練時 captioner 不動，它是固定的裁判，不是共同演化的對手。</li>
+  </ul>
+
+  <p>最後 LC-BC 的目標就是 <code>L_BC + λ·L_LC</code>（L_BC 是普通的 MSE 行為克隆，Eq. 10）。這就是「語言不壓成純量」的具體意思——批評的每個 token 都在 loss 裡留有一席之地：動作偏了，「the action is good」這幾個 token 的 likelihood 就掉，梯度就會告訴 policy <em>往哪個方向修才能讓這句話重新成立</em>。</p>
+</section>
+
+<!-- ============ THEORY ============ -->
+<section id="theory">
+  <h2><span class="num">05</span>理論保證：語言差距 bound 住表現差距</h2>
+  <p class="sec-sub">Theorem A.4 — 兩個假設，一條 √ 型上界</p>
+
+  <p>先定義理論版的 language-critique gap（Eq. 2）：Δ<sub>LC</sub>(π<sub>θ</sub>) ＝「expert 動作解釋 expert 標籤的 log-likelihood」減「policy 動作解釋 expert 標籤的 log-likelihood」，沿軌跡折現加總。附錄 A.2 先給了一個很乾淨的等價形式——它就是逐步的 KL divergence：</p>
+
+  <div class="eq">Δ<sub>LC</sub>(π<sub>θ</sub>) = Σ<sub>t</sub> γ<sup>t</sup> E[ D<sub>KL</sub>( µ(·|s<sub>t</sub>, a<sup>E</sup><sub>t</sub>) ‖ µ(·|s<sub>t</sub>, â<sub>t</sub>) ) ]</div>
+  <div class="eqnote">Eq. 21 — 最小化 Δ_LC ≡ 讓 policy 動作引發的「語言分布」貼近 expert 動作引發的「語言分布」</div>
+
+  <p>然後兩個假設：</p>
+
+  <div class="duo">
+    <div class="panel">
+      <h4 style="color:var(--blue)">A.2 線性可實現性</h4>
+      <ul>
+        <li>最優 reward 下的 Q 函數對特徵 ψ(s,a) 線性：Q<sup>π</sup><sub>r*,t</sub> = w<sup>π</sup><sub>t</sub><sup>⊤</sup>ψ(s,a)</li>
+        <li>linear MDP / successor features 文獻的標準假設</li>
+        <li>w<sub>max</sub> := sup‖w‖₂ 有限</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h4 style="color:var(--purple)">A.3 語言充分性</h4>
+      <ul>
+        <li>存在 c &gt; 0：D<sub>KL</sub>(µ(·|s,a′) ‖ µ(·|s,a)) ≥ c‖ψ(s,a′) − ψ(s,a)‖₂²</li>
+        <li>白話：<b>兩個動作在 reward 相關特徵上不同，它們引發的批評就必須聽得出差別</b></li>
+        <li>直接排除「廢話標籤」——這正是 &lt;T&gt;&lt;A&gt;&lt;M&gt; 結構化設計要滿足的性質</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="eq">|J<sub>r*</sub>(π<sub>E</sub>) − J<sub>r*</sub>(π<sub>θ</sub>)| ≤ w<sub>max</sub> · √( (1/c) · (1−γ<sup>T</sup>)/(1−γ) · Δ<sub>LC</sub>(π<sub>θ</sub>) )</div>
+  <div class="eqnote">Theorem A.4（Eq. 24）— 把語言差距壓下去，表現差距就被 bound 住</div>
+
+  <p>證明四步，都是標準工具：performance difference lemma 展開表現差距 → A.2 把 Q 差寫成 w<sup>⊤</sup>(ψ(s,a<sup>E</sup>)−ψ(s,â)) → Jensen ＋ 加權 Cauchy–Schwarz 處理折現和 → A.3 把特徵差距換成語言 KL，即 Δ<sub>LC</sub>。注意理論鏈是<em>錨定在 µ<sub>g</sub> 上</em>的：A.3 的充分性必須對結構化生成器成立，再由 A.6 橋接到蒸餾出的 µ<sub>ϕ</sub>。</p>
+
+  <p>附錄 A.5 把定理延伸到實務版 loss：先假設蒸餾誤差有界（Assumption A.6：|log µ<sub>g</sub> − log µ<sub>ϕ</sub>| ≤ ε<sub>ϕ</sub>），得到 Theorem A.8——</p>
+
+  <div class="eq">|J(π<sub>E</sub>) − J(π<sub>θ</sub>)| ≤ w<sub>max</sub> √( (1/c)·(1−γ<sup>T</sup>)/(1−γ)·[ N<sub>max</sub>q<sub>max</sub>·<span class="o">L<sub>LC</sub>(π<sub>θ</sub>,π<sub>E</sub>)</span> + <span class="r">2ε<sub>ϕ</sub></span>(1−γ<sup>T</sup>)/(1−γ) ] )</div>
+  <div class="eqnote">Theorem A.8（Eq. 56）— 實際訓練的 LC-loss 也 bound 住表現差距，多付一項蒸餾殘差 ε_ϕ</div>
+
+  <p>這個殘差項也解釋了為什麼 LC-loss 要 clip 在 expert loss 而不是 0——ε<sub>ϕ</sub> &gt; 0 時，追求零就是在擬合裁判的誤差。</p>
+
+  <div class="callout orange">
+    <span class="tag">c 是整篇論文的靈魂參數</span>
+    Bound 隨 1/c 放大：標籤越能分辨動作差異（c 大），保證越緊；標籤是廢話（c→0），保證失效。第 08 節的 µ<sub>g</sub>-shuffled ablation 就是 c≈0 的實證版——格式完好、語意打亂，成績立刻掉到跟沒有語言一樣。理論和 ablation 在這裡咬合得很漂亮。
+  </div>
+</section>
+
+<!-- ============ LC-DP ============ -->
+<section id="lcdp">
+  <h2><span class="num">06</span>接上 diffusion policy 的細節工程</h2>
+  <p class="sec-sub">DP 預測的是噪聲不是動作 — LC-loss 要先「重建」才有著力點</p>
+
+  <figure class="narrow">
+    <img src="figs/fig7.png" alt="Feedforward vs Diffusion policy 取樣流程">
+    <figcaption><b>Fig 7</b>Feedforward policy 一步輸出動作；diffusion policy 從高斯噪聲出發，K 步反向去噪才得到乾淨動作 â⁰。問題來了：訓練時模型輸出的是 ϵ̂（噪聲預測），語言 loss 沒有動作可以評。</figcaption>
+  </figure>
+
+  <p>解法兩件套：</p>
+
+  <ul>
+    <li><strong>一步重建</strong>（Eq. 12，沿用 Kang et al. 的技巧）：從第 k 步的噪聲樣本 a<sup>k</sup> 和預測噪聲 ϵ̂ 直接反解乾淨動作 â⁰ = (a<sup>k</sup> − √(1−ᾱ<sup>k</sup>)·ϵ̂)/√ᾱ<sup>k</sup>，LC-loss 就評這個重建動作。</li>
+    <li><strong>k 相關重加權</strong>（Eq. 13–15，本文的新推導）：k 越大訊噪比越低，重建越不可靠——1/√ᾱ<sup>k</sup> 這個放大係數在 k 大時會爆。所以每一步的 LC-loss 乘上 ω<sup>k</sup> = ᾱ<sup>k</sup>/(1−ᾱ<sup>k</sup>)，把高噪聲步的話語權壓下去。</li>
+  </ul>
+
+  <figure>
+    <img src="figs/fig8.png" alt="Diffusion schedule 與 k 相關重加權曲線">
+    <figcaption><b>Fig 8</b>(a) 訊號項 √ᾱ<sup>k</sup> 與噪聲項 √(1−ᾱ<sup>k</sup>) 隨 k 的消長；(b) 一步重建引入的誤差放大因子（藍）與對應的重加權因子 ω<sup>k</sup>（橘）——正好互為倒數，把放大抵消掉。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig9.png" alt="三種 diffusion 訓練目標的 loss 與 success rate 曲線">
+    <figcaption><b>Fig 9</b>消融驗證：<span style="color:#ff7b72">紅＝標準噪聲預測</span>、<span style="color:#8b949e">灰＝不加權的動作級 loss（loss 劇烈震盪、成功率卡在四成上下）</span>、<span style="color:#79c0ff">藍＝重加權版（收斂快、成功率貼近上限）</span>。不加 ω<sup>k</sup> 直接用重建動作算 loss，policy 還能動但明顯落後——這個重加權不是可有可無的細節。</figcaption>
+  </figure>
+
+  <p>最終 LC-DP 目標：<code>L_DP + λ·L̃_LC</code>，其中 L̃_LC 是加了 ω<sup>k</sup> 的 hinge 版 LC-loss，結構跟 LC-BC 完全平行。</p>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results">
+  <h2><span class="num">07</span>實驗結果：四張表</h2>
+  <p class="sec-sub">8 tasks × 50 rollouts × 5 seeds（Table 2 為 3 seeds）— 數字為成功率 %</p>
+
+  <figure>
+    <img src="figs/fig3.png" alt="八個實驗環境">
+    <figcaption><b>Fig 3</b>八個任務：MAZE 導航、PARKING 駕駛、SWEEP／BOX-CLOSE（MetaWorld 機械臂）、BLOCKPUSH（多階段多模態推方塊）、PEGINSERT（ManiSkill-3 高精度插銷）、HAMMER／RELOCATE（Adroit 28／30-DoF 靈巧手）。</figcaption>
+  </figure>
+
+  <h3>Table 1 — 對決 offline IL 基線</h3>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>方法</th><th>MAZE</th><th>PARKING</th><th>SWEEP</th><th>BOX-CLOSE</th><th>BLOCKPUSH</th><th>PEGINSERT</th><th>HAMMER</th><th>RELOCATE</th></tr>
+    <tr class="grouphead"><td colspan="9">Feedforward 組</td></tr>
+    <tr><td>BC</td><td>79.6±4.8</td><td>96.4±3.0</td><td>76.0±14.6</td><td>54.8±8.4</td><td>34.4±3.3</td><td class="second">66.4±5.4</td><td>96.0±3.7</td><td>70.8±8.3</td></tr>
+    <tr><td>DWBC</td><td class="good">85.2±5.8</td><td class="second">98.0±0.0</td><td>66.0±6.3</td><td>64.8±7.8</td><td>26.0±4.2</td><td>60.8±1.8</td><td>88.0±9.9</td><td>48.0±6.6</td></tr>
+    <tr><td>DemoDICE</td><td>78.0±3.2</td><td>96.8±1.1</td><td>68.4±10.1</td><td class="good">82.0±6.3</td><td class="bad">3.6±2.6</td><td class="good">67.2±6.1</td><td class="second">96.8±7.2</td><td>65.2±8.1</td></tr>
+    <tr><td>ILID</td><td class="second">82.4±3.6</td><td>93.6±1.7</td><td class="good">92.4±7.3</td><td>69.6±15.3</td><td>28.4±4.1</td><td>59.6±2.6</td><td>90.4±9.1</td><td class="good">80.8±6.9</td></tr>
+    <tr><td>LC-BC-reward</td><td>79.6±4.8</td><td>96.8±2.7</td><td>88.4±7.0</td><td>63.6±12.1</td><td>38.8±5.8</td><td>63.6±3.3</td><td>90.0±6.9</td><td>65.6±11.2</td></tr>
+    <tr><td>LC-BC-classifier</td><td>78.0±3.2</td><td class="good">100.0±0.0</td><td>85.2±3.3</td><td class="good">82.0±14.4</td><td class="second">40.4±6.1</td><td>65.2±3.6</td><td>75.6±9.8</td><td>66.8±12.6</td></tr>
+    <tr class="oursrow"><td><strong>LC-BC (ours)</strong></td><td>81.6±6.1</td><td>96.8±2.7</td><td class="second">90.0±5.8</td><td class="second">80.4±4.6</td><td class="good">47.2±4.1</td><td class="good">67.2±5.4</td><td class="good">99.2±1.8</td><td class="second">71.2±5.9</td></tr>
+    <tr class="grouphead"><td colspan="9">Diffusion 組</td></tr>
+    <tr><td>DP</td><td class="good">94.4±2.2</td><td>96.0±0.0</td><td>94.0±5.7</td><td>64.8±5.0</td><td>83.6±4.8</td><td class="second">53.6±1.7</td><td class="second">79.2±3.0</td><td>67.2±24.2</td></tr>
+    <tr><td>LPB-Offline</td><td>93.6±2.2</td><td>95.6±0.9</td><td>93.6±7.1</td><td class="second">67.2±7.8</td><td>78.0±4.9</td><td>51.6±5.0</td><td>74.4±3.6</td><td>59.6±27.2</td></tr>
+    <tr><td>LC-DP-reward</td><td class="second">94.0±2.0</td><td class="second">96.4±0.9</td><td>94.0±5.8</td><td>58.4±5.7</td><td class="second">85.2±1.1</td><td>53.2±2.7</td><td>76.0±1.4</td><td>66.8±21.8</td></tr>
+    <tr><td>LC-DP-classifier</td><td>92.4±2.2</td><td class="good">97.6±0.9</td><td class="second">96.0±5.8</td><td>66.8±4.1</td><td>82.8±2.3</td><td>52.8±1.8</td><td>77.6±0.9</td><td class="second">68.0±24.8</td></tr>
+    <tr class="oursrow"><td><strong>LC-DP (ours)</strong></td><td class="good">94.4±1.7</td><td class="good">97.6±1.7</td><td class="good">96.8±3.6</td><td class="good">69.2±6.7</td><td class="good">88.0±1.4</td><td class="good">56.8±2.7</td><td class="good">80.0±3.2</td><td class="good">77.6±4.1</td></tr>
+  </table>
+  </div>
+
+  <div class="chart">
+    <h4>BLOCKPUSH：多模態任務就是純量方法的照妖鏡</h4>
+    <div class="src">Table 1, BLOCKPUSH 欄（多階段推兩塊方塊，多種合法策略並存）</div>
+    <div class="bar-row"><div class="name">DemoDICE</div><div class="bar-track"><div class="bar-fill fail" style="width:4%"></div></div><div class="val">3.6</div></div>
+    <div class="bar-row"><div class="name">DWBC</div><div class="bar-track"><div class="bar-fill" style="width:29.5%"></div></div><div class="val">26.0</div></div>
+    <div class="bar-row"><div class="name">ILID</div><div class="bar-track"><div class="bar-fill" style="width:32.3%"></div></div><div class="val">28.4</div></div>
+    <div class="bar-row"><div class="name">BC</div><div class="bar-track"><div class="bar-fill" style="width:39.1%"></div></div><div class="val">34.4</div></div>
+    <div class="bar-row"><div class="name"><b>LC-BC</b></div><div class="bar-track"><div class="bar-fill hero" style="width:53.6%"></div></div><div class="val">47.2</div></div>
+    <div class="bar-row"><div class="name">DP</div><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><div class="val">83.6</div></div>
+    <div class="bar-row"><div class="name"><b>LC-DP</b></div><div class="bar-track"><div class="bar-fill hero" style="width:100%"></div></div><div class="val">88.0</div></div>
+  </div>
+
+  <p>解讀重點：</p>
+  <ul>
+    <li><strong>多模態是分水嶺</strong>。BLOCKPUSH 有多種合法策略，「像不像 expert」的分布匹配直接誤殺合法解——DemoDICE 從別的任務的 80+ 崩到 3.6。語言標籤只描述「進度＋好壞＋修正」，不強迫單一模式，LC-BC 34.4→47.2。</li>
+    <li><strong>精度控制看 policy class</strong>。PEGINSERT 上 LC-BC 對 BC 只小勝（67.2 vs 66.4），但 LC-DP 對 DP 明顯領先（56.8 vs 53.6）——語言給的是「高層行為指引」，diffusion 的迭代去噪比 feedforward 更能把它消化成細粒度控制。</li>
+    <li><strong>飽和任務沒戲唱</strong>。MAZE、PARKING 上多數方法已接近飽和，語言加不了什麼。</li>
+  </ul>
+
+  <h3>Table 2 — 拿掉「乾淨 expert 分割」的假設</h3>
+
+  <p>更狠的設定：沒有分好的 D_E，只有一包混雜資料。做法：用 <span class="lbl-a">&lt;A&gt;</span> 標籤篩「連續 N 步都是正評」的片段當偽 expert 集（N 越大越嚴格，括號內是篩出樣本中真 expert 的占比）。所有方法都用同一份篩過的資料訓練，但只有 LC 系列在訓練中利用語言標籤：</p>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th rowspan="2" style="vertical-align:bottom">方法</th><th colspan="4">SWEEP</th><th colspan="4">BOX-CLOSE</th></tr>
+    <tr><th>N=2 (22.7%)</th><th>N=3 (33.6%)</th><th>N=5 (51.9%)</th><th>N=10 (84.3%)</th><th>N=2 (32.9%)</th><th>N=3 (48.9%)</th><th>N=5 (68.4%)</th><th>N=10 (86.8%)</th></tr>
+    <tr class="grouphead"><td colspan="9">Feedforward 組</td></tr>
+    <tr><td>BC</td><td>53.3±8.1</td><td>65.3±7.0</td><td>72.7±3.1</td><td class="second">94.7±3.1</td><td>50.0±4.0</td><td>55.3±11.0</td><td class="second">87.3±4.6</td><td>84.7±2.3</td></tr>
+    <tr><td>DWBC</td><td>60.7±8.1</td><td>69.3±5.0</td><td>74.0±4.0</td><td>84.0±3.5</td><td>34.7±2.3</td><td>52.7±7.0</td><td>71.3±3.1</td><td>80.0±2.0</td></tr>
+    <tr><td>DemoDICE</td><td>66.7±5.0</td><td>76.7±8.3</td><td class="good">87.3±3.1</td><td>80.7±8.3</td><td>65.3±15.5</td><td>61.3±5.0</td><td class="second">87.3±5.0</td><td>84.0±5.3</td></tr>
+    <tr><td>ILID</td><td>68.7±10.1</td><td class="good">86.7±8.1</td><td>80.7±8.3</td><td class="good">95.3±8.1</td><td class="second">68.0±7.2</td><td>63.3±6.4</td><td>50.7±43.9</td><td class="second">88.0±2.0</td></tr>
+    <tr><td>LC-BC-reward</td><td>52.0±7.2</td><td>60.7±4.6</td><td>76.0±10.6</td><td>91.3±7.0</td><td>58.7±5.0</td><td>56.7±13.3</td><td>82.0±8.0</td><td>85.3±5.0</td></tr>
+    <tr><td>LC-BC-classifier</td><td class="good">88.7±2.3</td><td class="second">85.3±9.2</td><td class="second">85.3±13.3</td><td>78.7±5.0</td><td>64.7±4.2</td><td class="second">64.7±5.8</td><td>80.0±7.2</td><td>87.3±6.4</td></tr>
+    <tr class="oursrow"><td><strong>LC-BC (ours)</strong></td><td class="second">72.0±8.7</td><td>81.3±4.6</td><td>84.0±8.7</td><td>88.0±5.3</td><td class="good">71.3±8.3</td><td class="good">78.0±3.5</td><td class="good">88.7±7.0</td><td class="good">94.0±2.0</td></tr>
+    <tr class="grouphead"><td colspan="9">Diffusion 組</td></tr>
+    <tr><td>DP</td><td class="good">66.0±3.5</td><td class="second">70.7±1.2</td><td>86.0±0.0</td><td class="good">100.0±0.0</td><td>56.0±4.0</td><td class="second">91.3±1.2</td><td>92.0±2.0</td><td>95.3±2.3</td></tr>
+    <tr><td>LPB-Offline</td><td>47.3±2.3</td><td>58.0±2.0</td><td>73.3±8.1</td><td>97.3±2.3</td><td>54.0±5.3</td><td>82.0±4.0</td><td>86.7±6.1</td><td>91.3±4.6</td></tr>
+    <tr><td>LC-DP-reward</td><td class="second">64.7±4.2</td><td class="good">72.0±2.0</td><td class="second">87.3±1.2</td><td>98.7±1.2</td><td>58.0±3.5</td><td>86.0±2.0</td><td>91.3±1.2</td><td>95.3±1.2</td></tr>
+    <tr><td>LC-DP-classifier</td><td class="second">64.7±3.1</td><td>70.0±2.0</td><td class="good">88.0±2.0</td><td class="good">100.0±0.0</td><td class="second">58.7±3.1</td><td>88.7±1.2</td><td class="second">92.7±2.3</td><td class="second">96.0±2.0</td></tr>
+    <tr class="oursrow"><td><strong>LC-DP (ours)</strong></td><td>62.7±1.2</td><td class="good">72.0±5.3</td><td class="good">88.0±4.0</td><td class="second">99.3±1.2</td><td class="good">70.0±2.0</td><td class="good">92.0±2.0</td><td class="good">94.0±0.0</td><td class="good">96.7±1.2</td></tr>
+  </table>
+  </div>
+
+  <p>重點在<strong>低品質區</strong>（N=2、3，偽 expert 集裡七八成是雜牌）：BOX-CLOSE N=2 時 LC-BC 71.3 vs BC 50.0、N=3 時 78.0 vs 55.3——資料越髒，逐步的語言批評越值錢。DWBC、DemoDICE 在髒分割下明顯退化，ILID 偶爾撐住但方差爆炸（50.7±43.9）。</p>
+
+  <h3>Table 4 — 對決 offline RL（reward 由語言轉換而來）</h3>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>方法</th><th>MAZE</th><th>PARKING</th><th>SWEEP</th><th>BOX-CLOSE</th><th>BLOCKPUSH</th><th>PEGINSERT</th><th>HAMMER</th><th>RELOCATE</th></tr>
+    <tr><td>CQL</td><td class="bad">30.0±1.4</td><td class="bad">25.2±3.0</td><td class="bad">4.0±3.2</td><td class="bad">10.0±10.3</td><td class="bad">0.0±0.0</td><td class="bad">1.6±0.9</td><td>50.8±5.2</td><td class="bad">2.4±2.2</td></tr>
+    <tr><td>TD3+BC</td><td class="second">81.2±3.0</td><td class="second">93.6±0.9</td><td class="second">38.8±6.7</td><td class="second">56.8±10.4</td><td class="second">41.2±5.8</td><td class="second">58.4±3.6</td><td class="second">97.6±5.4</td><td class="second">41.6±7.0</td></tr>
+    <tr class="oursrow"><td><strong>LC-BC (ours)</strong></td><td class="good">81.6±6.1</td><td class="good">96.8±2.7</td><td class="good">90.0±5.8</td><td class="good">80.4±4.6</td><td class="good">47.2±4.1</td><td class="good">67.2±5.4</td><td class="good">99.2±1.8</td><td class="good">71.2±5.9</td></tr>
+    <tr><td>DT</td><td class="bad">41.6±4.3</td><td class="bad">39.2±2.3</td><td>59.2±7.7</td><td>42.0±5.5</td><td class="bad">2.4±0.9</td><td>40.4±3.3</td><td>61.6±12.8</td><td class="bad">11.6±2.6</td></tr>
+    <tr><td>EDP</td><td class="second">91.2±1.1</td><td class="second">96.8±1.1</td><td class="good">98.4±2.6</td><td class="good">71.6±5.2</td><td class="second">82.0±6.8</td><td class="second">56.0±2.4</td><td class="good">83.6±3.3</td><td class="second">44.0±5.1</td></tr>
+    <tr class="oursrow"><td><strong>LC-DP (ours)</strong></td><td class="good">94.4±1.7</td><td class="good">97.6±1.7</td><td class="second">96.8±3.6</td><td class="second">69.2±6.7</td><td class="good">88.0±1.4</td><td class="good">56.8±2.7</td><td class="second">80.0±3.2</td><td class="good">77.6±4.1</td></tr>
+  </table>
+  </div>
+
+  <p>公平起見，offline RL 基線用的 reward 就是從同一份語言標籤轉換來的（按 Cao et al. 的方法）——所以這張表直接量化了「語言 → 純量」這個壓縮步驟本身丟掉多少資訊。CQL 幾乎全面崩盤、DT 在多模態任務失能；<strong>LC-BC 在 feedforward 組八戰全勝，LC-DP 在 diffusion 組五勝</strong>。RELOCATE 上 LC-DP 77.6 vs EDP 44.0，差了 33.6 分。</p>
+</section>
+
+<!-- ============ ABLATION ============ -->
+<section id="ablation">
+  <h2><span class="num">08</span>Ablation：拆解語言標籤，順便打臉 VLM</h2>
+  <p class="sec-sub">Table 3（BOX-CLOSE 上）— 結構、語意、來源，一項一項拆</p>
+
+  <h3>三個組件各值多少</h3>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th><span class="lbl-t">&lt;T&gt;</span> 進度</th><th><span class="lbl-a">&lt;A&gt;</span> 好壞</th><th><span class="lbl-m">&lt;M&gt;</span> 修正</th><th>LC-BC</th><th>LC-DP</th></tr>
+    <tr><td>✗</td><td>✗</td><td>✓</td><td>67.6±8.3</td><td>56.0±5.7</td></tr>
+    <tr><td>✗</td><td>✓</td><td>✗</td><td>69.6±10.5</td><td>65.2±8.1</td></tr>
+    <tr><td>✓</td><td>✗</td><td>✗</td><td class="bad">51.6±4.3</td><td class="second">66.4±7.1</td></tr>
+    <tr><td>✓</td><td>✓</td><td>✗</td><td>65.6±9.5</td><td>62.4±15.5</td></tr>
+    <tr><td>✓</td><td>✗</td><td>✓</td><td class="second">79.6±10.8</td><td>62.0±9.6</td></tr>
+    <tr><td>✗</td><td>✓</td><td>✓</td><td>74.4±15.3</td><td>62.8±8.8</td></tr>
+    <tr class="oursrow"><td>✓</td><td>✓</td><td>✓</td><td class="good">80.4±4.6</td><td class="good">69.2±6.7</td></tr>
+  </table>
+  </div>
+
+  <p>三件全上最好，但拆開看有意思：LC-BC 靠 <span class="lbl-a">&lt;A&gt;</span>、<span class="lbl-m">&lt;M&gt;</span>（跟動作選擇直接相關），單獨 <span class="lbl-t">&lt;T&gt;</span> 反而只有 51.6；LC-DP 卻光靠 <span class="lbl-t">&lt;T&gt;</span> 就有 66.4——diffusion 吃階段級訊號就夠，feedforward 需要動作級指令。同一份監督，不同 policy class 消化方式完全不同。</p>
+
+  <h3>那直接用 VLM 生標籤呢？</h3>
+
+  <p>把 µ<sub>g</sub> 換成 o4-mini 看圖說話（prompt 見下方 Fig 4），結果：</p>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>標籤來源</th><th>Captioner backbone</th><th>LC-BC</th><th>LC-DP</th></tr>
+    <tr><td>o4-mini</td><td>SmolLM2-135M</td><td class="bad">55.2±15.1</td><td>63.6±6.1</td></tr>
+    <tr><td>o4-mini</td><td>SmolLM2-360M</td><td>61.6±14.6</td><td class="good">71.2±12.1</td></tr>
+    <tr><td>o4-mini（改寫精簡）</td><td>SmolLM2-135M</td><td>63.4±10.5</td><td>62.4±7.1</td></tr>
+    <tr><td>o4-mini（改寫成 µ<sub>g</sub> 風格）</td><td>SmolLM2-135M</td><td>56.4±13.4</td><td>62.4±12.8</td></tr>
+    <tr><td>µ<sub>g</sub>-shuffled（格式對、語意亂）</td><td>SmolLM2-135M</td><td class="bad">55.6±13.5</td><td>62.4±11.3</td></tr>
+    <tr><td>µ<sub>g</sub>-verbose（語意對、文風囉嗦）</td><td>SmolLM2-135M</td><td class="second">68.0±12.4</td><td>62.0±10.7</td></tr>
+    <tr class="oursrow"><td><strong>µ<sub>g</sub>（本文）</strong></td><td>SmolLM2-135M</td><td class="good">80.4±4.6</td><td class="second">69.2±6.7</td></tr>
+  </table>
+  </div>
+
+  <div class="cards">
+    <div class="kcard"><div class="big">51.8<small>%</small></div><div class="lbl">o4-mini 的 <span class="lbl-t">&lt;T&gt;</span> 任務進度標籤與 µ<sub>g</sub> 的一致率</div></div>
+    <div class="kcard"><div class="big">46.1<small>%</small></div><div class="lbl"><span class="lbl-a">&lt;A&gt;</span> 動作好壞的一致率——比丟銅板好不了多少</div></div>
+    <div class="kcard"><div class="big">18.8<small>%</small></div><div class="lbl"><span class="lbl-m">&lt;M&gt;</span> 移動修正的一致率——精細空間推理是現役 VLM 的死穴</div></div>
+  </div>
+
+  <p>兩組對照實驗把「為什麼 VLM 標籤不行」拆得很乾淨：</p>
+  <ul>
+    <li><strong>µ<sub>g</sub>-shuffled</strong>（格式完好、語意隨機互換）掉到 55.6 ≈ o4-mini 原生的 55.2 —— 對 feedforward policy 而言，o4-mini 標籤的有效資訊量約等於亂數。<em>語意才是本體</em>。</li>
+    <li><strong>把 o4-mini 改寫成 µ<sub>g</sub> 風格</strong>反而更糟（56.4）——表面模仿結構沒用，錯的內容穿上對的格式還是錯。</li>
+    <li><strong>µ<sub>g</sub>-verbose</strong>（語意對、文風囉嗦）對 LC-BC 仍有 68.0——豐富文風傷一點，但語意準確撐住大盤；對 LC-DP 卻沒加分——diffusion 更在意標籤分布好不好被 captioner 建模。</li>
+    <li>唯一的例外亮點：<strong>360M captioner + o4-mini 標籤讓 LC-DP 衝到 71.2，超過 µ<sub>g</sub></strong>——captioner 容量夠大時，VLM 標籤的多樣性反而變成資產。VLM 路線沒死，只是還沒到。</li>
+  </ul>
+
+  <figure>
+    <img src="figs/fig4.png" alt="o4-mini VLM prompt 全文">
+    <figcaption><b>Fig 4</b>o4-mini 標籤生成的完整 prompt：給前後兩幀影像＋數值 state/action，要求空間關係推理、判斷動作好壞、輸出「對 agent 說話」的一句人話建議。設計得很用心——但 &lt;M&gt; 一致率還是只有 18.8%。</figcaption>
+  </figure>
+
+  <h3>λ 敏感度</h3>
+
+  <figure>
+    <img src="figs/fig10.png" alt="λ 係數敏感度曲線">
+    <figcaption><b>Fig 10</b>LC-loss 權重 λ 的敏感度（BOX-CLOSE，橘線＝無 LC-loss 基線）：LC-BC 一路穩定受益、在 λ=10⁻² 附近最好，但 λ≥1 直接崩到 0——語言 loss 蓋過 BC loss 會毀掉動作模仿本身。LC-DP 的反應是<em>非單調</em>的：λ∈{1, 0.1, 10⁻⁴} 都有改善，中段值反而略降——不像 feedforward 會被大 λ 毀掉，但也不是全域遲鈍。實際採用值：LC-BC 幾乎全任務 λ=10⁻²（BLOCKPUSH 例外 10⁻⁴）；LC-DP 逐任務調（10⁻⁵ 到 5×10⁻²）。</figcaption>
+  </figure>
+
+  <h3>Captioner backbone：越大越好？正好相反</h3>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>Backbone</th><th>Finetune 方式</th><th>LC-BC</th><th>LC-DP</th></tr>
+    <tr class="oursrow"><td><strong>SmolLM2-135M-Instruct</strong></td><td>全模型</td><td class="good">80.4±4.6</td><td class="good">69.2±6.7</td></tr>
+    <tr><td>SmolLM2-135M-Instruct</td><td>只 projector</td><td>62.0±14.3</td><td class="second">66.4±7.1</td></tr>
+    <tr><td>SmolLM2-135M-Instruct</td><td>不微調（現成）</td><td class="bad">53.6±8.2</td><td>60.0±15.0</td></tr>
+    <tr><td>SmolLM2-360M-Instruct</td><td>全模型</td><td class="bad">55.2±6.6</td><td>66.0±4.9</td></tr>
+    <tr><td>Qwen2-0.5B-Instruct</td><td>全模型</td><td>67.2±17.1</td><td>62.4±6.1</td></tr>
+    <tr><td>Mistral-7B-Instruct-v0.3</td><td>只 projector</td><td>61.2±7.9</td><td>58.8±5.4</td></tr>
+  </table>
+  </div>
+
+  <p>Table 13（µ<sub>g</sub> 標籤下）的結論很反直覺：<strong>adaptation 遠比 scale 重要</strong>。135M 全模型微調最好（80.4）；同一顆模型只練 projector 掉到 62.0、完全不微調掉到 53.6；而 7B 的 Mistral（只 projector）61.2 補不回這個差距。更妙的是放大 backbone 反而變差——360M 只有 55.2。前面 Table 3 那個「360M 讓 o4-mini 標籤反超」的故事要合起來讀：<em>µ<sub>g</sub> 的標籤簡潔一致，小模型全微調就吃得下；VLM 的標籤囉嗦多樣，才需要大 captioner 去建模</em>。captioner 容量要配標籤分布的複雜度，不是越大越好。</p>
+
+  <h3>Table 14 — 沒見過爛動作的評論員，比沒有評論員更糟</h3>
+
+  <p>把 µ<sub>ϕ</sub> 的訓練資料從 D_G^lang（expert＋雜牌）換成只有 D_E^lang（純 expert）：LC-BC 80.4→<span class="bad">59.2</span>、LC-DP 69.2→<span class="bad">56.0</span>——後者<strong>低於完全不用語言的 DP（64.8）</strong>。這是整篇最重要的機制證據：雜牌資料的價值只透過 captioner 這條通道進入系統，而 captioner 必須靠好壞對照才能學到有判別力的映射。沒有對照的 captioner 給出的批評千篇一律，LC-loss 變成純噪音。</p>
+</section>
+
+<!-- ============ QUALITATIVE ============ -->
+<section id="qualitative">
+  <h2><span class="num">09</span>質性結果：看 loss 逐步抓出偏差</h2>
+  <p class="sec-sub">Figures 11–12 — LC-loss 是「會指出哪一步開始歪」的顯微鏡</p>
+
+  <figure>
+    <img src="figs/fig11.png" alt="PEGINSERT 質性比較">
+    <figcaption><b>Fig 11</b>PEGINSERT 逐步 rollout：左 LC-BC、右 BC，每步附當下的語言標籤與 L<sub>LC</sub> 值。LC-BC 全程 L<sub>LC</sub>=0——每個動作都「配得上」expert 的批評；BC 在對齊階段出現 0.05、0.01、0.02 的非零 loss，正是動作開始偏離語意的位置。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig12.png" alt="BOX-CLOSE 質性比較">
+    <figcaption><b>Fig 12</b>BOX-CLOSE 同款比較。BC 這邊 L<sub>LC</sub> 在後段連續飆高：0.17（「the action is not useful for the state」）、最後 0.61，動作與語意徹底脫鉤，任務失敗。LC-loss 不只是訓練訊號，事後看也是很好的軌跡診斷工具。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ APPENDIX ============ -->
+<section id="appendix">
+  <h2><span class="num">10</span>附錄深讀：演算法、資料、超參數</h2>
+  <p class="sec-sub">Appendix B–I 的可復現細節</p>
+
+  <h3>Algorithm 1 / 2 — 完整流程</h3>
+
+  <pre class="block"><span class="c">// Algorithm 1: LC-BC（Algorithm 2 的 LC-DP 平行，差異標注於後）</span>
+<span class="k">Input:</span> D_E, D_G, λ, π_θ, µ_g, µ_ϕ
+<span class="g">1.</span> 用 µ_g 標注 D_E → D_E^lang；標注 D_G → D_G^lang
+<span class="g">2.</span> 初始化 µ_ϕ = 預訓練 LLM Ψ + projector W
+<span class="g">3.</span> <span class="o">Stage 1</span>：凍結 Ψ，只用 ℓ_CE 更新 W          <span class="c">// 先讓 projector 學會「打進 hidden space」</span>
+<span class="g">4.</span> <span class="o">Stage 2</span>：解凍，W 和 Ψ 一起 end-to-end 微調   <span class="c">// 然後全模型蒸餾 µ_g</span>
+<span class="g">5.</span> 凍結 µ_ϕ；隨機初始化 π_θ
+<span class="g">6.</span> <span class="k">for</span> each policy iteration:
+     取 (s, a^E, l) ∼ D_E^lang；â ∼ π_θ(·|s)
+     算 L_BC（MSE）＋ L_LC（Eq. 9，經 µ_ϕ）
+     更新 π_θ ← L_BC + λ·L_LC
+<span class="c">// LC-DP 差異：抽 diffusion step k、加噪得 a^k、預測 ϵ̂、
+//   一步重建 â⁰（Eq. 12）、LC-loss 乘 ω^k 重加權（Eq. 13–15）</span></pre>
+
+  <h3>資料集組成（Table 7–8）— 注意極端不對稱</h3>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>Task</th><th>Expert 軌跡數</th><th>Expert steps</th><th>General steps</th><th>State / Action 維度</th><th>Expert 來源</th></tr>
+    <tr><td>MAZE</td><td>200</td><td>26,037</td><td>153,177</td><td>6 / 2</td><td>D4RL controller</td></tr>
+    <tr><td>PARKING</td><td>500</td><td>10,693</td><td>73,604</td><td>18 / 2</td><td>SAC policy</td></tr>
+    <tr><td>SWEEP</td><td>500</td><td>5,035</td><td>73,485</td><td>9 / 4</td><td>MetaWorld controller</td></tr>
+    <tr><td>BOX-CLOSE</td><td>500</td><td>4,214</td><td>76,031</td><td>9 / 4</td><td>MetaWorld controller</td></tr>
+    <tr><td>BLOCKPUSH</td><td>500</td><td>37,994</td><td>301,876</td><td>16 / 2</td><td>default controller</td></tr>
+    <tr><td>PEGINSERT</td><td>500</td><td>18,589</td><td>246,576</td><td>43 / 8</td><td>PPO policy</td></tr>
+    <tr><td>HAMMER</td><td class="bad">10</td><td class="bad">439</td><td>24,752</td><td>46 / 26</td><td>DAPG policy</td></tr>
+    <tr><td>RELOCATE</td><td class="bad">20</td><td class="bad">1,118</td><td>30,136</td><td>39 / 30</td><td>DAPG policy</td></tr>
+  </table>
+  </div>
+
+  <p>HAMMER 只有 <strong>10 條</strong> expert 軌跡、RELOCATE 只有 20 條——偏偏是狀態 39–46 維、動作 26–30 維的靈巧手任務。LC-BC 在 HAMMER 拿 99.2、LC-DP 在 RELOCATE 拿 77.6（EDP 只有 44.0），等於在「expert 最稀缺 × 維度最高」的角落給出了最大優勢。</p>
+
+  <h3>關鍵實作事實</h3>
+
+  <ul>
+    <li><strong>Captioner backbone</strong>：SmolLM2-135M-Instruct（主實驗），(s, a) 經 MLP projector 壓成<em>一顆 token</em> 進 transformer。</li>
+    <li><strong>兩階段微調超參數</strong>：projector 先練（lr 1e-4、100 epochs、batch 128，PEGINSERT 為 64），再全模型 10 epochs（lr 逐任務 1e-5～1e-4）；policy 訓 1001 epochs。整套建構在 Diffusion Policy codebase 上。</li>
+    <li><strong>λ 實際值</strong>：LC-BC 幾乎全任務 10⁻²（BLOCKPUSH 10⁻⁴）；LC-DP 逐任務調（10⁻⁵～5×10⁻²）。因 LLM 前向的記憶體成本，policy 端用小 batch（16，HAMMER 的 LC-BC 為 32）＋大 gradient accumulation（4–16）。</li>
+    <li><strong>µ<sub>g</sub> 的家世</strong>：基於 LLF-Bench 的生成管線客製——加 &lt;T&gt;&lt;A&gt;&lt;M&gt; 結構、擴展到 LLF-Bench 沒有的任務（MAZE、BLOCKPUSH、PEGINSERT、Adroit）。</li>
+    <li><strong>評測協定</strong>：Table 1/3/4 為 50 rollouts × 5 seeds；Table 2 為 50 rollouts × 3 seeds。成功判準很硬：HAMMER 要整根釘子打進板子、PEGINSERT 要求插入誤差 0.015m 內。</li>
+    <li><strong>算力</strong>：12 台工作站，從 RTX 3080/3090 到 A6000、H100 ×2 都有——學術等級，不是大廠叢集。</li>
+    <li><strong>語言只在訓練期存在</strong>：推論時 π<sub>θ</sub> 是普通的 MLP／UNet，跟 BC／DP 部署成本完全相同。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">變體怎麼做的（Section H）</span>
+    對照組 <code>LC-*-reward</code>：把語言標籤壓成純量 reward、訓一個 reward model R<sub>ϕ</sub>、套 LC-loss 式的 hinge 目標——連「在 D_G 上訓練→凍結→輔助監督」的兩階段管線都跟本法一模一樣，唯一變因是監督格式。<code>LC-*-classifier</code>：把 &lt;T&gt;&lt;A&gt;&lt;M&gt; 各自變成類別標籤、multi-head cross-entropy——保留多維結構，但丟掉兩樣東西（H.2 明列）：autoregressive LM 捕捉的<em>標籤間相依性</em>，以及 pretrained token embedding 帶來的<em>語意 grounding</em>。結果（Table 1）：語言版全面壓過 reward 版；classifier 版偶爾在 feedforward 上占優（語言的詞彙噪音對 MLP 有害），但 diffusion 上語言版穩贏——去噪過程天然抗噪，吃得下語言的全部表達力。
+  </div>
+</section>
+
+<!-- ============ LIMITS ============ -->
+<section id="limits">
+  <h2><span class="num">11</span>侷限</h2>
+  <p class="sec-sub">Appendix L — 作者自己列的，都很實在</p>
+
+  <div class="limits">
+    <div class="limit"><span class="t">任務類型</span>語言批評適合「動作語意可解釋」的任務；locomotion 這種行為差異難以言喻的領域，語言標籤可能沒什麼資訊量。</div>
+    <div class="limit"><span class="t">Privileged state</span>µ<sub>g</sub> 的 heuristics 需要特權狀態資訊（物體位置、gripper 狀態等幾何量）。換成 VLM 就能吃純影像——但 ablation 顯示現役 VLM 的動作級批評還不夠格（&lt;M&gt; 一致率 18.8%）。</div>
+    <div class="limit"><span class="t">訓練開銷</span>兩階段管線比純 BC 貴：要多訓練一顆語言模型 µ<sub>ϕ</sub>（雖然 policy 訓練時它凍結、推論時不存在）。</div>
+    <div class="limit"><span class="t">評測範圍</span>全部是 offline 模擬 benchmark；對更複雜、動態的真實機器人場景的泛化性仍是開放問題。標籤來源的隱性偏見也會直接進入監督訊號。</div>
+  </div>
+</section>
+
+<!-- ============ TAKEAWAY ============ -->
+<section id="takeaway">
+  <h2><span class="num">12</span>我的重點筆記</h2>
+  <p class="sec-sub">從 harness 工程視角讀這篇</p>
+
+  <ul>
+    <li><strong>監督訊號別做有損壓縮。</strong>整篇論文一句話：scalar 是語言的 lossy compression，壓掉的正是「錯在哪、怎麼修」。Table 4 的設計特別漂亮——offline RL 基線用的 reward 就是同一份語言轉的，等於直接量測壓縮損失：RELOCATE 上差 33.6 分。</li>
+    <li><strong>結構贏過風格，語意贏過結構。</strong>µ<sub>g</sub>-shuffled（格式對、語意亂）≈ 隨機；o4-mini 改寫成 µ<sub>g</sub> 風格（風格對、內容錯）更糟；µ<sub>g</sub>-verbose（語意對、文風囉嗦）能撐住。設計監督訊號時，先保語意正確，再談格式一致，文風最不重要。</li>
+    <li><strong>135M 的 LLM 當 loss function 用。</strong>不是每個「LLM in the loop」都要大模型——凍結的小模型當可微分裁判，訓練時給梯度、推論時直接扔掉。便宜、穩定、零部署成本。</li>
+    <li><strong>Hinge at expert 是個好習慣。</strong>不要求輔助 loss 歸零，只要求「不輸 expert 基準」——因為裁判本身有蒸餾殘差，追求零就是過擬合裁判的偏見。理論（A.5 的殘差項）和實作（stop-gradient + clip）在這裡完全一致。</li>
+    <li><strong>Policy class 決定監督怎麼餵。</strong>同一份標籤：feedforward 要語意準的動作級指令（&lt;A&gt;&lt;M&gt;），diffusion 吃階段級訊號（&lt;T&gt;）就夠、還抗詞彙噪音。換 policy 架構時，supervision 設計要跟著換——這是 Table 3 左右兩半合起來教的事。</li>
+    <li><strong>VLM 自動標註的現況座標。</strong>粗粒度判斷（進度 51.8%、好壞 46.1%）勉強及格邊緣，精細空間修正（18.8%）完全不行。captioner 放大到 360M 後 VLM 標籤能讓 LC-DP 反超規則版（71.2 vs 69.2），但注意 Table 13：<em>用規則標籤時放大 captioner 反而變差</em>（360M 只有 55.2）——容量要配標籤分布的複雜度。「規則產生器＋小 captioner 全微調」是今天的解，「強 VLM＋大 captioner」是明天的賭注。</li>
+    <li><strong>對照組資料是裁判的命。</strong>Table 14：captioner 只看 expert 資料訓練，LC-DP 掉到比不用語言還糟（56.0 vs 64.8）。要一個模型當判別性的裁判，就必須讓它見過反例——只餵好樣本訓出來的評審，會把一切都評成好。</li>
+  </ul>
+</section>
+
+</div></main>
+
+<footer>
+  <div class="wrap">
+    Language-Critique Imitation Learning from Suboptimal Demonstrations · arXiv 2607.01225 (2026-07-01)<br>
+    Digest 整理於 2026-07-14 · 圖片版權屬原論文作者
+  </div>
+</footer>
+
+</body>
+</html>
