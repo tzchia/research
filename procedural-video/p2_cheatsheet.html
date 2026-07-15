@@ -179,7 +179,28 @@ YOLO 說『這裡有個 wok』，VLM 給的是整片畫面的<b>語意場</b>。
 </div>
 
 <div class="card wide">
-<h2>⑧ 講稿三句話 ＋ Q&A 防身</h2>
+<h2>⑧ DINOv2 vs LingBot-Vision — 架構異同</h2>
+<div class="dim" style="margin-bottom:6px">共同底盤：ViT-Small（12 層、384 維、6 heads）、DINO 家族自蒸餾預訓練（student/teacher + global/local crops、無標注）、
+本 task 用法完全相同：凍結、224² 輸入、patch tokens 每秒平均池化。</div>
+<table>
+<tr><th></th><th style="text-align:left" class="k-dv2">DINOv2 ViT-S/14（Meta 2023）</th><th style="text-align:left" class="k-lb">LingBot-Vision ViT-S</th></tr>
+<tr><td style="text-align:left">世代/配方</td><td style="text-align:left">DINOv2</td><td style="text-align:left"><b>DINOv3 式</b>（RoPE + registers）</td></tr>
+<tr><td style="text-align:left">patch / 224² 格數</td><td style="text-align:left">14 → 16×16 = 256 tokens</td><td style="text-align:left">16 → 14×14 = 196 tokens</td></tr>
+<tr><td style="text-align:left">位置編碼</td><td style="text-align:left">learned absolute（換解析度要插值）</td><td style="text-align:left"><b>RoPE 2D 相對</b>（解析度魯棒、免插值）</td></tr>
+<tr><td style="text-align:left">register tokens</td><td style="text-align:left">0（本版）</td><td style="text-align:left">4（吸收全域雜訊）</td></tr>
+<tr><td style="text-align:left">訓練解析度</td><td style="text-align:left">224 / 518</td><td style="text-align:left">global crop 512</td></tr>
+<tr><td style="text-align:left">預訓練資料</td><td style="text-align:left">LVD-142M（1.42 億精選圖，公開）</td><td style="text-align:left"><b>未公開</b>（套件僅推論 API）</td></tr>
+<tr><td style="text-align:left">本 task 成績</td><td style="text-align:left">原序 .918 / 打亂 .889</td><td style="text-align:left">原序 .923 / 打亂 .894</td></tr>
+</table>
+<ul>
+<li><b>成績打平的意義</b>：兩個獨立來源的凍結特徵給同一結論 → 「瞬時 embedding 腿順序魯棒」是<b>特徵類型的性質</b>，非單一模型巧合；粗粒度鍋況判斷的瓶頸在下游資料量，不在 backbone 世代</li>
+<li>之後要吃高解析度（看清調料罐標籤）→ LingBot RoPE 有先天優勢</li>
+<li>誠實聲明：LingBot 訓練資料不明，<b>不可宣稱</b>「robot-domain 預訓練所以較好」— 數據上也沒好到可辨</li>
+</ul>
+</div>
+
+<div class="card wide">
+<h2>⑨ 講稿三句話 ＋ Q&A 防身</h2>
 <div class="say">1. <b>原序部署：融合最強</b> — FUS 94.0%（因果 93.0%），全系統遠勝規則 FSM 0.699。</div>
 <div class="say">2. <b>打亂 = 順序魯棒性壓力測試</b> — 手工時序特徵腿隨切碎密度崩（v4: 92→80→86→73→<b class="die">49</b>），
 凍結 VLM/DINOv2 embedding 是瞬時特徵，<b class="live">幾乎不動（92→89）</b>：順序魯棒性住在 embedding 腿。</div>
@@ -190,6 +211,10 @@ YOLO 說『這裡有個 wok』，VLM 給的是整片畫面的<b>語意場</b>。
 <li>「LB/DV2 為何不掉？」→ 每秒 emission 打亂前後 bit 級相同（實測），只剩 HMM 先驗小額罰款</li>
 <li>「準確率怎麼算？」→ 每秒 label 全等 / 總秒數，LODO，GT 來自 /play_recipe feedback</li>
 <li>「30s 打散為何反而變好？」→ 切點對齊 30s chunk，chunk 內容大多完整連續</li>
+<li>「FUS 為何被 YOLO 拖累、不是取兩家之長？」→ early fusion = 一顆 MLP 吃兩包特徵，訓練（全原序）學會重依賴 YOLO 腿；
+打亂時該腿特徵<b>壞掉但不舉手</b>（值仍在正常範圍），MLP 照套權重 → 打亂 FUS m1 .850 比自家 VLM 腿單跑 .899 還差 =
+YOLO 腿成淨負資產。原序時 FUS .930 同時高於兩腿 = 兩腿健康時確實 1+1&gt;2。
+解法：splice augmentation / modality dropout / late-fusion gating</li>
 <li>工具：四頁 player（原序/打亂 × 離線/因果）+ 六格 model internals（YOLO mask / ViT PCA）同步影片</li>
 </ul>
 </div>
