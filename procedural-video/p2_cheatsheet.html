@@ -127,7 +127,7 @@ HMM 順序先驗只賠 2–6pt。偵測 mask 本身沒變差。</div>
 <div class="card wide">
 <h2>⑤ 粒度梯度（MACRO 原序→打亂，m2v；括號 = 因果 m2）</h2>
 <table>
-<tr><th>粒度</th><th class="k-v3">v3 手工</th><th class="k-v4">v4 手工</th><th class="k-lb">LB VLM</th><th class="k-dv2">DINOv2</th><th class="k-fus">FUS</th></tr>
+<tr><th>粒度</th><th class="k-v3">v3 手工</th><th class="k-v4">v4 手工</th><th class="k-lb">LB vision</th><th class="k-dv2">DINOv2</th><th class="k-fus">FUS</th></tr>
 <tr><td>原序（不打亂）</td><td>.812 (.786)</td><td>.916 (.893)</td><td>.923 (.916)</td><td>.918 (.909)</td><td><b>.940</b> (.930)</td></tr>
 <tr><td>GT 段打散</td><td>.703 (.638)</td><td>.799 (.740)</td><td class="live">.909 (.879)</td><td class="live">.913 (.889)</td><td>.873 (.814)</td></tr>
 <tr><td>30s 段打散</td><td>.759 (.709)</td><td>.864 (.832)</td><td class="live">.919 (.911)</td><td class="live">.917 (.904)</td><td>.929 (.901)</td></tr>
@@ -143,22 +143,22 @@ HMM 順序先驗只賠 2–6pt。偵測 mask 本身沒變差。</div>
 </div>
 
 <div class="card wide">
-<h2>⑥ 名詞：「YOLO 腿 / VLM 腿」— 兩條特徵支柱</h2>
+<h2>⑥ 名詞：「YOLO 腿 / vision 腿」— 兩條特徵支柱</h2>
 <div class="flow"><i>影像 →</i><b style="border-color:var(--v4);color:var(--v4)">YOLO 腿（符號腿）：seg 偵測 → 145 維手工特徵（bbox 交疊、質心速度、1/3/8s 時窗）</b><i>─┐</i></div>
-<div class="flow"><i>影像 →</i><b style="border-color:var(--lb);color:var(--lb)">VLM 腿（語意腿）：凍結 ViT → 每秒 patch 向量平均（瞬時、零時窗、零標注）</b><i>─┴→ concat → MLP → state</i></div>
+<div class="flow"><i>影像 →</i><b style="border-color:var(--lb);color:var(--lb)">vision 腿（語意腿）：凍結 ViT → 每秒 patch 向量平均（瞬時、零時窗、零標注）</b><i>─┴→ concat → MLP → state</i></div>
 <ul>
-<li><span class="k-v3">v3</span>/<span class="k-v4">v4</span> = 只用 YOLO 腿 · <span class="k-lb">LB</span>/<span class="k-dv2">DV2</span> = 只用 VLM 腿 · <span class="k-fus">FUS</span> = 兩條腿串接</li>
-<li>「誰殺了 YOLO 腿」= 打亂殺的是 <b>YOLO 腿的手工時序特徵</b>（時窗吃到剪接點），<b>不是偵測本身</b> — mask 每幀照樣準；VLM 腿零損傷（bit 同）；FUS 一腿受傷所以跛行不倒（−.080）</li>
+<li><span class="k-v3">v3</span>/<span class="k-v4">v4</span> = 只用 YOLO 腿 · <span class="k-lb">LB</span>/<span class="k-dv2">DV2</span> = 只用 vision 腿 · <span class="k-fus">FUS</span> = 兩條腿串接</li>
+<li>「誰殺了 YOLO 腿」= 打亂殺的是 <b>YOLO 腿的手工時序特徵</b>（時窗吃到剪接點），<b>不是偵測本身</b> — mask 每幀照樣準；vision 腿零損傷（bit 同）；FUS 一腿受傷所以跛行不倒（−.080）</li>
 <li>嫌行話可改口：「YOLO 特徵路徑」「符號特徵那一路」</li>
 </ul>
 </div>
 
 <div class="card wide">
-<h2>⑦ 糊糊色塊（VLM PCA / 融合疊圖）怎麼講</h2>
-<div class="say"><b>30 秒台詞</b>：「這是 VLM 的視角。它不畫框 — 把畫面切成 <b>14×14 小格</b>，每格編碼成
+<h2>⑦ 糊糊色塊（backbone PCA / 融合疊圖）怎麼講</h2>
+<div class="say"><b>30 秒台詞</b>：「這是視覺 foundation model 的視角。它不畫框 — 把畫面切成 <b>14×14 小格</b>，每格編碼成
 384 維語意向量；我們用 PCA 壓到 3 維當 RGB 上色。<b>同顏色 = backbone 認為同一種東西</b>：
 鍋一坨色、手臂一坨色、檯面一坨色，<b>顏色邊界 = 它看到的物件邊界</b>。
-YOLO 說『這裡有個 wok』，VLM 給的是整片畫面的<b>語意場</b>。」</div>
+YOLO 說『這裡有個 wok』，它給的是整片畫面的<b>語意場</b>。」</div>
 <ul>
 <li><b>為什麼糊？</b>patch 解析度 14×14（DV2 16×16）放大到 640×360 自然糊 —
 <b>糊的是圖，不是特徵</b>：就是這個糊糊特徵在打亂測試幾乎不掉分（92→89），
@@ -203,16 +203,17 @@ YOLO 說『這裡有個 wok』，VLM 給的是整片畫面的<b>語意場</b>。
 <h2>⑨ 講稿三句話 ＋ Q&A 防身</h2>
 <div class="say">1. <b>原序部署：融合最強</b> — FUS 94.0%（因果 93.0%），全系統遠勝規則 FSM 0.699。</div>
 <div class="say">2. <b>打亂 = 順序魯棒性壓力測試</b> — 手工時序特徵腿隨切碎密度崩（v4: 92→80→86→73→<b class="die">49</b>），
-凍結 VLM/DINOv2 embedding 是瞬時特徵，<b class="live">幾乎不動（92→89）</b>：順序魯棒性住在 embedding 腿。</div>
+凍結 LingBot/DINOv2 embedding 是瞬時特徵，<b class="live">幾乎不動（92→89）</b>：順序魯棒性住在 embedding 腿。</div>
 <div class="say">3. <b>不是 model 壞，是特徵設計的取捨</b> — 時序窗換來原序精度，代價是剪接脆弱；
 若要順序魯棒可加 splice augmentation 重訓融合（管線現成）。</div>
 <ul class="dim">
 <li>「作弊嗎？」→ 預設 m2v 是離線上限（chunk 內看未來，+2~5pt）；因果 m2 頁面全數字都在，結論不變</li>
 <li>「LB/DV2 為何不掉？」→ 每秒 emission 打亂前後 bit 級相同（實測），只剩 HMM 先驗小額罰款</li>
 <li>「準確率怎麼算？」→ 每秒 label 全等 / 總秒數，LODO，GT 來自 /play_recipe feedback</li>
+<li>「LB/DV2 是 VLM 嗎？」→ 精確講<b>不是</b>：兩者都是<b>自監督視覺 foundation model</b>（DINO 系自蒸餾，無語言成分）；口語泛稱大型預訓練視覺模型。結論反而更強：<b>純視覺自監督特徵就撐住順序魯棒性</b>，連圖文對齊都不需要</li>
 <li>「30s 打散為何反而變好？」→ 切點對齊 30s chunk，chunk 內容大多完整連續</li>
 <li>「FUS 為何被 YOLO 拖累、不是取兩家之長？」→ early fusion = 一顆 MLP 吃兩包特徵，訓練（全原序）學會重依賴 YOLO 腿；
-打亂時該腿特徵<b>壞掉但不舉手</b>（值仍在正常範圍），MLP 照套權重 → 打亂 FUS m1 .850 比自家 VLM 腿單跑 .899 還差 =
+打亂時該腿特徵<b>壞掉但不舉手</b>（值仍在正常範圍），MLP 照套權重 → 打亂 FUS m1 .850 比自家 vision 腿單跑 .899 還差 =
 YOLO 腿成淨負資產。原序時 FUS .930 同時高於兩腿 = 兩腿健康時確實 1+1&gt;2。
 解法：splice augmentation / modality dropout / late-fusion gating</li>
 <li>工具：四頁 player（原序/打亂 × 離線/因果）+ 六格 model internals（YOLO mask / ViT PCA）同步影片</li>
