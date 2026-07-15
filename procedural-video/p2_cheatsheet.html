@@ -1,0 +1,151 @@
+<title>報告小抄 — 五系統 × 打亂實驗</title>
+<style>
+  :root{--bg:#f2f0ec;--panel:#e9e6e0;--ink:#20242b;--dim:#6b7280;--line:#d5d1c9;
+    --wrong:#d43d2a;--hl:#b3540e;--ok:#1f7a4d;
+    --v3:#8a8a86;--v4:#b3540e;--lb:#2a78d6;--dv2:#4a3aa7;--fus:#1f7a4d}
+  @media (prefers-color-scheme:dark){:root{--bg:#0e1116;--panel:#151a21;--ink:#dde2e8;
+    --dim:#7d8590;--line:#242b34;--wrong:#e5533d;--hl:#e8833a;--ok:#3fb970;
+    --v3:#7d8590;--v4:#c98500;--lb:#3987e5;--dv2:#9085e9;--fus:#3fb970}}
+  :root[data-theme="dark"]{--bg:#0e1116;--panel:#151a21;--ink:#dde2e8;--dim:#7d8590;
+    --line:#242b34;--wrong:#e5533d;--hl:#e8833a;--ok:#3fb970;
+    --v3:#7d8590;--v4:#c98500;--lb:#3987e5;--dv2:#9085e9;--fus:#3fb970}
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);margin:0;padding:18px 24px 40px;
+    font-family:ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;font-size:12px;line-height:1.55}
+  h1{font-size:16px;letter-spacing:.2em;margin:0 0 4px}
+  h2{font-size:12.5px;letter-spacing:.12em;color:var(--hl);margin:0 0 8px;
+    border-bottom:1px solid var(--line);padding-bottom:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;overflow-x:auto}
+  .card.wide{grid-column:1/-1}
+  @media (max-width:900px){
+    .grid{grid-template-columns:1fr}
+    .card.wide{grid-column:auto}
+    body{padding:12px 10px 30px;font-size:12.5px}
+    .bar em{width:80px}
+  }
+  table{border-collapse:collapse;width:100%;font-size:11.5px}
+  th,td{padding:3px 7px;border-bottom:1px solid var(--line);text-align:right;
+    font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--dim);font-size:10.5px}
+  .sys{font-weight:800}
+  .flow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+  .flow b{background:var(--bg);border:1px solid var(--line);border-radius:5px;
+    padding:3px 8px;font-size:11px;white-space:nowrap}
+  .flow i{color:var(--dim);font-style:normal}
+  .die{color:var(--wrong);font-weight:800}
+  .live{color:var(--ok);font-weight:800}
+  .dim{color:var(--dim)}
+  .bar{display:flex;align-items:center;gap:6px;margin:2px 0}
+  .bar em{width:110px;font-style:normal;font-size:10.5px;text-align:right;font-weight:700}
+  .bar .tr{flex:1;height:12px;background:var(--line);border-radius:3px;position:relative}
+  .bar .tr b{position:absolute;left:0;top:0;bottom:0;border-radius:3px;opacity:.45}
+  .bar .tr u{position:absolute;left:0;top:0;bottom:0;border-radius:3px;text-decoration:none}
+  .bar s{width:88px;font-size:10.5px;text-decoration:none;font-variant-numeric:tabular-nums}
+  ul{margin:4px 0;padding-left:18px}
+  li{margin:3px 0}
+  .say{border-left:3px solid var(--hl);padding:2px 10px;margin:6px 0;font-size:12px}
+  code{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:10.5px}
+  .k-v3{color:var(--v3)}.k-v4{color:var(--v4)}.k-lb{color:var(--lb)}
+  .k-dv2{color:var(--dv2)}.k-fus{color:var(--fus)}
+</style>
+
+<h1>小抄 — COOKING STATE 五系統 × 打亂 GT 實驗</h1>
+<div class="dim" style="margin-bottom:12px">madison real_test 7 runs · 2026-07-15 · 頁面：
+<code>notes/previews/p2_video_player*.html</code>（四頁互連，#c=c5 直開 5s 檔）</div>
+
+<div class="grid">
+
+<div class="card">
+<h2>① 五系統 — 各自怎麼做</h2>
+<table>
+<tr><th>系統</th><th style="text-align:left">特徵來源（每秒一筆）</th><th style="text-align:left">性質</th></tr>
+<tr><td class="sys k-v3">v3</td><td style="text-align:left">前代 YOLO seg 偵測 → 145 維手工特徵：bbox 交疊、質心速度、1/3/8s 時窗統計</td><td style="text-align:left">人寫規則、含時序窗</td></tr>
+<tr><td class="sys k-v4">v4</td><td style="text-align:left">同 v3，換新 seg model（0522 純手標訓練）</td><td style="text-align:left">同上、偵測較準</td></tr>
+<tr><td class="sys k-lb">LB</td><td style="text-align:left">LingBot-Vision ViT-S 凍結 backbone，每秒 patch-token 平均池化</td><td style="text-align:left"><b>瞬時</b>、零標注</td></tr>
+<tr><td class="sys k-dv2">DV2</td><td style="text-align:left">DINOv2 ViT-S/14 同法（backbone 對照組）</td><td style="text-align:left"><b>瞬時</b>、零標注</td></tr>
+<tr><td class="sys k-fus">FUS</td><td style="text-align:left">v4 手工特徵 ⊕ LB embedding 串接</td><td style="text-align:left">融合、原序最強</td></tr>
+</table>
+<div class="flow" style="margin-top:8px">
+<b>3 cam 影像</b><i>→</i><b>偵測/embedding 5Hz</b><i>→</i><b>每秒特徵</b><i>→</i>
+<b>MLP(256)</b><i>→</i><b>30s chunk HMM 解碼</b><i>→</i><b>每秒 state</b></div>
+<div class="dim">訓練共通：LODO fold（測試 run <b>當天</b>資料全排除）、PCA96（emb 腿）、fold 內學 normalization + HMM transition</div>
+</div>
+
+<div class="card">
+<h2>② 解碼器（作弊程度）＋準確率定義</h2>
+<table>
+<tr><th>解碼</th><th style="text-align:left">作法</th><th style="text-align:left">看未來?</th></tr>
+<tr><td><b>m1</b></td><td style="text-align:left">逐秒 argmax，無時序</td><td style="text-align:left">否（因果）</td></tr>
+<tr><td><b>m2</b></td><td style="text-align:left">HMM forward filter</td><td style="text-align:left"><b class="live">否 — 無作弊版</b></td></tr>
+<tr><td><b>m2v</b></td><td style="text-align:left">HMM Viterbi 回推</td><td style="text-align:left"><b class="die">chunk 內會</b>（離線上限，+2~5pt）</td></tr>
+</table>
+<ul>
+<li>HMM = train-fold 每秒 bigram transition（self-loop 為主）+ floor 1e-4、uniform 起始；<b>30s chunk 完全獨立</b>：無絕對時鐘、無跨 chunk 記憶</li>
+<li><b>frame-acc</b>：GT 來自 rosbag <code>/play_recipe feedback</code> 1Hz；每秒 label 全等才算對；MACRO = 7 runs 秒數池化 Σ對/Σ秒</li>
+<li>基準：亂猜地板 <b>0.125</b>（17 類）、規則 FSM 全 run <b>0.699</b>、FSM 切碎 <b class="die">0.238</b></li>
+</ul>
+</div>
+
+<div class="card">
+<h2>③ 打亂 GT 實驗 — 作法（真實驗，非播放特效）</h2>
+<div class="flow"><b>GT 切段</b><i>→</i><b>seed 42 重排</b><i>→</i><b>影片 ffmpeg 真剪接</b><i>→</i><b>五系統重推論</b><i>→</i><b>四頁可視化</b></div>
+<ul>
+<li>切段粒度四檔（頁面右下選單）：<b>GT 行為段</b> / <b>30s</b> / <b>10s</b> / <b>5s</b> 固定切</li>
+<li>偵測與 embedding 都是 per-frame（順序無關）→ 重排 5Hz cache + 重寫時間戳 <b>數學上等價</b> 對剪接影片重跑模型；手工特徵的 3/8s 時窗會如實吃到剪接點</li>
+<li><b>訓練完全不動</b>（原順序、LODO），只有測試序列被打亂</li>
+<li>sanity check：LB/DV2 每秒 emission 打亂前後 <b>bit 級相同</b>（瞬時特徵的定義驗證）</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>④ 歸因 — 誰殺了 YOLO 腿？（GT段打散, MACRO）</h2>
+<table>
+<tr><th>sys</th><th>原序m1</th><th>亂m1</th><th>特徵損傷</th><th>先驗損傷@m2</th></tr>
+<tr><td class="sys k-v3">v3</td><td>.764</td><td>.650</td><td class="die">−.114</td><td>−.044</td></tr>
+<tr><td class="sys k-v4">v4</td><td>.895</td><td>.754</td><td class="die">−.141</td><td>−.040</td></tr>
+<tr><td class="sys k-lb">LB</td><td>.899</td><td class="live">.899</td><td class="live">0（bit 同）</td><td>−.029</td></tr>
+<tr><td class="sys k-dv2">DV2</td><td>.903</td><td class="live">.903</td><td class="live">0（bit 同）</td><td>−.024</td></tr>
+<tr><td class="sys k-fus">FUS</td><td>.930</td><td>.850</td><td class="die">−.080</td><td>−.058</td></tr>
+</table>
+<div class="dim" style="margin-top:6px">結論：崩壞主因 = <b>手工時序特徵被剪接點污染</b>（每 run ~19 個接點 × 3–8s 窗）；
+HMM 順序先驗只賠 2–6pt。偵測 mask 本身沒變差。</div>
+</div>
+
+<div class="card wide">
+<h2>⑤ 粒度梯度（MACRO 原序→打亂，m2v；括號 = 因果 m2）</h2>
+<table>
+<tr><th>粒度</th><th class="k-v3">v3 手工</th><th class="k-v4">v4 手工</th><th class="k-lb">LB VLM</th><th class="k-dv2">DINOv2</th><th class="k-fus">FUS</th></tr>
+<tr><td>原序（不打亂）</td><td>.812 (.786)</td><td>.916 (.893)</td><td>.923 (.916)</td><td>.918 (.909)</td><td><b>.940</b> (.930)</td></tr>
+<tr><td>GT 段打散</td><td>.703 (.638)</td><td>.799 (.740)</td><td class="live">.909 (.879)</td><td class="live">.913 (.889)</td><td>.873 (.814)</td></tr>
+<tr><td>30s 段打散</td><td>.759 (.709)</td><td>.864 (.832)</td><td class="live">.919 (.911)</td><td class="live">.917 (.904)</td><td>.929 (.901)</td></tr>
+<tr><td>10s 段打散</td><td>.597 (.511)</td><td>.726 (.615)</td><td class="live">.917 (.871)</td><td class="live">.902 (.869)</td><td>.832 (.737)</td></tr>
+<tr><td><b>5s 段打散</b></td><td class="die">.401 (.331)</td><td class="die">.487 (.399)</td><td class="live">.894 (.797)</td><td class="live">.889 (.791)</td><td>.648 (.546)</td></tr>
+</table>
+<div style="margin-top:8px">
+<div class="bar"><em class="k-v4">v4 5s 打散</em><span class="tr"><b style="width:91.6%;background:var(--v4)"></b><u style="width:48.7%;background:var(--v4)"></u></span><s>.916→<b class="die">.487</b></s></div>
+<div class="bar"><em class="k-lb">LB 5s 打散</em><span class="tr"><b style="width:92.3%;background:var(--lb)"></b><u style="width:89.4%;background:var(--lb)"></u></span><s>.923→<b class="live">.894</b></s></div>
+<div class="bar"><em class="k-fus">FUS 5s 打散</em><span class="tr"><b style="width:94.0%;background:var(--fus)"></b><u style="width:64.8%;background:var(--fus)"></u></span><s>.940→.648</s></div>
+<div class="dim">淡 = 原序，實 = 打亂後。30s 檔傷害最小：切點與 30s chunk 對齊，chunk 內大多完整；5s = 每 chunk 6 個剪接點。</div>
+</div>
+</div>
+
+<div class="card wide">
+<h2>⑥ 講稿三句話 ＋ Q&A 防身</h2>
+<div class="say">1. <b>原序部署：融合最強</b> — FUS 94.0%（因果 93.0%），全系統遠勝規則 FSM 0.699。</div>
+<div class="say">2. <b>打亂 = 順序魯棒性壓力測試</b> — 手工時序特徵腿隨切碎密度崩（v4: 92→80→86→73→<b class="die">49</b>），
+凍結 VLM/DINOv2 embedding 是瞬時特徵，<b class="live">幾乎不動（92→89）</b>：順序魯棒性住在 embedding 腿。</div>
+<div class="say">3. <b>不是 model 壞，是特徵設計的取捨</b> — 時序窗換來原序精度，代價是剪接脆弱；
+若要順序魯棒可加 splice augmentation 重訓融合（管線現成）。</div>
+<ul class="dim">
+<li>「作弊嗎？」→ 預設 m2v 是離線上限（chunk 內看未來，+2~5pt）；因果 m2 頁面全數字都在，結論不變</li>
+<li>「LB/DV2 為何不掉？」→ 每秒 emission 打亂前後 bit 級相同（實測），只剩 HMM 先驗小額罰款</li>
+<li>「準確率怎麼算？」→ 每秒 label 全等 / 總秒數，LODO，GT 來自 /play_recipe feedback</li>
+<li>「30s 打散為何反而變好？」→ 切點對齊 30s chunk，chunk 內容大多完整連續</li>
+<li>工具：四頁 player（原序/打亂 × 離線/因果）+ 六格 model internals（YOLO mask / ViT PCA）同步影片</li>
+</ul>
+</div>
+
+</div>
