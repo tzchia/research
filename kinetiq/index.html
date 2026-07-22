@@ -159,7 +159,76 @@
     <li><a href="#compare">合讀：和 Anthropic「Claude Plays Robotics」對照</a></li>
     <li><a href="#takeaway">重點筆記：對狀態偵測專案的啟示</a></li>
   </ol>
+  <div style="margin-top:10px;font-size:13.5px">◎ 先修：<a href="#abbr">縮寫速查表</a>（BC、IK、RL、VLA、CFM、PPO……全文縮寫一次講清）</div>
 </nav>
+
+<!-- ============ ABBR ============ -->
+<section id="abbr">
+  <h2><span class="num">00</span>縮寫速查表</h2>
+  <p class="sec-sub">全文出現過的縮寫，按主題分組——讀到卡住就跳回來查</p>
+
+  <h3>學習範式</h3>
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>縮寫</th><th>全名</th><th>意思</th></tr>
+    <tr><td><strong>RL</strong></td><td>Reinforcement Learning（強化學習）</td><td>不給示範，讓系統自己試錯：做對給 reward、做錯給懲罰，policy 朝「長期報酬最大」的方向更新。P2 全篇的主角。</td></tr>
+    <tr><td><strong>BC</strong></td><td>Behavior Cloning（行為克隆）</td><td>模仿學習的最基本形式：收集人類（遙操作）示範，用監督式學習訓 policy 去複製示範動作。快但有天花板——速度、品質被示範者鎖死，也學不到「失敗的代價」。</td></tr>
+    <tr><td><strong>DAgger</strong></td><td>Dataset Aggregation</td><td>模仿學習的迭代改良法：讓 policy 自己跑、專家對它犯錯的狀態給出正確動作、把這些修正併回資料集再訓。解決「policy 一偏離示範分佈就沒資料可學」的問題。</td></tr>
+  </table>
+  </div>
+
+  <h3>模型與架構</h3>
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>縮寫</th><th>全名</th><th>意思</th></tr>
+    <tr><td><strong>LLM</strong></td><td>Large Language Model（大型語言模型）</td><td>吃文字、出文字的大模型（GPT、Claude、Gemini 這類）。文中 System 2 用的「frontier model」就是最強一批的 LLM。</td></tr>
+    <tr><td><strong>VLM</strong></td><td>Vision-Language Model（視覺語言模型）</td><td>在 LLM 上加視覺輸入：吃圖＋文字、出文字。網路級圖文預訓練給了它認物體、懂場景、聽指令的先驗。</td></tr>
+    <tr><td><strong>VLA</strong></td><td>Vision-Language-Action model</td><td>再往前一步：吃相機畫面＋語言指令＋機器人狀態，直接輸出<em>機器人動作</em>的神經網路。通常拿 VLM 當 backbone、接上 action head。KinetIQ System 1 的本體。</td></tr>
+    <tr><td><strong>CLS token</strong></td><td>classification token</td><td>Transformer 慣例：在輸入序列前掛一個特殊 token，訓練後它會匯聚整個序列的資訊。P2 的 critic 就是讀一個可訓練的 CLS token、過線性層輸出 value 估計。</td></tr>
+    <tr><td><strong>FSM</strong></td><td>Finite State Machine（有限狀態機）</td><td>「狀態＋轉移條件」的離散流程模型。出現在筆記節：我們的食譜 FSM。</td></tr>
+  </table>
+  </div>
+
+  <h3>生成式動作頭與 RL 演算法</h3>
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>縮寫</th><th>全名</th><th>意思</th></tr>
+    <tr><td><strong>CFM</strong></td><td>Conditional Flow Matching（條件流匹配）</td><td>與 diffusion 同族的生成技術：學一個「速度場」，把隨機噪聲沿著它積分、逐步變形成目標輸出（這裡是動作軌跡）。擅長表達「同一情境有多種合理動作」的多峰分佈——π0.5、GR00T N1 等頂尖 VLA 的 action head 都用它。</td></tr>
+    <tr><td><strong>ODE / SDE</strong></td><td>Ordinary / Stochastic Differential Equation（常微分／隨機微分方程）</td><td>CFM 採樣本質上是解一條<em>確定性</em> ODE——給定噪聲起點，結果唯一，算不出「這個動作的機率」。在每步積分注入高斯噪聲就變成 SDE，每步有可解的高斯密度 → RL 需要的 log-prob 有了，噪聲還順便當探索。</td></tr>
+    <tr><td><strong>PPO</strong></td><td>Proximal Policy Optimization（近端策略優化）</td><td>目前最通用的 policy-gradient RL 演算法（也是 LLM RLHF 的主力）：用「新舊 policy 機率比」加權更新，並把這個比值 clip 在小範圍內，防止單次更新走太遠而崩潰。</td></tr>
+    <tr><td><strong>GAE</strong></td><td>Generalized Advantage Estimation（廣義優勢估計）</td><td>PPO 的標準配件：計算「這個動作比平均好多少」（advantage）時，在偏差與變異之間用一個 λ 參數折衷。</td></tr>
+    <tr><td><strong>Flow-GRPO / Flow-SDE / πRL</strong></td><td>—</td><td>非縮寫、是方法名：近一年把 RL 接上流匹配 policy 的幾篇代表作。P2 實測後棄用 Flow-GRPO（極度樣本低效），最終方案「近似 Flow-SDE 的 PPO」。</td></tr>
+  </table>
+  </div>
+
+  <h3>控制與硬體</h3>
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>縮寫</th><th>全名</th><th>意思</th></tr>
+    <tr><td><strong>IK</strong></td><td>Inverse Kinematics（逆運動學）</td><td>古典機器人學：給定末端（手掌／夾爪）想到達的位置與姿態，反解出各關節該轉多少度。「逆」是相對於正運動學（給關節角算末端位置）。優點：可顯式下硬約束、行為可預測——KinetIQ 上半身控制的基礎。</td></tr>
+    <tr><td><strong>FPS</strong></td><td>frames per second</td><td>本文特殊用法：不是畫面幀率，是 <em>policy 動作序列的執行頻率</em>。用高於資料採集的 FPS 播放＝sport mode，機器人動得比示範快。</td></tr>
+    <tr><td><strong>wrench</strong></td><td>力旋量</td><td>非縮寫、是術語：力＋力矩的六維合稱。P2 監控手腕 wrench 超閾值就急停縮手（痛覺反射）。</td></tr>
+    <tr><td><strong>H100 / Hopper / Blackwell</strong></td><td>—</td><td>NVIDIA 資料中心 GPU：H100 屬 Hopper 世代，Blackwell 是下一代。P2 的 trainer 跑在這些上面。</td></tr>
+    <tr><td><strong>Jetson Thor</strong></td><td>—</td><td>NVIDIA 的機器人邊緣運算模組——裝在機器人身上跑推論的那顆電腦。與 trainer GPU 的數值差異就是「sampler-trainer gap」的來源。</td></tr>
+    <tr><td><strong>UMI</strong></td><td>Universal Manipulation Interface</td><td>手持夾爪式資料收集裝置（Stanford／TRI 系工作）：人拿著它做任務就能收操作示範，不需要真的開機器人。Humanoid 把 UMI 相容性直接寫進硬體設計需求。</td></tr>
+    <tr><td><strong>HMND 01</strong></td><td>—</td><td>Humanoid 公司的機器人產品型號。</td></tr>
+    <tr><td><strong>GR00T / π0.5 / MolmoAct</strong></td><td>—</td><td>開放 VLA 模型名：NVIDIA GR00T N1（及 N1.7）、Physical Intelligence π0.5、AI2 MolmoAct（Anthropic 那篇拿來被監督的 policy）。</td></tr>
+  </table>
+  </div>
+
+  <h3>營運與評測</h3>
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>縮寫</th><th>全名</th><th>意思</th></tr>
+    <tr><td><strong>UPH</strong></td><td>Units Per Hour（每小時件數）</td><td>工業吞吐指標——機器人在產線上「值不值錢」的直接量尺。</td></tr>
+    <tr><td><strong>A/B</strong></td><td>A/B testing（A/B 測試）</td><td>兩組同期對照實驗。P2 用約 10% 額度跑凍結舊 policy 當同期基線，把「環境漂移」從「訓練增益」裡剝出來。</td></tr>
+    <tr><td><strong>WMS</strong></td><td>Warehouse Management System（倉儲管理系統）</td><td>管庫存、揀貨、上下架的企業軟體；System 3 要對接的外部系統之一。</td></tr>
+    <tr><td><strong>EMS</strong></td><td>（製造端平台，原文未展開）</td><td>依上下文指工廠端的生產調度／製造服務平台（如 Electronics Manufacturing Services 電子代工），特點是按單即時重排產能。</td></tr>
+    <tr><td><strong>API</strong></td><td>Application Programming Interface（應用程式介面）</td><td>程式對程式的呼叫介面；「API 推論」＝走網路呼叫雲端模型。</td></tr>
+    <tr><td><strong>GVL</strong></td><td>Generative Value Learning</td><td>筆記節引用的方法：讓 VLM 零訓練直接對影片幀輸出「任務完成百分比」——與 P2 的 time-to-completion value head 同一思路。詳見<a href="../state-detection/index.html">狀態偵測八篇對讀</a>。</td></tr>
+  </table>
+  </div>
+</section>
 
 <!-- ============ TLDR ============ -->
 <section id="tldr">
