@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinetIQ 兩篇導讀 — Humanoid 的四層認知架構與真機 VLA 強化學習</title>
+<meta name="description" content="英國人形機器人新創 Humanoid 兩篇技術文章中文導讀：KinetIQ AI Stack Overview（System 0–3 四層認知架構：50Hz 全身控制、10Hz VLA、agentic 執行層、Petri-net 車隊調度）與 KinetIQ Ascend（生產級 VLA 上的真機 RL：PPO × 流匹配、24/7 訓練、機台上料 +42%、交付 80%→98%、雙臂搬箱 78%→99%）。並查證：模型完全沒有公開——無 weights、無 code、無 dataset、無論文。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#ffa657; --accent-deep:#bd561d; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  .pb{display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:999px;vertical-align:middle;margin-right:8px}
+  .pb.b1{background:rgba(121,192,255,.15);color:var(--blue);border:1px solid rgba(121,192,255,.4)}
+  .pb.b2{background:rgba(126,231,135,.13);color:var(--green);border:1px solid rgba(126,231,135,.4)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img,figure video{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figure.dark{background:#0a0d12}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--blue),#1f6feb)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:27px;font-weight:700;color:var(--green);line-height:1.1}
+  .kcard .big small{font-size:15px;color:var(--dim);font-weight:400}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard.c1 .big{color:var(--blue)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.blue{border-left-color:#1f6feb}
+  .callout.red{border-left-color:var(--red)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.blue .tag{color:var(--blue)}
+  .callout.red .tag{color:var(--red)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  tr:last-child td{border-bottom:none}
+  td{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  td:first-child{color:var(--fg);font-family:var(--sans);font-size:13.5px}
+  table.compare td{white-space:normal;text-align:left;font-family:var(--sans);font-size:13.5px;vertical-align:top;line-height:1.6}
+  table.compare th{text-align:left}
+  .good{color:var(--green);font-family:var(--mono);font-weight:700}
+  .bad{color:var(--red);font-family:var(--mono)}
+
+  .steps{counter-reset:s;margin:22px 0}
+  .step{display:flex;gap:16px;margin-bottom:14px;align-items:flex-start}
+  .step::before{counter-increment:s;content:counter(s);flex:0 0 30px;height:30px;border-radius:50%;background:var(--bg3);border:1px solid var(--accent-deep);color:var(--accent);font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .step div{flex:1}
+  .step b{color:#fff}
+  .step p{font-size:14px;color:var(--muted);margin:2px 0 0}
+
+  .limits{display:grid;gap:12px;margin:22px 0}
+  .limit{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;font-size:14.5px}
+  .limit .t{color:var(--orange);font-weight:700;margin-right:8px}
+
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+  @media(max-width:640px){.duo{grid-template-columns:1fr}}
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:20px 0}
+  @media(max-width:760px){.trio{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--bg2);padding:16px 18px}
+  .panel h4{font-size:14px;margin-bottom:10px;font-family:var(--mono);letter-spacing:.04em}
+  .panel.t1{border-top:3px solid var(--blue)} .panel.t1 h4{color:var(--blue)}
+  .panel.t2{border-top:3px solid var(--green)} .panel.t2 h4{color:var(--green)}
+  .panel.t3{border-top:3px solid var(--orange)} .panel.t3 h4{color:var(--orange)}
+  .panel.t4{border-top:3px solid var(--purple)} .panel.t4 h4{color:var(--purple)}
+  .panel ul{margin:0 0 0 18px;font-size:13.5px}
+  .panel li{margin-bottom:6px;color:var(--muted)}
+  .panel li code{color:var(--fg)}
+  .panel p{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+
+  .eq{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:18px 0;font-family:var(--mono);font-size:15px;text-align:center;overflow-x:auto;line-height:2;color:#dbe4ee}
+  .eq .l{color:var(--accent)} .eq .g{color:var(--green)} .eq .o{color:var(--orange)} .eq .r{color:var(--red)}
+  .eq sub,.eq sup{font-size:.68em}
+  .eqnote{font-size:13px;color:var(--muted);text-align:center;margin-top:-10px;margin-bottom:18px;font-family:var(--mono)}
+
+  nav.toc{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:44px;font-size:14px}
+  nav.toc .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+  nav.toc ol{margin:0 0 0 20px;columns:2;column-gap:36px}
+  @media(max-width:640px){nav.toc ol{columns:1}}
+  nav.toc li{margin-bottom:4px;break-inside:avoid}
+
+  footer{padding:36px 0 60px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Humanoid (thehumanoid.ai) · Tech Blog × 2 · 2026-02 / 2026-06</div>
+    <h1>KinetIQ 兩篇導讀：<br>四層認知架構 × 生產級 VLA 的真機強化學習</h1>
+    <p class="subtitle">倫敦人形機器人新創 Humanoid 的 AI 全棧。第一篇畫出 System 0–3 的認知分層（50Hz 全身控制 → 10Hz VLA → 單機 agentic 執行 → Petri-net 車隊調度）；第二篇 KinetIQ Ascend 把 RL 直接跑在真實雙臂人形硬體上、24/7 練生產任務——機台上料吞吐 +42%、物品交付成功率 80%→98%、雙臂搬箱 78%→99%。<strong>另外回答一個問題：他們的 model 有沒有公開？——沒有，一項都沒有。</strong></p>
+    <div class="meta">
+      <span class="pb b1">P1</span>KinetIQ: AI Stack Overview · <a href="https://thehumanoid.ai/technology/kinetiq-ai-stack-overview/">thehumanoid.ai/technology/kinetiq-ai-stack-overview</a> · 2026-02-05<br>
+      <span class="pb b2">P2</span>KinetIQ Ascend: Toward 100% Reliable Manipulation and Superhuman Speed · <a href="https://thehumanoid.ai/technology/kinetiq-ascend/">thehumanoid.ai/technology/kinetiq-ascend</a> · 2026-06-25<br>
+      整理：<a href="https://github.com/tzchia/research">tzchia/research</a> · 相關：<a href="../claude-robotics/index.html">Anthropic Claude Plays Robotics 導讀</a>
+    </div>
+  </div>
+</header>
+
+<main><div class="wrap">
+
+<nav class="toc">
+  <div class="t">目錄</div>
+  <ol>
+    <li><a href="#tldr">30 秒速覽</a></li>
+    <li><a href="#open">先回答：model 有公開嗎？</a></li>
+    <li><a href="#arch">P1 · System 0–3：四層認知架構</a></li>
+    <li><a href="#sys0">P1 · System 0：IK 上身 + RL 下身的混合全身控制</a></li>
+    <li><a href="#sys1">P1 · System 1：自建 VLA——CFM head、非同步推論、能力工廠</a></li>
+    <li><a href="#sys23">P1 · System 2/3：frontier model 執行層 + Petri-net 車隊</a></li>
+    <li><a href="#why-rl">P2 · 為什麼模仿學習到不了 99.9%</a></li>
+    <li><a href="#algo">P2 · 演算法：PPO × 流匹配、prefix loss</a></li>
+    <li><a href="#ops">P2 · 真機工程實戰：安全反射、A/B 基線、數值鴻溝、速度課程</a></li>
+    <li><a href="#results">P2 · 三個生產任務的成績單 + 兩個驚喜</a></li>
+    <li><a href="#compare">合讀：和 Anthropic「Claude Plays Robotics」對照</a></li>
+    <li><a href="#takeaway">重點筆記：對狀態偵測專案的啟示</a></li>
+  </ol>
+</nav>
+
+<!-- ============ TLDR ============ -->
+<section id="tldr">
+  <h2><span class="num">01</span>30 秒速覽</h2>
+  <p class="sec-sub">一句話：架構篇給「分層」，Ascend 篇給「真機 RL 把 BC 天花板打穿」的第一手工程記錄</p>
+
+  <div class="cards">
+    <div class="kcard c1"><div class="big">4 層</div><div class="lbl">System 0（50Hz 全身控制）→ 1（10Hz VLA）→ 2（單機 agentic 執行）→ 3（車隊 Petri-net 調度），層層把下層當工具</div></div>
+    <div class="kcard c2"><div class="big">80→98<small>%</small></div><div class="lbl">物品交付成功率，真機 RL 三天練成——失敗率降 10 倍；雙臂搬箱 77.6→98.9%（降 ~20 倍）</div></div>
+    <div class="kcard"><div class="big">+42<small>%</small></div><div class="lbl">機台上料吞吐（291→412 環/小時），只對「揀取」這半個任務做 RL，整條任務跟著變快</div></div>
+    <div class="kcard c3"><div class="big">0<small> 項公開</small></div><div class="lbl">無 weights、無 code/SDK、無 dataset、無論文——KinetIQ 全專有；他們是開放模型（GR00T、Isaac）的使用者</div></div>
+  </div>
+
+  <ul>
+    <li><strong>P1（架構篇）</strong>：借 Kahneman 的 System 1/2 術語擴成四層。最有辨識度的兩個設計：上半身用<em>古典 IK</em>（跨平台共用、可下硬約束）、下半身用 <em>RL 步態</em>（把上身動作當外部擾動）；System 2 直接用擅長 tool-use 的 <em>frontier 大模型</em>當單機大腦。</li>
+    <li><strong>P2（Ascend 篇）</strong>：在生產級 CFM VLA 上跑真機 PPO，宣稱是<em>「據我們所知，第一個發表的、在真實雙臂人形硬體上對生產 VLA 做端到端視覺 RL」</em>。三個任務、每個只花 3–5 天機器時間；交付與搬箱的成功率推到 98–99%，上料的主指標是吞吐（+42%）。</li>
+    <li><strong>兩個超出預期的發現</strong>：只對任務最難的片段做 RL，整條任務都變好（沒練的部分不退化）；只用一種物體（水瓶）練，沒見過的罐頭 +40%——<em>RL 改善的是「揀取」這個通用技能，不是過擬合單一物體</em>。</li>
+    <li><strong>工程含金量最高的三節</strong>：prefix conditioning 在 RL 下的隱性崩壞（沒人發表過的失敗模式）、真實環境非平穩性要用 10% 額度跑凍結基線做線上 A/B、edge（Jetson Thor）與 trainer（Hopper/Blackwell）的數值差異會毒化 PPO importance ratio——在 trainer 端重算 log-prob 解掉。</li>
+    <li><strong>商業邏輯</strong>：目標 99.9% 成功率 @ 人類或超人速度；部署後車隊繼續用同一套 RL loop 自我改進，主管介入＝負 reward，每台部署機器人都是 rollout worker。</li>
+  </ul>
+
+  <div class="callout green">
+    <span class="tag">One-liner</span>
+    P1 說「我們把機器人腦子切成四層，每層把下層當工具」；P2 說「其中 System 1 那層，我們已經能在真機上用 RL 磨到接近部署等級——而且 scaling 曲線長得像 LLM」。合起來是一份罕見的、量產導向人形機器人公司的全棧自白。
+  </div>
+
+  <figure class="dark">
+    <img src="figs/a3.png" alt="KinetIQ Ascend 執行摘要圖：三個生產任務（機台上料、物品交付、雙臂搬箱）的吞吐與成功率提升總覽">
+    <figcaption><b>P2 摘要圖</b>Ascend 三任務總覽：機台上料吞吐 +42%；物品交付吞吐 +85%、成功率 80%→98%；雙臂搬箱吞吐 2 倍多、成功率 78%→99%。全部只用「幾天」的真機時間。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ OPENNESS ============ -->
+<section id="open">
+  <h2><span class="num">02</span>先回答：model 有公開嗎？——沒有，一項都沒有</h2>
+  <p class="sec-sub">查證日期 2026-07-22 · HuggingFace / GitHub / arXiv / 官網與新聞稿全查</p>
+
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>項目</th><th>狀態</th><th>查證細節</th></tr>
+    <tr><td><strong>自家模型權重</strong></td><td class="bad">✗ 無</td><td>HuggingFace 搜 <code>kinetiq</code>、<code>HMND</code> 皆空；無官方 HF 組織（thehumanoid → 404）</td></tr>
+    <tr><td><strong>程式碼 / SDK</strong></td><td class="bad">✗ 無</td><td>GitHub 搜 kinetiq 231 個結果全是同名無關專案（ERP、健身 app…）；無官方 GitHub org、無開發者計畫</td></tr>
+    <tr><td><strong>資料集</strong></td><td class="bad">✗ 無</td><td>HF datasets 無；無任何資料釋出公告</td></tr>
+    <tr><td><strong>論文</strong></td><td class="bad">✗ 無</td><td>arXiv 搜 KinetIQ / HMND 01 / thehumanoid.ai 零命中——這兩篇「technical deep dive」是部落格文，結尾是徵才不是釋出</td></tr>
+    <tr><td><strong>使用別人的開放模型</strong></td><td class="good">✓ 有</td><td>GTC 2026-03 公告採用 <strong>NVIDIA Isaac GR00T N1.7</strong>（開放 reasoning VLA）與開放的 <strong>Isaac Sim / Isaac Lab</strong>，edge 用 Jetson Thor；Ascend 文中把 π0.5、GR00T N1 引為 CFM VLA 的 prior art</td></tr>
+  </table>
+  </div>
+
+  <p>媒體報導（如 humanoid.press 資料庫）一律把 KinetIQ 描述為 <strong>proprietary</strong>。P1 文中只說 System 1 的 VLA「用一個 VLM 當 backbone」，<em>連是哪個 VLM 都沒講</em>；3B 參數量與 34ms 推論延遲（同樣出自 P1）已是公開的全部細節。定位很清楚：這家公司走「軟體實力＝護城河」路線，公開的是<em>工程經驗</em>（部落格寫得相當坦白），不是<em>資產</em>（模型、碼、資料全留在牆內）。</p>
+
+  <div class="callout">
+    <span class="tag">Caveat</span>
+    查證覆蓋 HF / GitHub / arXiv API 與英文媒體。不排除有「只給客戶的私有 SDK」存在，但公開世界裡零痕跡。想跑他們的方法，只能拿開放的替代品自己拼：π0.5 / GR00T N1.7 當 VLA，Flow-SDE / πRL 系的論文當 RL 配方——好在 P2 把配方細節寫得夠多（見第 08–09 節）。
+  </div>
+</section>
+
+<!-- ============ P1 ARCH ============ -->
+<section id="arch">
+  <h2><span class="num">03</span><span class="pb b1">P1</span>System 0–3：四層認知架構</h2>
+  <p class="sec-sub">借 Stanovich/West → Kahneman 的雙系統術語，擴成機器人版的四層</p>
+
+  <figure class="dark">
+    <img src="figs/s1.jpg" alt="KinetIQ 主視覺：Humanoid 機器人與 AI 堆疊示意">
+    <figcaption><b>P1 主視覺</b>KinetIQ 是 Humanoid 全產品線（工業、服務、家用）共用的 AI 棧——文章開頭的展示影片裡，同一套棧跨兩種機身、多個時間尺度同時調度多個相關任務。</figcaption>
+  </figure>
+
+  <figure class="dark">
+    <img src="figs/s3.svg" alt="KinetIQ 四層架構圖：System 3 車隊協調、System 2 單機協調、System 1 VLA 移動操作網路、System 0 全身控制器">
+    <figcaption><b>P1 架構圖</b>四層各管一個時間尺度與調度範圍。每層從上層收目標、把下層當「agentic 工具」呼叫——這個「層層互為工具」的設計讓每一層可以獨立開發、測試、替換。</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step"><div><b>System 3 — 車隊層</b><p>把多台機器人當工具，完成外部定義的 fleet 級目標（訂單、工單）。時間尺度：秒～分鐘以上。</p></div></div>
+    <div class="step"><div><b>System 2 — 單機執行層</b><p>協調一台機器人，把導航、移動操作等能力當 agentic 工具呼叫。純離散符號狀態，不碰連續控制。</p></div></div>
+    <div class="step"><div><b>System 1 — VLA 移動操作網路</b><p>把 System 2 給的自然語言目標（「lift the tote」）轉成目標姿態（末端執行器、軀幹、骨盆），<strong>10Hz</strong>。</p></div></div>
+    <div class="step"><div><b>System 0 — 全身控制器</b><p>達成 System 1 給的目標姿態，同時維持動態穩定，<strong>50Hz</strong>；底下還有 1kHz 的柔順低階控制層吸收衝擊。</p></div></div>
+  </div>
+
+  <p>作者自己預告：<em>「層與層的邊界會隨時間越來越模糊」</em>——但以當前 AI 技術狀態，這個分解在「做得出來的能力」和「系統透明度」之間取了平衡，對一家商業公司來說是 time-to-market 的考量。誠實。</p>
+</section>
+
+<!-- ============ SYS0 ============ -->
+<section id="sys0">
+  <h2><span class="num">04</span><span class="pb b1">P1</span>System 0：IK 上身 + RL 下身的混合全身控制</h2>
+  <p class="sec-sub">上半身跨平台共用、下半身各自為政——為了讓 VLA 無痛跨機身</p>
+
+  <figure class="dark">
+    <img src="figs/s4.svg" alt="混合全身控制圖：共享的上身 IK 控制器 + 雙足專屬的 RL 步態 policy">
+    <figcaption><b>P1 混合控制</b>輪式和雙足機器人<strong>共用同一套上身 IK 控制器</strong>（手臂、軀幹、頭），下身則各自實作（輪式底盤 vs 雙足 RL policy）。上身控制對機身不變 → VLA 操作策略跨機器人乾淨遷移。</figcaption>
+  </figure>
+
+  <p>為什麼上身堅持用古典 IK 而不是全學習？兩個理由值得抄：</p>
+  <ul>
+    <li><strong>執行期可配置。</strong>IK 的冗餘解算可以顯式調——精密任務偏向只動手臂、需要延伸範圍時才動軀幹，用「控制器變體 + 參數」暴露給上層。</li>
+    <li><strong>硬約束可保證。</strong>policy 層很難可靠保證的幾何約束，IK 層做得到。例：雙手搬塑膠箱（tote）時強制鎖定兩個末端執行器的<em>相對位姿</em>，物體姿態全程不變形、不施加過大的力——System 1 可以按需開關這種「約束模式」。</li>
+  </ul>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/s5.mp4"></video>
+      <figcaption><b>P1 影片</b>開啟相對位姿約束的搬箱：雙臂維持與箱體幾何相容的相對姿態，避免過度施力。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/s6.mp4"></video>
+      <figcaption><b>P1 影片</b>上身獨立控制，下身自己維持平衡並追蹤目標骨盆位姿——兩者解耦。</figcaption>
+    </figure>
+  </div>
+
+  <p>雙足下身是純模擬訓練的 RL policy：把上身動作當<strong>外部擾動</strong>處理，以骨盆為主要運動參考。System 1 透過「目標骨盆位姿」介面影響走、轉、蹲，平衡與復原則由下身 policy 自主解決。訓練上的一個反主流選擇：<strong>刻意少用 domain randomization</strong>，改靠精確的系統辨識（system identification）對齊模擬與真實動力學——得到「不保守、但穩」的步態。</p>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/s7.mp4"></video>
+      <figcaption><b>P1 影片</b>模擬評測（一）：隨機上身動作與隨機外力擾動下的步態穩定性與復原。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/s8.mp4"></video>
+      <figcaption><b>P1 影片</b>模擬評測（二）：同上，另一組隨機場景。</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout blue">
+    <span class="tag">代價（原文自己承認）</span>
+    這個解耦刻意犧牲了「全身協同」的表達力：人類在高動態場景會用手臂和軀幹一起維持平衡，但這裡上身操作<strong>不參與</strong>平衡。近期有走統一 policy 的研究（BeyondMimic 等），但對「可預測、強健、跨機身重用」優先的商用場景，他們選結構化分解——門留著，等學習方法成熟再收緊。
+  </div>
+
+  <p>還有一個伏筆：System 0 用「目標姿態」當輸入介面，天然對齊<strong>末端執行器空間的資料來源</strong>——UMI 式手持夾爪、第一人稱影片。他們的硬體設計明確要求 UMI 裝置盡量貼近現有機器人的運動學，把 embodiment gap 壓低。資料策略藏在控制介面的選擇裡。</p>
+</section>
+
+<!-- ============ SYS1 ============ -->
+<section id="sys1">
+  <h2><span class="num">05</span><span class="pb b1">P1</span>System 1：自建 VLA——CFM head、非同步推論、能力工廠</h2>
+  <p class="sec-sub">VLM backbone + 可換的 action head · 3B 模型 H100 上 34ms · edge 部署導向</p>
+
+  <figure class="dark">
+    <img src="figs/s9.svg" alt="System 1 VLA 架構圖：VLM backbone 處理多相機輸入、語言目標與機器人狀態，經 action head 輸出動作">
+    <figcaption><b>P1 VLA 架構</b>VLM backbone（吃多相機 + 語言目標 + 機器人狀態）→ 專門的 action decoder 出動作。動作以 chunk 預測（1–2 秒視野），執行端 30–50Hz——chunking 把「推論速度」和「控制頻率」解耦。</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Action head 刻意做成可插拔。</strong>CFM（conditional flow matching）head 微調到新任務又穩又快——3B CFM VLA 在 H100 上推論 34ms。但 CFM 的 RL 還不成熟，autoregressive head 能直接接上 LLM 界磨了多年的 RL 工具鏈——所以同一個 backbone 同時支援兩種 head。（這個「head 不可知」的堅持，在 P2 的 prefix conditioning 設計裡再次出現。）</li>
+    <li><strong>VLM backbone 不是終點。</strong>作者直說 VLM 對動力學和物理感知差——訓練訊號太靜態、太高層。他們押注影片生成 backbone（引 mimic-video、Cosmos Policy）會補上這塊，架構已預留無痛換模的空間。</li>
+    <li><strong>Value head 預測 time-to-completion。</strong>除了出動作，再訓一個頭預測「距離成功還剩幾步」：數字持續下降＝順利，躺平＝出事，訊號回流 System 2 觸發重試/換策略/上報。還能對<em>單一動作</em>估值——推論時採樣多個 action chunk、挑「會更快成功」的那個，用推論算力換 policy 表現。</li>
+  </ul>
+
+  <h3>非同步推論與 prefix conditioning</h3>
+  <p>雲端推論有網路延遲抖動，同步推論會走走停停，更會把 policy 推出訓練分佈。解法是非同步：上一個 chunk 還在執行時就預測下一個。但這樣模型是拿「舊世界」在做預測——chunk 交接處會有頓挫。已知解法（diffusion 圈的 real-time chunking / inpainting）只適用 CFM，他們要 head 不可知，所以自創 <strong>prefix conditioning</strong>：把「推論期間會被執行掉的那段動作」當額外輸入餵給模型，訓練時模型學會把這段照抄進輸出、然後平滑接續。訓練時隨機採樣 prefix 長度 → 一個模型容忍各種延遲條件。</p>
+
+  <figure class="narrow dark">
+    <img src="figs/s10.svg" alt="prefix conditioning 示意圖：把將於推論期間執行的動作片段作為條件輸入">
+    <figcaption><b>P1 Prefix conditioning</b>純靠 conditioning，不依賴任何 flow matching 特性 → 任何 action head 都能用。這個機制在 P2 的 RL 訓練裡會出大事（見第 08 節）。</figcaption>
+  </figure>
+
+  <h3>能力工廠（capability factory）</h3>
+  <p>對 VLA 的零樣本泛化不抱幻想：<em>「zero-shot generalization to arbitrary novel behaviors remains out of reach for VLA technology for now」</em>。商業解法是把「快速造出新行為」工具化：資料收集、整理、標注、訓練、評測一條龍，目標是<strong>讓沒有工程學位的 robot trainer 用幾小時、幾個示範就能養出一個部署級行為</strong>。遙操作和自主執行走同一套記錄棧，DAgger、拿成功 rollout 回訓都很自然。兩個具體技巧：</p>
+
+  <ul>
+    <li><strong>Behavior gluing：</strong>一個 prompt 對應的行為可以由多個子行為拼成。機台上料裡「揀」難而吃資料、「搬」簡單——把示範資料集中花在難的那段，不用收端到端長示範，也不用把子行為調度推給 System 2 增加複雜度。</li>
+    <li><strong>Sport-mode 資料前處理：</strong>想讓 policy 跑得比示範快，直接加速執行會壞事——夾爪本來就在最大速度運轉，手臂加速後會「還沒夾到就開走」。解法：在<em>資料端</em>做非線性加速，脆弱片段（抓取）保持 1x，其餘加速——做成 recipe 給 curator 一鍵套用。</li>
+  </ul>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/s11.mp4"></video>
+      <figcaption><b>P1 影片</b>同一份資料訓的三個 policy：1x 基準、天真 2.6x 執行端加速（快但爛）、sport-mode 資料端加速（快且穩）。</figcaption>
+    </figure>
+    <figure style="margin:0">
+      <img src="figs/s12.svg" alt="機台上料三指標比較圖：UPH 吞吐、每小時搬運次數、揀取成功率">
+      <figcaption><b>P1 評測</b>三個維度：UPH（每小時件數）、每臂搬運效率、揀取成功率。天真加速動作快了但成功率崩，吞吐反而次優；資料端加速兩頭兼顧。</figcaption>
+    </figure>
+  </div>
+
+  <p>但文末已經預告：各種 recipe 都是過渡，<strong>長期押注 RL</strong> 才是打穿模仿學習天花板的正路——這就是四個月後 P2 的主題。</p>
+</section>
+
+<!-- ============ SYS23 ============ -->
+<section id="sys23">
+  <h2><span class="num">06</span><span class="pb b1">P1</span>System 2/3：frontier model 執行層 + Petri-net 車隊調度</h2>
+  <p class="sec-sub">單機大腦是「會用工具的 LLM」，車隊大腦是「有記憶和策略的 Petri net」</p>
+
+  <h3>System 2：一切皆工具</h3>
+
+  <figure class="narrow dark">
+    <img src="figs/s13.svg" alt="System 2 示意圖：機器人能力（導航、操作、感知查詢、復原行為、內部服務）作為工具集">
+    <figcaption><b>P1 System 2</b>導航、操作 policy、感知查詢、復原行為、甚至重定位/重啟硬體/切控制模式這種內部操作，全部包成帶「前置條件 + 結果」的工具。古典規劃器、學習 policy、手寫復原行為可以共存在同一個介面後面。</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>直接用 frontier 大模型。</strong>「Our layered approach allows us to leverage state-of-the-art frontier models for System 2 which excel at tool-use.」因為 System 2 只碰離散符號狀態，對網路延遲跟抖動皆穩健——所以可以用又大又慢的雲端模型。</li>
+    <li><strong>失敗是常態不是例外。</strong>每次工具呼叫都被進度訊號監控（含 System 1 的 value 預測），依訊號決定續跑/重試/換策略/上報 System 3。<em>「機器人不需要完美的模型或 policy，只需要夠豐富的工具箱＋會隨機應變的控制層。」</em></li>
+    <li><strong>人在迴路＝換人拿工具。</strong>操作員用自然語言下新指示、給提示、做修正，不用全程遙操作；這些介入被記錄下來餵資料飛輪，讓系統將來自己會恢復。</li>
+  </ul>
+
+  <h3>System 3：工作流是活的</h3>
+
+  <figure class="narrow dark">
+    <img src="figs/s14.svg" alt="System 3 Petri-net 式工作流示意圖：places、transitions、tokens">
+    <figcaption><b>P1 System 3</b>概念上最接近「帶記憶與策略的 Petri net」：place＝狀態、transition＝條件滿足時可發生的操作、token＝流經網路的機器人/工單/物件。</figcaption>
+  </figure>
+
+  <p>與傳統自動化管線的差異：工作流<strong>不是固定腳本</strong>，是執行期可演化的活物件——機器人故障或復原、任務超時、人為介入、優先級變動，都靠啟用/停用 transition 重塑執行。排程是連續指派問題：不求全域最優解，維護一個滾動的工作分配，決策「軟且可逆」。外部系統（WMS、EMS、dashboard）的輸入被當成一等公民 transition；反向也持續回報執行狀態——雙向回饋讓 System 3 慢慢從「手工編排」演化成「資料驅動調度」。</p>
+</section>
+
+<!-- ============ P2 WHY RL ============ -->
+<section id="why-rl">
+  <h2><span class="num">07</span><span class="pb b2">P2</span>為什麼模仿學習到不了 99.9%</h2>
+  <p class="sec-sub">目標：99.9% 成功率 @ 人類或超人速度——BC 的三個天花板</p>
+
+  <figure class="dark">
+    <video controls muted playsinline preload="metadata" src="figs/a1.mp4"></video>
+    <figcaption><b>P2 開場影片</b>KinetIQ Ascend 三個生產任務的 RL 訓練與成果集錦。</figcaption>
+  </figure>
+
+  <p>工業產線的門檻不講情面：一台機器人在工位上一天重複幾千次，要嘛幾乎不失敗、跟得上人的節奏，要嘛沒有存在價值。行為克隆（BC）撐到今天，但三個結構性天花板擋在部署前面：</p>
+
+  <div class="trio">
+    <div class="panel t1">
+      <h4>① 速度與品質被示範者鎖死</h4>
+      <p>policy 繼承遙操作資料的速度上限。直接加速播放撞物理：夾爪最快就那麼快，加速後手臂「還沒抓穩就走人」。P1 的 sport-mode 資料前處理是啟發式，推太猛就失效。</p>
+    </div>
+    <div class="panel t2">
+      <h4>② 被動模仿學不到「失敗的代價」</h4>
+      <p>BC 只看好行為，從不知道壞行為多貴。「學會做什麼，幾乎沒學到不該做什麼」——這在安全問題上最致命。</p>
+    </div>
+    <div class="panel t3">
+      <h4>③ 因果混淆（causal confusion）</h4>
+      <p>操作員決策時用的資訊（長期記憶、更多算力、不同視角）policy 看不到，模仿就會抓到「可見但虛假的相關訊號」。熟悉場景完美，相關性一斷就崩。</p>
+    </div>
+  </div>
+
+  <p>RL 三個都正面解：對顯式 reward 做試錯，在<em>真實物理動力學</em>裡優化，不被示範綁住 → 速度與品質都能超過示範者；虛假相關遲早導致任務失敗 → RL 偵測並壓制，直接打長尾。KinetIQ 本來就在 System 0 用 RL 練步態，<strong>Ascend 把 RL 沿著棧往上推到 System 1 的操作 VLA</strong>。</p>
+
+  <div class="callout green">
+    <span class="tag">他們的核心主張</span>
+    真機 RL 的 reward 曲線和模擬曲線<strong>貼著同一條軌跡走</strong>，而模擬那條已經例行性到 100%——「剩下的距離，靠機器時間和算力就能關上，不缺方法」。這是他們宣稱 line of sight to our reliability target（99.9%）、標題喊 Toward 100% 的依據。以及一句 LLM 人聽了會心一笑的話：<em>「scaling trend mirrors what reasoning models did for language」</em>。
+  </div>
+
+  <figure class="dark">
+    <img src="figs/a4.png" alt="模擬與真機在同一任務上的 RL reward 訓練曲線對比：兩條曲線緊密吻合">
+    <figcaption><b>P2 sim vs real</b>同一任務，模擬（可跑到 100%）與真機的 reward 曲線在已跑的範圍內緊密重合。sim 與 real 的 RL 表現高度相關——所以方法研究在 sim 做（快而便宜），正式訓練在真機做（沒有 sim-to-real gap 要關）。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ P2 ALGO ============ -->
+<section id="algo">
+  <h2><span class="num">08</span><span class="pb b2">P2</span>演算法：PPO × 流匹配、prefix loss</h2>
+  <p class="sec-sub">CFM policy 的 log-prob 不可解 → ODE 轉 SDE · 已發表方法全數不夠用 · 一個沒人寫過的失敗模式</p>
+
+  <h3>基礎設施：訓練與推論徹底分離</h3>
+  <p>一個廠區可能同時幾百台機器人，把即時相機流全部推到資料中心不現實 → 推論在機上（Jetson Thor）。RL 棧配合同一約束：<strong>trainer 在雲端伺服器持有權重跑更新，rollout 收集委託給薄介面後的 worker</strong>——worker 連上來、拉權重、跑 rollout、回傳 transition。worker 可以是機器人上的 Jetson，也可以是雲端模擬器，同一次訓練可以同時吃真機和模擬的 rollout。吞吐隨 worker 數擴展。</p>
+
+  <figure class="dark">
+    <img src="figs/a5.png" alt="分離式訓練架構圖：雲端 trainer 與機器人／模擬器 rollout worker 透過統一介面通訊">
+    <figcaption><b>P2 基礎設施</b>「部署後車隊自我改進」用的就是同一套 loop——每台部署機器人都是 rollout worker，主管介入標記為負 reward，訓練吞吐隨車隊規模成長。</figcaption>
+  </figure>
+
+  <h3>PPO on CFM：怎麼對流匹配 policy 算機率</h3>
+  <p>CFM policy 出動作＝抽噪聲、積分一個學到的速度場（確定性 ODE）——RL 需要「policy 給這個動作多少機率」，而這個機率精確計算不可行。標準解法：<strong>把採樣 ODE 轉成 SDE</strong>，每個積分步注入高斯噪聲，每步就有可解的高斯密度 → log-prob 有了，噪聲順便當探索驅動。已發表的方法他們全試過（在 sim 大規模測）：</p>
+
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th>方法</th><th>在他們的規模/難度下</th></tr>
+    <tr><td>ReinFlow</td><td>零到微小的改善，不穩定</td></tr>
+    <tr><td>Flow Policy Optimization</td><td>最簡單的操作環境可以，難的不行</td></tr>
+    <tr><td>Flow-GRPO</td><td>工業任務可以，但<strong>極度</strong>樣本低效</td></tr>
+    <tr><td>Reinforce Adjoint Matching</td><td>表現同 Flow-GRPO，宣稱的樣本效率增益沒看到</td></tr>
+    <tr><td><strong>最終採用：近似 Flow-SDE 的 PPO</strong></td><td class="good">樣本效率、訓練穩定性、超參數魯棒性的最佳平衡；單一套超參數通吃所有模擬環境</td></tr>
+  </table>
+  </div>
+
+  <ul>
+    <li>噪聲只注入<strong>一個隨機選擇的積分步</strong>（效果好且訓練快）；<strong>最後一步永遠無噪聲</strong>（減少動作抖動）；噪聲量開到「不明顯劣化 policy 的最高檔」。</li>
+    <li><strong>用回歸 critic 的 PPO，不用 critic-free。</strong>妙論證：馬達控制的 value estimation 比推理任務可解得多——「演化上古老、簡單的生物神經迴路就做得很好」。Flow-GRPO 那批 critic-free 方法樣本低效，缺準確 credit assignment 可能就是主因。policy 和 critic 權重完全分離，都從同一個 BC checkpoint 初始化；critic 讀一個可訓練 CLS token 過線性投影出 value。</li>
+  </ul>
+
+  <figure class="dark">
+    <img src="figs/a6.png" alt="actor-critic 架構圖：policy 與 critic 分離權重，皆由 BC checkpoint 初始化">
+    <figcaption><b>P2 Actor–Critic</b>目標函數＝標準 clipped PPO + GAE，再加下面的 prefix-CFM 項。</figcaption>
+  </figure>
+
+  <h3>Prefix loss：一個沒人發表過的崩壞模式</h3>
+  <p>P2 的設定：模型預測 2 秒 chunk（30Hz 動作），正常營運只執行前 200ms 就重規劃；非同步推論靠 P1 引入的 prefix conditioning 保持 chunk 交接平滑——BC 時模型學會「照抄 prefix + 平滑接續」。<strong>RL 一來，這個機制悄悄崩掉：</strong></p>
+
+  <figure class="dark">
+    <img src="figs/a7.png" alt="action chunk 與 prefix 示意圖">
+    <figcaption><b>P2 Action chunks</b>prefix＝「下個 chunk 推論期間會被執行掉的當前 chunk 片段」。</figcaption>
+  </figure>
+
+  <p>RL 只獎勵<em>實際執行</em>的動作，copied prefix 永遠拿不到 reward → 沒有東西逼模型繼續照抄 → 模型開始違反交接平滑性換取短期 reward → 下個 chunk 的 prefix 取自上個 chunk 的預測，預測一漂，餵回去的 conditioning 就出分佈，再把下個預測推得更歪——<strong>逐 chunk 複利放大</strong>。表現形式：不做任務的關節（閒置的手臂、軀幹）慢慢漂移，最後震盪、訓練發散。作者：「沒在別處看過這個失敗模式的描述，但任何用類似 action-prefix conditioning 的 RL 設定遲早會撞上。」</p>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a8.mp4"></video>
+      <figcaption><b>P2 影片</b>長時間 RL 後的手臂漂移——prefix 漂移的具象化。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <img src="figs/a9.png" alt="RL 訓練中 prefix 回饋迴路示意圖">
+      <figcaption><b>P2 示意</b>上：無約束時 prefix 出分佈 → 預測更歪 → prefix 更歪的正回饋迴路；下：加入 CFM prefix loss（見下文）強制照抄 prefix，交接恢復平滑。</figcaption>
+    </figure>
+  </div>
+
+  <p>解法簡單漂亮：在 PPO 目標裡加一項 masked CFM 回歸損失，強制預測的 chunk 從給定 prefix 出發——不論 reward，所有 chunk 一律適用（這是個普適性質，不是任務目標）：</p>
+
+  <div class="eq">ℒ<sub>PPO</sub> = ℒ<sup>clip</sup><sub>π</sub> <span class="l">+</span> λ<sub>V</sub>·ℒ<sub>V</sub> <span class="l">+</span> <span class="g">λ<sub>pref</sub>·ℒ<sub>prefix-CFM</sub></span></div>
+  <div class="eqnote">clipped PPO policy loss + value loss + prefix 的 masked CFM 回歸損失</div>
+
+  <figure class="dark">
+    <img src="figs/a10.png" alt="閒置手臂漂移與 CFM prefix loss 隨訓練演變圖：無 prefix loss 時漂移與 loss 同步惡化，啟用後保持穩定">
+    <figcaption><b>P2 驗證</b>vanilla run（無 prefix loss）：prefix loss 追蹤漂移、在漂移最糟處同時到頂；啟用 prefix loss 後漂移消失、訓練全程穩定。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ P2 OPS ============ -->
+<section id="ops">
+  <h2><span class="num">09</span><span class="pb b2">P2</span>真機工程實戰：安全反射、A/B 基線、數值鴻溝、速度課程</h2>
+  <p class="sec-sub">這節是全文含金量最高的部分——四個「教科書上沒有」的實戰課</p>
+
+  <h3>① 探索期的硬體保命</h3>
+  <p>重物 + 24/7 + RL 探索（有些新動作就是破壞性的）＝硬體損耗複利。兩道防線：</p>
+  <ul>
+    <li><strong>主動柔順（active compliance）：</strong>意外接觸時手臂讓步、降接觸力——但只在關節行程內有效，一到行程極限，力直接灌進結構。</li>
+    <li><strong>痛覺反射：</strong>監控手腕 wrench（力/力矩），超過安全閾值立刻停止執行，然後<em>倒放最近的指令</em>快速縮手。因為 episode 在安全違規時終止，RL 隱式學會少觸發反射——BC 做不到這件事：模仿只能對「已經施加的力」反應，RL 學會一開始就不施加過大的力。</li>
+  </ul>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a11.mp4"></video>
+      <figcaption><b>P2 影片</b>基於力-力矩訊號的自動終止（側邊對照）。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <img src="figs/a12.png" alt="安全學習雙圖：安全終止率隨訓練下降、揀取成功率同步上升">
+      <figcaption><b>P2 安全學習</b>安全終止率隨訓練從 ~0.4 降到 ~0.02，揀取成功率同步上升——RL 學會「一開始就不施加過大的力」。</figcaption>
+    </figure>
+  </div>
+
+  <p><strong>Reward 設計刻意稀疏而通用</strong>：核心是單一二元任務成功 reward + 少數容易偵測的可恢復錯誤懲罰（如 misgrasp，幫 credit assignment）；<em>不加</em>速度密集項——discount 因子本身就是時間壓力；安全走隱式（違規即終止）。沒有任何任務特定項 → 新能力的 RL 設定只要「定義成功 + 挑要顯式懲罰的錯誤類型」。密集 shaping 那條路被明確棄用：要任務特定實驗、容易被鑽漏洞、還常需要真實世界拿不到的特權資訊（物體座標）。</p>
+
+  <div class="eq">ℛ = r<sub>task_success</sub> <span class="l">+</span> α·r<sub>recoverable_error</sub></div>
+
+  <h3>② 真實環境會漂移——線上 A/B 基線</h3>
+  <p>「reward 從 0.6 升到 0.75」＝訓練有效？<strong>不一定。</strong>真實環境非平穩：日夜光照循環、操作員換班（重置環境的手勢各有偏差）、硬體磨損。解法：<strong>約 10% 的 episode 用凍結的參考 policy（RL 前的起始 policy）跑</strong>，只用於監控——線上 A/B 測試。下面三張圖是完整的方法論教學：</p>
+
+  <div class="trio">
+    <figure class="dark" style="margin:0">
+      <img src="figs/a13.png" alt="看似有效的 RL 訓練曲線：reward 從 0.6 升到 0.75">
+      <figcaption><b>P2 陷阱</b>看起來明顯的勝利：reward 0.6 → 0.75。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <img src="figs/a14.png" alt="同一 run 加上 A/B 基線：基線同步上升，RL 實際無增益">
+      <figcaption><b>P2 真相</b>加上 A/B 基線：基線漲得一樣多——這個 run 其實<strong>零增益</strong>，漲的是環境不是 policy。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <img src="figs/a15.png" alt="真正有效的 run：RL 曲線明顯拉開基線且優勢隨訓練擴大">
+      <figcaption><b>P2 真增益</b>真正的贏：RL 明顯拉開基線，且優勢隨訓練擴大。<em>本文所有增益都以此法（對照同期基線）報告。</em></figcaption>
+    </figure>
+  </div>
+
+  <h3>③ Sampler-trainer gap：edge 與雲的數值鴻溝</h3>
+  <p>PPO 的每個梯度項都掛著 importance ratio（當前 policy 機率 ÷ 採樣時機率），ratio 錯＝更新錯，容易發散。而他們的 rollout 在 Jetson Thor 上跑、訓練在 Hopper/Blackwell 上跑——不同編譯器、kernel、數值精度、隨 batch size 變化的運算路徑，加上推論棧為延遲做了激進優化 → <strong>同一份權重、同一個動作，兩邊算出的機率不一樣</strong>。徹底消除（batch-invariant kernel、對齊 dtype……）只能做一半，因為 sampler 必須釘死在生產推論棧上——RL 要在部署條件下訓練。</p>
+  <p>解法：<strong>不用推論端回報的機率，在 trainer 端用計算梯度的同一份模型重算 log-prob</strong> 進 importance ratio；同時持續監控兩邊差距、反過來調推論棧讓差距別太大（差距越大，更新越 off-policy 越噪）。</p>
+
+  <figure class="dark">
+    <img src="figs/a16.png" alt="三組訓練對比：float32 基準、naive bfloat16、bfloat16+重算 log-prob；後者緊貼 float32 基準">
+    <figcaption><b>P2 驗證</b>float32 基準（不實用但沒數值問題）vs naive bf16（掉隊）vs bf16+trainer 端重算（緊貼基準）。看 PPO importance ratio 標準差：健康的 run 呈鋸齒狀（每個 epoch 開頭 ratio 歸一），naive bf16 沒有。</figcaption>
+  </figure>
+
+  <h3>④ 速度課程：把「加速」變成定向探索</h3>
+  <p>policy 輸出的是一段目標位姿序列，想多快播就多快播（他們稱執行頻率為 policy 的 FPS，超過資料採集頻率＝sport mode）。單獨拉 FPS 到某個點品質就崩（世界不會跟著加速）；但<strong>配上 RL：拉高 FPS → 接受品質下跌 → 在快的狀態下繼續訓練 → policy 學會新速度下的時序與修正</strong>。這其實是一種朝「更快行為」的定向探索——ODE-to-SDE 的動作噪聲只做局部探索，快的行為靠隨機亂踩很難踩到。經驗法則：<strong>速度要小步階梯式拉</strong>，一次跳太大，分佈偏移大到 reward 崩過 RL 能救回的點。</p>
+
+  <figure class="dark">
+    <img src="figs/a17.png" alt="速度課程圖：60→75→90 FPS，每步品質先跌後由 RL 恢復；直接跳 90 FPS 的基線品質崩潰">
+    <figcaption><b>P2 速度課程</b>基準 policy 原生 60 FPS、reward ~0.8。拉到 75 FPS 品質掉到 ~0.4 → RL 練回原 reward（此時已是 1.25x 速度）→ 再拉 90 FPS，再跌再練回（1.5x）。對照：基準 policy 直接跑 90 FPS 品質爛到 RL 都不一定救得回。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ P2 RESULTS ============ -->
+<section id="results">
+  <h2><span class="num">10</span><span class="pb b2">P2</span>三個生產任務的成績單 + 兩個驚喜</h2>
+  <p class="sec-sub">全部在雙臂 Alpha 系統上 · 起點都是遙操作資料訓的 BC baseline · 同一套配方零任務客製</p>
+
+  <div class="tablewrap">
+  <table>
+    <tr><th>任務</th><th>機器時間</th><th>吞吐</th><th>成功率</th><th>週期/時長</th></tr>
+    <tr><td><strong>機台上料</strong>（bin 裡撿軸承環→輸送帶）</td><td>~5 天</td><td class="good">291 → 412 環/hr（+42%）</td><td>揀取 0.60 → 0.67</td><td>27.2s → 19.5s</td></tr>
+    <tr><td><strong>物品交付</strong>（雜亂 tote 撿物→遞給人）</td><td>~3 天</td><td class="good">+85%</td><td class="good">80% → 98%（失敗 ↓10 倍）</td><td>時長 −35%</td></tr>
+    <tr><td><strong>雙臂搬箱</strong>（任意朝向的 tote 雙臂舉起）</td><td>~4 天</td><td class="good">122 → 279 箱/hr（2.3 倍）</td><td class="good">77.6% → 98.9%（失敗 ↓~20 倍）</td><td>22.9s → 12.8s（−44%）</td></tr>
+  </table>
+  </div>
+
+  <h3>機台上料：只練「揀」，整條任務跟著快</h3>
+  <p>任務兩段：從雜亂 bin 揀環（難）、搬到輸送帶（簡單），同一個 BC policy 端到端執行。<strong>RL 只練揀取段</strong>（它有自動化 reward），速度課程 60→75→90 FPS。每次提速，regrasp 率先上升（手臂比夾爪快，「還沒夾穩就走」），RL 再把抓取可靠性練回來。最終 +42% 吞吐：週期 27.2→19.5 秒、揀取成功率 0.60→0.67，cycle time 的信賴區間也收緊——不只平均變快，慢的離群值也變少。</p>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <img src="figs/a18.png" alt="機台上料結果圖：吞吐、揀取成功率、週期時間的 baseline vs RL 比較">
+      <figcaption><b>P2 上料結果</b>吞吐/揀取成功率/週期時間，baseline vs RL。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a19.mp4"></video>
+      <figcaption><b>P2 影片</b>機台上料 baseline vs RL（6 倍速側邊對照）。</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout green">
+    <span class="tag">驚喜一</span>
+    <strong>對半個任務做 RL，整個任務受益，沒練的部分不退化。</strong>搬運段從沒被 RL 碰過，policy 照樣端到端把整條任務跑在課程收斂到的高速上。意義：不必端到端改善行為，把珍貴的機器時間全花在瓶頸段（通常是最難的那段）就好。
+  </div>
+
+  <h3>物品交付：只練水瓶，罐頭跟著變好</h3>
+  <p>服務場景：從雜亂 tote 抓物遞給站在面前的人，人接走算成功（評測 30 秒逾時）。BC baseline 的訓練資料涵蓋多種物體，<strong>RL 期間只練水瓶</strong>，三天。結果：水瓶上全指標改善（吞吐 +85%、時長 −35%、成功率 80→98%）；然後拿 RL 沒見過的物體來考——</p>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <img src="figs/a20.png" alt="水瓶交付結果圖：吞吐、成功率、時長 baseline vs RL">
+      <figcaption><b>P2 交付結果</b>RL 練過的水瓶：全指標改善。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a21.mp4"></video>
+      <figcaption><b>P2 影片</b>水瓶撿取 baseline vs RL（6 倍速）。</figcaption>
+    </figure>
+  </div>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <img src="figs/a22.png" alt="泛化結果圖：未見過的罐頭 +40%、變形袋 +13%">
+      <figcaption><b>P2 泛化</b>圓柱罐頭（形狀近似瓶）：吞吐 +40%；軟性小袋（形狀迥異、抓法 RL 沒機會練）：+13%，部分因為 baseline 本來就強。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a23.mp4"></video>
+      <figcaption><b>P2 影片</b>罐頭（RL 未見過）撿取 baseline vs RL（6 倍速）。</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout green">
+    <span class="tag">驚喜二</span>
+    <strong>單一物體的 RL 改善的是「揀取」這個通用技能，不是過擬合那個物體。</strong>加碼驗證：baseline 可以被指定用左手或右手撿，RL 完全沒練過手臂指定——練完後指令合規性完好無損，就算 tote 被故意放在「不准用的那隻手」旁邊也照樣服從。與上料任務「搬運段毫髮無傷」相互印證：RL 的改善是局部的、外溢是正向的。
+  </div>
+
+  <h3>雙臂搬箱：同一套配方，零修改</h3>
+  <p>兩臂同時作用在同一個物體上的協調，是前兩個任務都沒有的。<strong>同一個 PPO-on-CFM 目標、同一個稀疏 reward、同一組超參數、同一個速度課程，一字不改</strong>，四天：吞吐 122→279 箱/hr，時長 22.9→12.8 秒，成功率 77.6→98.9%。「方法開箱即用地處理了一個實質不同的任務」——這是他們宣稱 Ascend 具備通用性、能加速產品路線圖的底氣。</p>
+
+  <div class="duo">
+    <figure class="dark" style="margin:0">
+      <img src="figs/a24.png" alt="雙臂搬箱結果圖：吞吐、成功率、時長 baseline vs RL">
+      <figcaption><b>P2 搬箱結果</b>失敗率 ~20 倍下降，99.9% 目標在望。</figcaption>
+    </figure>
+    <figure class="dark" style="margin:0">
+      <video controls muted playsinline preload="metadata" src="figs/a25.mp4"></video>
+      <figcaption><b>P2 影片</b>雙臂搬箱 baseline vs RL（6 倍速）。</figcaption>
+    </figure>
+  </div>
+
+  <h3>Discussion 裡的四個戰略宣言</h3>
+  <ul>
+    <li><strong>BC 的角色改變：</strong>有 RL 在後面，BC 不用再產出部署級 policy，只要「覆蓋對的行為模式」——RL 壓制無效的、放大並打磨有效的。</li>
+    <li><strong>車隊出貨後繼續學：</strong>部署車隊跑的就是今天這套分離式 RL loop；主管介入＝該避免的失敗標記；資料收集不再是獨立活動，<em>每台部署機器人都是 rollout worker</em>。</li>
+    <li><strong>RL 當資料引擎：</strong>所有 rollout 都存檔進下一代模型的預訓練混合——真機收的，零 embodiment gap。policy 變好 → 資料變好 → 基模變強 → 下輪 RL 更快更便宜，複利。</li>
+    <li><strong>24/7 RL＝部署預演：</strong>硬體在客戶之前先被當部署條件操，設計與營運問題趁便宜的時候浮出來。</li>
+  </ul>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section id="compare">
+  <h2><span class="num">11</span>合讀：和 Anthropic「Claude Plays Robotics」對照</h2>
+  <p class="sec-sub">同一個月讀的兩份材料，剛好是同一張圖的兩面（<a href="../claude-robotics/index.html">Anthropic 篇導讀</a>）</p>
+
+  <div class="tablewrap">
+  <table class="compare">
+    <tr><th></th><th>Anthropic（評測視角）</th><th>Humanoid KinetIQ（產品視角）</th></tr>
+    <tr><td><strong>問的問題</strong></td><td>通用 LLM 接上機器人<em>能</em>做什麼？（安全評估）</td><td>怎麼把機器人做到 99.9% 可部署？（商業交付）</td></tr>
+    <tr><td><strong>LLM 的位置</strong></td><td>被測物：直接控制全滅，監督 pretrained policy 才有戲</td><td>System 2：<em>直接採用 frontier model 當單機執行層</em>——正是 Anthropic 驗證「可行」的那個位置</td></tr>
+    <tr><td><strong>低階控制</strong></td><td>LLM 寫 Python 控制器，Go2 平衡 ~2 秒</td><td>不讓大模型碰：IK + RL 步態 50Hz，專職專層</td></tr>
+    <tr><td><strong>VLA 誰說了算</strong></td><td>LLM 監督 MolmoAct，量測 follow rate 與否決品味</td><td>System 2 監控 System 1 的 value 訊號（time-to-completion），決定重試/換招/上報</td></tr>
+    <tr><td><strong>latency 觀</strong></td><td>即時控制要 83Hz，API 推論 0.2–0.4Hz → 暫停模擬器測上限</td><td>用架構吃掉 latency：chunking + prefix conditioning + 非同步推論，離散符號層才給慢模型</td></tr>
+    <tr><td><strong>從經驗學習</strong></td><td>in-context、短視野（最近 6–12 步），重試才變強</td><td>權重級：真機 PPO 直接改 policy；部署後規劃把主管介入當 reward</td></tr>
+  </table>
+  </div>
+
+  <div class="callout blue">
+    <span class="tag">合讀結論</span>
+    Anthropic 用 4 種介面掃出「LLM 在機器人棧裡的能力地形」——高階監督可行、低階控制免談；KinetIQ 的四層架構<strong>就是按這個地形蓋的房子</strong>：frontier model 只放在離散、慢、工具化的 System 2，10Hz 以下全部交給專用網路。Anthropic 的安全結論（「接了什麼」決定影響力量級）在這裡具象化成一家公司的產品架構。
+  </div>
+</section>
+
+<!-- ============ TAKEAWAY ============ -->
+<section id="takeaway">
+  <h2><span class="num">12</span>重點筆記：對狀態偵測專案的啟示</h2>
+  <p class="sec-sub">連續視覺流 + 下層 FSM 的人，從這兩篇能搬走什麼</p>
+
+  <div class="limits">
+    <div class="limit"><span class="t">① Value head＝進度感，躺平＝出事</span>System 1 用 time-to-completion 頭給 System 2 進度訊號：數字持續下降＝順利，平台期＝該介入。搬到煮食狀態偵測：讓 VLM 對每幀吐「距離下一個狀態轉移還有多久」的估計，<strong>平台化的進度估計就是異常偵測器</strong>——比只回報「目前狀態」多一個免費的自我監控通道（GVL 式進度百分比同款思路）。</div>
+    <div class="limit"><span class="t">② 非平穩環境：凍結基線做線上 A/B</span>日夜光照、操作員換班、硬體磨損會讓「起點 reward」失效——他們花 10% 額度跑凍結 policy 當同期基線。我們的廚房一樣非平穩（晨昏光線、鍋具更換、鏡頭微移）：評估任何 pipeline 改動，<strong>留一份固定舊版本在同批影像上同步跑</strong>，漲跌對照同期基線，不對照上週的數字。</div>
+    <div class="limit"><span class="t">③ 稀疏而通用的訊號設計</span>reward＝二元成功 + 少數「容易偵測的錯誤」顯式懲罰，拒絕任務特定 shaping。對應：狀態轉移判定規則保持極簡（主判定 + 少數硬否決條件），別為每道菜寫一堆特化規則——特化規則就是他們說的「會被鑽漏洞、不可規模化」的密集 shaping。</div>
+    <div class="limit"><span class="t">④ 把訓練資源砸在瓶頸段</span>behavior gluing + 「只 RL 揀取段」兩度證明：難的段落吃掉絕大部分失敗，而且<strong>局部改善會外溢、不會破壞其他段</strong>。我們的對應：35 趟錄影的標注預算，集中花在最難判的轉移（如「將沸/已沸」邊界），簡單狀態少標——不必均勻覆蓋整條時間軸。</div>
+    <div class="limit"><span class="t">⑤ 數值一致性是分散式系統的隱形殺手</span>Jetson 和 H100 對同一權重算出不同機率，毒化整個 RL。任何「edge 推論 + 雲端訓練/評估」的架構都有同款風險：<strong>版本、精度、前處理在兩端對不齊，評測數字就不可信</strong>。我們若在邊緣盒子跑推論、雲端做評估，先做「同輸入雙端輸出一致性」檢查。</div>
+    <div class="limit"><span class="t">⑥ 想要的行為踩不到，就設計課程</span>速度課程的本質：目標行為（高速）離現有分佈太遠，隨機探索到不了 → 階梯式把分佈拖過去，每步讓系統先恢復再前進。對應到模型迭代：想讓偵測器適應新鍋具/新菜色，別一次全換，混入比例階梯式上調。</div>
+  </div>
+
+  <div class="callout green">
+    <span class="tag">一句話帶走</span>
+    P1 的架構學＝「每層只做自己時間尺度內做得好的事，層間用工具介面說話」；P2 的工程學＝「真機 RL 可行，但可行的代價是把安全反射、同期基線、數值一致性、課程設計全部做對」。兩篇都是部落格，含金量勝過多數論文——可惜，程式碼和模型一行都沒放出來。
+  </div>
+</section>
+
+</div></main>
+
+<footer>
+  <div class="wrap">
+    來源：Humanoid（thehumanoid.ai）— KinetIQ: AI Stack Overview（2026-02-05）、KinetIQ Ascend（2026-06-25）· 37 張原圖/影片收錄（影片經壓縮）· 模型公開狀態查證於 2026-07-22 · 本頁為中文研讀筆記，非官方翻譯 · 產生於 2026-07-22
+  </div>
+</footer>
+
+</body>
+</html>
