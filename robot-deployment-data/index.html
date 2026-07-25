@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機器人部署資料到底值多少錢？— Chris Paxton 部署飛輪懷疑論中文速覽</title>
+<meta name="description" content="It Can Think（Chris Paxton）2026-07-21 文章中文速覽：為什麼大多數機器人部署產生的資料，價值遠低於你的想像。部署悖論、97–99.9% 成功率門檻、小米自攻螺帽 90.2%→98% 花 4 個月、18+6N 維度詛咒（N=10 時 10^78 ≈ 已知宇宙原子數）、Sontakke 與 Vedder 的「novelty pump」論，以及僅剩的兩條出路。含全部 5 張原圖。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  nav.toc{background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  nav.toc .wrap{display:flex;gap:4px;padding-top:0;padding-bottom:0}
+  nav.toc a{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding:12px 12px;white-space:nowrap;border-bottom:2px solid transparent}
+  nav.toc a:hover{color:var(--accent);text-decoration:none;border-bottom-color:var(--accent)}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figure.dark{background:#0a0d12}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+
+  /* 部署悖論循環圖 */
+  .loop{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .loop .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .loop .step .t{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .loop .step .d{color:var(--muted);font-size:13px;line-height:1.55}
+  .loop .step strong{display:block;font-size:15px;margin-bottom:4px}
+  .loop .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;padding:0 8px;font-family:var(--mono)}
+  .loopback{margin:10px auto 0;max-width:640px;text-align:center;font-family:var(--mono);font-size:12.5px;color:var(--red);border:1px dashed var(--red);border-radius:999px;padding:8px 18px}
+  @media(max-width:720px){
+    .loop{grid-template-columns:1fr}
+    .loop .arr{transform:rotate(90deg);padding:4px 0}
+  }
+
+  /* 維度詛咒 log-scale 條 */
+  .dimchart{margin:26px 0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:22px 22px 16px}
+  .dimchart .title{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+  .dimrow{display:grid;grid-template-columns:110px 1fr 120px;gap:12px;align-items:center;margin-bottom:14px}
+  .dimrow .lb{font-size:13.5px;color:var(--fg);font-family:var(--mono)}
+  .dimrow .bar{height:22px;border-radius:6px;background:linear-gradient(90deg,var(--accent-deep),var(--accent));position:relative}
+  .dimrow.r2 .bar{background:linear-gradient(90deg,#bd561d,var(--orange))}
+  .dimrow.r3 .bar{background:linear-gradient(90deg,#8e2a30,var(--red))}
+  .dimrow .val{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right}
+  .dimref{display:grid;grid-template-columns:110px 1fr 120px;gap:12px;align-items:center;margin-bottom:10px;opacity:.75}
+  .dimref .bar{height:0;border-top:2px dashed var(--dim);position:relative}
+  .dimref .lb{font-size:12px;color:var(--dim)}
+  .dimref .val{font-family:var(--mono);font-size:12px;color:var(--dim);text-align:right}
+  .dimnote{font-size:12.5px;color:var(--dim);margin-top:8px;line-height:1.6}
+  @media(max-width:600px){.dimrow,.dimref{grid-template-columns:70px 1fr 90px}}
+
+  /* 小米進度 */
+  .srchart{margin:26px 0;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:22px}
+  .srchart .title{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+  .srtrack{position:relative;height:34px;background:var(--bg3);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .srfill{position:absolute;inset:0;width:90.2%;background:linear-gradient(90deg,#8e2a30,var(--orange));border-radius:999px}
+  .srfill.after{width:98%;background:linear-gradient(90deg,#1f6e37,var(--green))}
+  .srlabel{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:13px;font-weight:700;color:#0d1117}
+  .srrow{margin-bottom:14px}
+  .srrow .cap{font-size:13px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)}
+  .srgoal{position:relative;margin-top:6px;height:0}
+  .srnote{font-size:12.5px;color:var(--dim);margin-top:14px;line-height:1.6}
+
+  /* 推文卡 */
+  .tweet{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:22px 0;font-size:14.5px}
+  .tweet .who{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+  .tweet .who .n{font-weight:700;color:#fff}
+  .tweet .who .h{font-family:var(--mono);font-size:12.5px;color:var(--dim)}
+  .tweet .body{color:var(--fg);line-height:1.7;white-space:pre-line}
+  .tweet .stats{margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">It Can Think · Blog Digest · 繁中速覽</div>
+    <h1>機器人部署資料，到底值多少錢？</h1>
+    <p class="subtitle">Chris Paxton 對「部署資料飛輪」的懷疑論：大多數機器人部署本質上不可規模化，而它們產出的資料，幾乎肯定比你想的更不值錢。</p>
+    <div class="meta">
+      原文：<a href="https://itcanthink.substack.com/p/how-much-is-robot-deployment-data">How Much Is Robot Deployment Data Worth?</a>（It Can Think, Substack）<br>
+      作者 Chris Paxton　|　發表 2026-07-21　|　本頁為繁中摘譯與解析，所有數字皆出自原文，並標註出處段落
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#quick">30 秒速覽</a>
+    <a href="#claim">核心論點</a>
+    <a href="#tasks">任務分佈</a>
+    <a href="#why">維度詛咒</a>
+    <a href="#novelty">新穎性</a>
+    <a href="#industrial">工業路線</a>
+    <a href="#final">結語</a>
+    <a href="#notes">我的筆記</a>
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字，讀完就抓到全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">97–99.9<small>%+</small></div>
+      <div class="lbl">機器人要在真實世界做有用的工作，多數任務所需的成功率門檻（§任務分佈）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">90.2→98<small>%</small></div>
+      <div class="lbl">小米 EV 工廠「自攻螺帽插入」任務，花了約 4 個月才從上線水準磨到接近量產品質（§任務分佈）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">10<small>^78</small></div>
+      <div class="lbl">雙臂移動操作 + 10 個物件、每維只取 10 個樣本點的狀態空間 ≈ 已知宇宙的原子數（§維度詛咒）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">2<small> 條出路</small></div>
+      <div class="lbl">找到天然充滿新任務的環境（例如家庭）；或養一支會自己「發明新任務」的頂尖 ops 團隊（§結語）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    部署要求高成功率 → 高成功率靠「把問題限縮」達成 → 被限縮的問題產出的資料，對下一個問題幾乎沒有幫助——因為機器人是極高維度的問題空間。<strong>這就是部署資料飛輪的悖論。</strong>
+  </div>
+
+  <figure>
+    <img src="fig1-hero.jpg" alt="文章題圖" loading="lazy">
+    <figcaption><b>原圖 1</b>文章題圖（原文標註：Image from Google Gemini，為 AI 生成示意圖）。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 核心論點 ─────────── -->
+<section id="claim">
+  <h2><span class="num">§1</span>核心論點：對「常識」的反駁</h2>
+  <p class="sec-sub">連 Tesla 都還沒靠純資料規模跑通，你的倉庫部署憑什麼？</p>
+
+  <p>近來機器人圈流行強調「真實世界部署」的重要性——這已成 common wisdom。表面上很合理：真實資料稀缺，而部署最終才是機器人公司的營收來源。</p>
+
+  <p>但 Paxton 提出反論：<strong>部署很重要，但大多數機器人部署本質上不可規模化</strong>——需要龐大的專門支援團隊與大量資源維護，而且這些部署產出的資料，「幾乎肯定比你以為的更沒價值」。</p>
+
+  <p>只有極少數類別的部署能近乎無限地規模化——例如<em>自動駕駛</em>。因為那個「單一任務」價值夠高，無止盡地蒐集同領域資料真的有效。但即使在這個對部署最有利的理想案例中，<strong>資料規模化至今仍然不夠</strong>：Tesla 擁有數百萬英里的駕駛資料，光靠這些資料並沒有做出完全自駕的 robotaxi——他們現在在 Austin 等城市部署的是「駕駛員在迴圈內」的 robotaxi，實質上是在蒐集<em>介入資料</em>（intervention data）來改進模型。</p>
+
+  <div class="loop">
+    <div class="step">
+      <div class="t">Step 1</div>
+      <strong>部署的前提</strong>
+      <div class="d">機器人必須在特定任務上達到極高成功率（97–99.9%+）才能創造價值</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 2</div>
+      <strong>達標的捷徑</strong>
+      <div class="d">最簡單的方法：把問題限縮（constrain）——固定場景、固定物件、固定流程</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 3</div>
+      <strong>資料的代價</strong>
+      <div class="d">高度限縮的問題，其資料無法幫你學會「下一個問題」——機器人是狂野的高維度問題空間</div>
+    </div>
+  </div>
+  <div class="loopback">↺ 部署悖論：越成功的部署，產出的資料越缺乏新穎性（依原文開頭論證繪製）</div>
+</section>
+
+<!-- ─────────── 任務分佈 ─────────── -->
+<section id="tasks">
+  <h2><span class="num">§2</span>機器人任務的分佈：為什麼大家都在摺衣服？</h2>
+  <p class="sec-sub">現代機器人 demo 反覆出現同幾種任務，不是巧合</p>
+
+  <figure>
+    <img src="fig2-shirt-folding.jpg" alt="摺衣任務的變化" loading="lazy">
+    <figcaption><b>原圖 2</b>摺衣任務中的變化（原文標註：Variation in shirt folding, from HuggingFace）。</figcaption>
+  </figure>
+
+  <p>原文點名反覆出現的任務類型與代表公司：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>任務類型</th><th>原文點名的公司／案例</th></tr>
+      <tr><td>剛性／半剛性 pick &amp; place</td><td>小米（引擎蓋放置任務）</td></tr>
+      <tr><td>包裹重新定向（package reorientation）</td><td>Figure、Robotera</td></tr>
+      <tr><td>裝箱（box packing）</td><td>Physical Intelligence、Ultra</td></tr>
+      <tr><td>摺衣服</td><td>HuggingFace、Sunday、Weave⋯⋯「以及更多」</td></tr>
+    </table>
+  </div>
+
+  <p>共同點：這些任務都能在訓練過程中被「灌飽」（saturated）——在限縮的環境裡大量蒐集高品質資料、訓出高品質 policy，達到 <strong>97%–99.9% 以上</strong>的實用門檻。</p>
+
+  <h3>但達標很慢：小米的自攻螺帽</h3>
+
+  <figure>
+    <img src="fig3-xiaomi-nut.jpg" alt="小米機器人在 EV 工廠插入自攻螺帽" loading="lazy">
+    <figcaption><b>原圖 3</b>小米機器人在 EV 工廠插入自攻螺帽（原文標註：Screenshot from YouTube video）。</figcaption>
+  </figure>
+
+  <div class="srchart">
+    <div class="title">小米「自攻螺帽插入」成功率演進（原文數字）</div>
+    <div class="srrow">
+      <div class="cap">上線時</div>
+      <div class="srtrack"><div class="srfill"><span class="srlabel">90.2%</span></div></div>
+    </div>
+    <div class="srrow">
+      <div class="cap">約 4 個月後</div>
+      <div class="srtrack"><div class="srfill after"><span class="srlabel">98%</span></div></div>
+    </div>
+    <div class="srnote">原文評價：98% 已「令人印象深刻地好」，假設能靠重試（retry）處理殘餘失敗，大概是<strong>邊緣量產品質</strong>——但這示範了把 policy 磨到堪用有多慢。</div>
+  </div>
+
+  <p>為什麼慢？原文給的機制很簡單：<strong>policy 越好，就越難找到「稀有而有用的失敗」</strong>——而你需要那些失敗來蒐集改進資料。加上現代機器人學習效率不高，一個 corner case 往往要餵大量針對性資料才能解掉。</p>
+</section>
+
+<!-- ─────────── 維度詛咒 ─────────── -->
+<section id="why">
+  <h2><span class="num">§3</span>為什麼需要這麼多資料：18+6N 維的詛咒</h2>
+  <p class="sec-sub">一段國高中數學就能算出的絕望</p>
+
+  <p>每個機器人垂直領域都藏著大量<em>內隱知識</em>（implicit knowledge）——該領域工人「知道該怎麼實際上手對付東西」的那種知識，寫不進部落格、影片、甚至 ChatGPT。理論上，這種知識要從部署中來。</p>
+
+  <p>問題是——引用 Sumedh Sontakke 的說法——機器人問題的長尾「又長又肥」（long and fat）：你必須解掉<strong>非常多個、且每個都頻繁出現</strong>的獨立問題，通用機器人才開始有實用價值。</p>
+
+  <div class="tweet">
+    <div class="who"><span class="n">Sumedh Sontakke</span><span class="h">@SOTA_kke · 2026-05-04</span></div>
+    <div class="body">💯. 依我的經驗：
+1. 機器人問題的尾巴極長且極肥
+2. 我們還沒有能以 99.9% 級成功率解掉多數任務的模型。action chunking 是點燃這波機器人爆發的關鍵創新，但我們該迎來下一個了</div>
+    <div class="stats">19.5K Views · 4 Replies · 17 Reposts · 123 Likes（原文內嵌推文，中文為本頁摘譯）</div>
+  </div>
+
+  <h3>把維度攤開算</h3>
+  <p>原文用最小表示法算一台<strong>雙臂移動操作機器人</strong>的自由度：軀幹 SE(2) 位姿（x, y, θ）＋軀幹高度 z ＝ 4 維；兩隻手臂末端各 6-DOF 位姿（roll, pitch, yaw, x, y, z）＝ 12 維；兩個夾爪開合 ＝ 2 維。<strong>機器人本體共 18 DoF</strong>，場景中每多一個物件再加 6 DoF。</p>
+
+  <p>現在想像對這 <code>18 + 6N</code> 個維度、每維均勻取樣區區 10 個值：</p>
+
+  <div class="dimchart">
+    <div class="title">狀態空間組合數（log₁₀ 尺度，每維取 10 個樣本點；依原文數字繪製）</div>
+    <div class="dimrow">
+      <div class="lb">N=1 物件</div>
+      <div class="bar" style="width:30.8%"></div>
+      <div class="val">10^24</div>
+    </div>
+    <div class="dimrow r2">
+      <div class="lb">N=5 物件</div>
+      <div class="bar" style="width:61.5%"></div>
+      <div class="val">10^48</div>
+    </div>
+    <div class="dimref">
+      <div class="lb">（參考）</div>
+      <div class="bar" style="width:64.1%"></div>
+      <div class="val">地球原子數 ~10^50</div>
+    </div>
+    <div class="dimrow r3">
+      <div class="lb">N=10 物件</div>
+      <div class="bar" style="width:100%"></div>
+      <div class="val">10^78</div>
+    </div>
+    <div class="dimref">
+      <div class="lb">（參考）</div>
+      <div class="bar" style="width:100%"></div>
+      <div class="val">≈ 已知宇宙原子數</div>
+    </div>
+    <div class="dimnote">原文對照：N=1 時 10^24 還「可管理」；N=5 的 10^48 逼近地球上的原子數（~10^50）；N=10 的 10^78 逼近已知宇宙的原子數。這就是維度詛咒（curse of dimensionality）。</div>
+  </div>
+
+  <p>當然，這個空間裡<strong>真正有用的區域相對有限</strong>，但天真的窮舉探索顯然不可行。過去的解法：運動規劃用學習到的啟發式、取樣式規劃、監督式學習先驗來讓問題可解。機器人學習的目標就是：探索這個巨大的組合空間，盡可能覆蓋「對機器人可能重要」的所有區域，且解析度要夠。</p>
+
+  <div class="callout red">
+    <span class="tag">殘酷之處</span>
+    正因為問題空間太大，窮盡探索永遠不可能；也正因為太大，你很容易漏掉某個測試時才冒出來的關鍵 manifold。而這一切還沒算進「在這空間裡要做的事情有多少種」。
+  </div>
+</section>
+
+<!-- ─────────── 新穎性 ─────────── -->
+<section id="novelty">
+  <h2><span class="num">§4</span>尋找新穎性：部署恰恰給不了的東西</h2>
+  <p class="sec-sub">novelty pump — 這篇文章真正的關鍵詞</p>
+
+  <p>於是問題變成一個<em>營運（operations）問題</em>：怎麼探索這個巨大空間，同時找到所有可能與 policy 相關的小眾角落？</p>
+
+  <p><strong>部署通常解決不了這個問題。</strong>原文給出兩個理由：</p>
+  <ul>
+    <li>已部署的機器人<strong>很少遇到我們在乎的新情境</strong>——因為它們本來就必須以高成功率運作（換句話說：會被部署的任務，都是已經被磨到沒剩多少新鮮事的任務）；</li>
+    <li>就算真的遇到新情境，部署也是<strong>極沒效率的示範蒐集方式</strong>——你永遠無法完整探索一個失敗模式。</li>
+  </ul>
+
+  <p>所以資料蒐集的目標應該是：<strong>持續發現並探索新的相關任務</strong>——刻畫出更廣的「機器人世界子空間」，讓 policy 更通用、更穩健。而能天然做到這件事的「飛輪」少之又少。</p>
+
+  <div class="callout green">
+    <span class="tag">例外：家庭</span>
+    有些場域確實會源源不絕地送來新穎性——最明顯的就是<strong>家</strong>。Weave Robotics、1X 這類公司在機器人做不來時遠端遙操作（teleoperate）介入，理論上能解掉資料問題。但原文也直說：這種 on-demand 介入仍是「excruciating」——極其磨人的資料蒐集方式。
+  </div>
+
+  <p>Physical Intelligence 的 Kyle Vedder 也寫了一篇（短得多的）文章表達類似觀點：</p>
+
+  <div class="tweet">
+    <div class="who"><span class="n">Kyle Vedder</span><span class="h">@KyleVedder · 2026-06-14</span></div>
+    <div class="body">意見文：cargo cults、資料飛輪、與 novelty pumps
+
+tl;dr：「部署資料飛輪」論忽略了規模應該提供的是<em>新穎性</em>；在已知任務上部署機器人，等於把它產生的資料裡的新穎性擰乾了
+
+你的 ops 團隊的 novelty pump 是唯一的出路</div>
+    <div class="stats">2.94K Views · 5 Replies · 4 Reposts · 43 Likes（原文內嵌推文，中文為本頁摘譯）</div>
+  </div>
+</section>
+
+<!-- ─────────── 工業 ─────────── -->
+<section id="industrial">
+  <h2><span class="num">§5</span>工業任務：乾脆不要飛輪</h2>
+  <p class="sec-sub">另一條完全合法的路——選一個根本不需要通用性的題目</p>
+
+  <figure class="narrow">
+    <img src="fig4-sanctuary-plug.jpg" alt="Sanctuary AI 插頭插入任務" loading="lazy">
+    <figcaption><b>原圖 4</b>Sanctuary AI 的插頭插入（plug insertion）任務（原文標註：Screenshot from Lucas Ziegler on X / Sanctuary AI）。</figcaption>
+  </figure>
+
+  <p>這把我們留在哪？許多有趣的工業任務可以被<strong>緊緊限縮</strong>，用簡單、較小的 policy 就能部署——像 Sanctuary AI 這個插頭插入任務。</p>
+
+  <p>在這類任務中，需要探索的子空間極小，只要環境限縮得夠緊，就能在資料蒐集階段<strong>完全灌飽</strong>。這些任務今天就完美適合上產線自動化——而且，值得注意的是，這條路<strong>完全迴避了「從部署中學習」或任何「資料飛輪」的需求</strong>：直接選一個容易訓練的任務就好。</p>
+</section>
+
+<!-- ─────────── 結語 ─────────── -->
+<section id="final">
+  <h2><span class="num">§6</span>結語：兩條出路，以及規模的魔法</h2>
+  <p class="sec-sub">Paxton 最後其實是樂觀的——但要等</p>
+
+  <figure>
+    <img src="fig5-agibot.jpg" alt="AGIBOT 機器人" loading="lazy">
+    <figcaption><b>原圖 5</b>結語配圖（原文標註：From AGIBOT on X）。</figcaption>
+  </figure>
+
+  <p>原文總結，大多數機器人部署有兩個致命傷：</p>
+  <ol>
+    <li><strong>新穎性引入速度不足</strong>——無法以有意義的速度提升模型的通用能力；</li>
+    <li><strong>失敗＋修正資料產生速度不足</strong>——無法以合理速率改進模型。</li>
+  </ol>
+
+  <p>那怎麼辦？原文給兩個選項：</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">選項 A</div>
+      <div class="lbl"><strong style="color:#fff">找對環境。</strong>進駐一個天然就會持續遭遇大量不同任務的場域（如家庭），靠環境本身供給新穎性來提升基礎模型能力。</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">選項 B</div>
+      <div class="lbl"><strong style="color:#fff">養對團隊。</strong>一支「cracked」的 ops 團隊，能主動出去發明新任務、自己探索——人肉 novelty pump。</div>
+    </div>
+  </div>
+
+  <div class="callout purple">
+    <span class="tag">作者的樂觀收尾（原文直譯大意）</span>
+    「幸運的是，我認為這一切終將被<strong>規模的魔法</strong>解決。世界上的機器人已經多了很多；明年更多，後年又更多。只要這些機器人在做有趣的事、只要它們產生的資料能被使用與共享，我們就能越來越深入地開採這些資料來打造通用機器人——即使每個單一部署本身沒那麼有用。<strong>但可能要等上一陣子。</strong>」
+  </div>
+</section>
+
+<!-- ─────────── 筆記 ─────────── -->
+<section id="notes">
+  <h2><span class="num">§7</span>我的重點筆記</h2>
+  <p class="sec-sub">讀後解析——這部分是本站觀點，不是原文內容</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在吵什麼</div>
+    <p>2025–2026 年幾乎每家人形機器人公司的 pitch deck 都有一頁「data flywheel」：部署越多 → 資料越多 → 模型越好 → 部署更多。Paxton（前 NVIDIA / Meta AI 機器人研究員，Substack「It Can Think」作者）這篇等於直接戳破該敘事的核心假設：<strong>飛輪要轉，資料必須帶新穎性；但能被部署的任務，恰恰是新穎性已被擰乾的任務。</strong>這與 Physical Intelligence 的 Kyle Vedder 一個月前的「novelty pump」論形成呼應——值得注意的是，連「賣通用 policy」的 PI 內部人都這樣說。</p>
+  </div>
+
+  <ul>
+    <li><strong>選擇偏差是整篇的邏輯核心。</strong>部署（deployment）本身就是一個過濾器：只有已被限縮到高成功率的任務才會被部署。所以「部署資料」在統計上天生偏向低資訊量樣本。這跟自駕的 intervention mining 不同——自駕是單一任務、無限 in-domain 變化，倉庫摺衣不是。</li>
+    <li><strong>90.2%→98% 花 4 個月</strong>這個數字很值得記住：這是資源充沛的大廠（小米）在單一、已高度限縮任務上的改進速度。如果你的商業計畫需要「幾十個任務都到 99%」，時間軸自己乘上去。</li>
+    <li><strong>維度計算是示意而非嚴謹論證</strong>——實際的有效資料流形遠小於 10^78（原文自己也承認「有用區域相對有限」），但方向正確：靠部署被動等 corner case 出現，數學上不划算。</li>
+    <li><strong>與 KinetIQ 真機 RL 那篇（本站另一篇速覽）對照著讀很有意思</strong>：Humanoid 用真機 RL 在 3–5 天內把單任務從 78–80% 拉到 98–99%，正是 Paxton 說的「把限縮任務灌飽」的高效版本——但那同樣沒有回答「下一個任務怎麼辦」。兩篇合起來就是 2026 年機器人學習的真實處境：<em>單任務磨到量產已可行，通用性仍靠資料新穎性，而新穎性沒有免費午餐。</em></li>
+    <li><strong>留意作者沒說的：</strong>文中「資料能被使用與共享」的樂觀前提，在商業上恰恰最難成立——各家部署資料是核心資產，跨公司共享機制（類 Open X-Embodiment）目前只在學術圈成形。</li>
+  </ul>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    原文：<a href="https://itcanthink.substack.com/p/how-much-is-robot-deployment-data">How Much Is Robot Deployment Data Worth?</a> — Chris Paxton, It Can Think（Substack）, 2026-07-21<br>
+    本頁：繁中摘譯＋解析，含原文全部 5 張配圖（版權歸原作者／原標註來源所有）· <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+</body>
+</html>
