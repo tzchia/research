@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CooT：把「隊友」當成 in-context 的題目來解 — ICML 2026 論文中文速覽</title>
+<meta name="description" content="NTU 孫紹華實驗室 ICML 2026 論文 CooT 中文速覽：把「適應陌生隊友」重新定義為 in-context learning 問題——觀察隊友最近幾局的行為，直接預測 best response，全程零參數更新。Overcooked 五張地圖 Overall BR-prox 0.57 vs 最強基線 0.44；隊友中途換人平均 3.67 局內恢復；36 人真人實驗 50% 選它當最愛隊友。含 7 張原圖與方法、消融全解析。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  /* 三步驟流程 */
+  .steps{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .steps .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .steps .step .t{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .steps .step .d{color:var(--muted);font-size:13px;line-height:1.55}
+  .steps .step strong{display:block;font-size:15px;margin-bottom:4px}
+  .steps .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;padding:0 8px;font-family:var(--mono)}
+  @media(max-width:720px){
+    .steps{grid-template-columns:1fr}
+    .steps .arr{transform:rotate(90deg);padding:4px 0}
+  }
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">ICML 2026 · Paper Digest · 繁中速覽</div>
+    <h1>CooT：把「隊友」當成 in-context 的題目來解</h1>
+    <p class="subtitle">NTU 孫紹華實驗室的 Coordination Transformer：不重訓、不微調，靠觀察隊友最近幾局的行為，即時推斷對方偏好並給出 best response——連真人隊友都投它當最佳搭檔。</p>
+    <div class="meta">
+      論文：<a href="https://arxiv.org/abs/2506.23549">CooT: Learning to Coordinate In-Context with Coordination Transformers</a>（arXiv 2506.23549, ICML 2026）<br>
+      作者：王懷志*、莊翔鈞*（*共同一作）、鄭席鈞、吳岱桀、孫紹華（NTU 電信所 × University of Utah × NTU AI-CoRE）<br>
+      專案頁：<a href="https://coot-project.github.io/coot/">coot-project.github.io/coot</a>　|　來源：<a href="https://www.threads.com/@shaohua0116/post/DafosVQmXS4">孫紹華老師 Threads 貼文</a>　|　本頁為繁中解析，所有數字皆出自論文原文
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字，抓住全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">0.57<small> vs 0.44</small></div>
+      <div class="lbl">Overcooked 五張地圖 Overall BR-prox：CooT 對上最強基線 HSP-ft。越需要協調的地圖差距越大（§4）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">0<small> 次參數更新</small></div>
+      <div class="lbl">測試時完全不做 gradient update——只把最近 5 局軌跡塞進 context，適應全靠 in-context learning（§2）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">3.67<small> 局</small></div>
+      <div class="lbl">隊友中途「換人」後，CooT 平均只要 3.67 局（最多 6 局）就恢復到不換人的水準（§6）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">18/36<small> 人</small></div>
+      <div class="lbl">真人實驗中 50% 參與者把 CooT 選為最喜歡的隊友；協作評分 4.0，全部指標第一（§5）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    過去的 in-context RL 學的是「換一個<em>任務</em>怎麼辦」；CooT 把問題轉成「換一個<em>隊友</em>怎麼辦」——<strong>把每一種隊友行為當成一個獨立任務</strong>，訓練 transformer 讀最近幾局的互動軌跡、直接預測對這位隊友的 best response。適應零梯度、即時、還能抗隊友中途變臉。
+  </div>
+</section>
+
+<!-- ─────────── 問題背景 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題：陌生隊友為什麼難帶</h2>
+  <p class="sec-sub">ad-hoc teamwork——和沒一起訓練過的搭檔臨時組隊</p>
+
+  <p>多 agent 合作最尷尬的場景：你訓練好的 agent 遇到一個<strong>從沒見過的隊友</strong>（可能是別家的 policy，可能是人類），還是得把工作做好。這在文獻裡叫 <em>ad-hoc teamwork</em>。論文把既有路線的失敗模式排了一遍：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>路線</th><th>代表方法</th><th>失敗模式（論文說法）</th></tr>
+      <tr><td>Self-play</td><td>SP</td><td>和自己的複本對練，收斂到一套「內部暗號」（conventions），遇到不懂暗號的陌生隊友直接崩潰</td></tr>
+      <tr><td>Population-based</td><td>MEP、HSP</td><td>靠多樣化隊友池提升穩健性，但<strong>沒有線上適應機制</strong>——出了訓練分佈就沒轍</td></tr>
+      <tr><td>測試時微調</td><td>HSP-ft</td><td>few-shot 場景不可行：學會協調往往要數千到數百萬條互動軌跡，且對 learning rate 極敏感</td></tr>
+      <tr><td>壓縮 context 的 meta-RL</td><td>PACE、PECAN、LIAM</td><td>把互動歷史壓成固定 latent 向量——壓縮丟資訊，隊友行為一超出訓練分佈，encoder 給出誤導表徵</td></tr>
+    </table>
+  </div>
+
+  <p>CooT 的切入點是 LLM 世界已經驗證過的能力：<strong>in-context learning</strong>——固定權重的模型，靠 prompt 裡的範例就能在推論時改變行為。但既有的 in-context RL（Decision-Pretrained Transformer、Algorithm Distillation）都在解「任務泛化」：換個迷宮、換個 reward。CooT 要解的是<strong>隊友泛化</strong>：環境不變，變的是搭檔的偏好和習慣，而且對方不會給你任何顯式回饋。</p>
+</section>
+
+<!-- ─────────── 核心方法 ─────────── -->
+<section id="method">
+  <h2><span class="num">§2</span>方法：每種隊友 = 一個任務</h2>
+  <p class="sec-sub">DPT 架構不變，學習目標從「解任務」換成「回應隊友」</p>
+
+  <figure>
+    <img src="figs/fig1.png" alt="CooT 框架總覽：訓練與評估" loading="lazy">
+    <figcaption><b>原圖 1</b>CooT 總覽。<strong>(a) 訓練</strong>：behavior-preferring 隊友 π<sup>p</sup> 與其 best-response policy π<sup>br</sup> 成對共同訓練，互動軌跡彙整成 Coordination Dataset D；CooT 收到 query state s<sub>h</sub> ＋ 過去互動的 context C，學著預測 BR 動作 â。<strong>(b) 評估</strong>：面對沒見過的隊友，第 1 局 context 全空，之後每打完一局就把軌跡塞進 context（FIFO），逐局適應。</figcaption>
+  </figure>
+
+  <h3>怎麼製造「有個性的隊友」：Hidden-Utility Markov Game</h3>
+  <p>訓練資料的關鍵是要有一池<strong>行為多樣</strong>的隊友。論文沿用 HSP 的 Hidden-Utility Markov Game（HU-MG）框架：在共享的環境 reward 之外，給每個隊友一個<strong>只有它自己看得到的隱藏 reward</strong>——由離散環境事件（撿洋蔥、拿盤子、送餐⋯⋯）的線性組合構成。同一張地圖上，「討厭拿盤子」和「喜歡站著不動」的隊友會演化出完全不同的行為習慣。這種 agent 論文稱為 <em>behavior-preferring agent</em>：偏好藏在 reward 裡，只透過行為顯露。</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="t">Step 1 · 造隊友</div>
+      <strong>抽一個隱藏 reward</strong>
+      <div class="d">事件線性組合 → 一種「個性」；用 MAPPO 把這位隊友 π<sup>p</sup> 和它的最佳搭檔 π<sup>br</sup> 成對訓練</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 2 · 挑多樣</div>
+      <strong>event-based 多樣性篩選</strong>
+      <div class="d">對每個 BR policy 算多樣性分數 d<sub>i</sub>，取 top-N 對進入訓練池 Π<sub>train</sub>，各收 T 條軌跡當 context</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 3 · 出考題</div>
+      <strong>(s<sub>h</sub>, C, â) 三元組</strong>
+      <div class="d">query state 從離線資料集<strong>獨立</strong>取樣（不是 context 的下一步），逼模型真的從 C 讀出隊友偏好</div>
+    </div>
+  </div>
+
+  <p>訓練目標非常樸素：cross-entropy <code>L = −log p̂(â)</code>，其中 â 是 best-response policy 在該 query state 的動作。架構就是 GPT-2 backbone（沿用 DPT）。<strong>全部的巧思都在資料的定義</strong>：context 是「這位隊友＋它的最佳搭檔」過去幾局的原始互動軌跡，模型要學的映射是「看行為 → 推偏好 → 給回應」。</p>
+
+  <div class="callout green">
+    <span class="tag">設計亮點：query 與 context 脫鉤</span>
+    如果 query state 直接取 context 軌跡的下一步，模型會學到「接著演下去」的捷徑（trajectory continuation），而不是真正讀懂隊友。CooT 刻意把 query 從整個離線資料集均勻抽樣，<strong>切斷時間連續性</strong>——這一刀是它和「用 Transformer 做 BC」的本質區別（論文附錄有專節論證，見 §7）。
+    </div>
+
+  <h3>部署：冷啟動 + FIFO context</h3>
+  <p>測試採<strong>嚴格無先驗協定</strong>：面對新隊友，context 初始化為 T 條「空軌跡」，第一局完全裸打。每打完一局，整條軌跡 (s, a, r) 進 context buffer、擠掉最舊的一條。評估用的陌生隊友池也講究：用行為特徵的相似度矩陣做 <em>Determinantal Point Process</em>（DPP）抽樣，保證挑出來的 10–15 位評估隊友彼此行為夠不一樣。</p>
+</section>
+
+<!-- ─────────── 實驗設定 ─────────── -->
+<section id="setup">
+  <h2><span class="num">§3</span>實驗設定：兩個基準、七個對手</h2>
+  <p class="sec-sub">Overcooked 主戰場 + Google Research Football 驗證擴展性</p>
+
+  <figure>
+    <img src="figs/fig2.png" alt="Overcooked 五種地圖" loading="lazy">
+    <figcaption><b>原圖 2</b>Overcooked 五張評估地圖：Coord. Ring、Coord. Ring Multi-recipe、Counter Circ.、Asymm. Adv.、Bothway Coord.——各自透過空間結構與食材配置製造不同強度的協調需求。Multi-recipe 版加入番茄，湯譜從 1 種擴到 5 種。</figcaption>
+  </figure>
+
+  <p><strong>Overcooked</strong>（ZSC-Eval 實作）：兩人煮湯送餐，每成功送一碗得 sparse reward 20。<strong>GRF</strong>「3 vs 1 with Keeper」：三名進攻球員（P0 持球、P1、P2）對一名後衛加守門員，透過 P0/P2 的兩組事件組合出 144 種偏好 reward 製造隊友多樣性，P1 的 best-response 軌跡拿來訓練 CooT，指標是 200 步內的進球率。</p>
+
+  <figure class="narrow">
+    <img src="figs/fig3.png" alt="GRF 3 vs 1 with Keeper 場景" loading="lazy">
+    <figcaption><b>原圖 3</b>GRF 評估場景「3 vs 1 with Keeper」：需要三名進攻者協調走位、繞過防守得分——比 Overcooked 更高維、更長 horizon 的協調考驗。</figcaption>
+  </figure>
+
+  <p>訓練資料規模：36 個 best-response policies（15 個來自 MEP、21 個來自 HSP，依事件多樣性貪婪挑選），每個收 200–250 條軌跡。context 視窗 = 5 局，訓練時搭配 context masking（隨機丟掉較舊軌跡，逼模型倚重近期互動）。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>基線</th><th>類型</th><th>測試什麼假設</th></tr>
+      <tr><td>BC / BC-RNN</td><td>模仿學習</td><td>監督式模仿（含局內記憶）能否泛化到陌生隊友</td></tr>
+      <tr><td>MEP / HSP</td><td>population-based RL</td><td>訓練期多樣性是否足以取代線上適應（皆為 recurrent policy，且用手工 dense reward 訓練——CooT 只用 sparse，比較對它們有利）</td></tr>
+      <tr><td>HSP-ft</td><td>測試時微調</td><td>few-shot 提升能否靠 gradient 達成</td></tr>
+      <tr><td>HSP-meta</td><td>PEARL 式 meta-RL</td><td>把軌跡壓成 latent context 是否足夠</td></tr>
+      <tr><td>PACE</td><td>context + peer identifier</td><td>再加一個「猜隊友身分」的模組會不會更好</td></tr>
+    </table>
+  </div>
+
+  <p>評估協定沿用 ZSC-Eval：每張地圖固定 10 位（Multi-recipe 15 位）DPP 挑出的陌生隊友，各連打 50 局讓 CooT 累積 context。主指標 <strong>BR-prox</strong>：你的得分除以「該隊友的專屬最佳搭檔」的得分——1.0 代表打得跟量身訂做的搭檔一樣好。附錄另比 GAMMA（生成式隊友建模）與 PLASTIC（貝氏 policy 挑選，Coord. Ring 上 19.4 vs CooT 38.3）。</p>
+</section>
+
+<!-- ─────────── 主結果 ─────────── -->
+<section id="results">
+  <h2><span class="num">§4</span>主結果：協調需求越重，領先越多</h2>
+  <p class="sec-sub">五張地圖 + GRF；粗體 = 落在最佳方法一個標準差內</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>Coord. Ring</th><th>Multi-recipe</th><th>Counter Circ.</th><th>Asymm. Adv.</th><th>Bothway Coord.</th><th>Overall（Return / BR-prox）</th></tr>
+      <tr><td>BC</td><td class="num">26.2</td><td class="num">9.0</td><td class="num">10.8</td><td class="num">108.8</td><td class="num">99.0</td><td class="num">50.8 / 0.40</td></tr>
+      <tr><td>BC-RNN</td><td class="num">28.1</td><td class="num">22.0</td><td class="num">15.2</td><td class="num">105.5</td><td class="num">93.6</td><td class="num">52.9 / 0.42</td></tr>
+      <tr><td>MEP</td><td class="num best">40.3</td><td class="num">16.6</td><td class="num">1.9</td><td class="num">127.4</td><td class="num">22.8</td><td class="num">41.8 / 0.30</td></tr>
+      <tr><td>HSP</td><td class="num best">41.1</td><td class="num">29.4</td><td class="num">21.4</td><td class="num best">134.0</td><td class="num">55.0</td><td class="num">56.2 / 0.44</td></tr>
+      <tr><td>HSP-ft</td><td class="num best">41.3</td><td class="num">29.2</td><td class="num">21.7</td><td class="num best">133.6</td><td class="num">55.8</td><td class="num">56.3 / 0.44</td></tr>
+      <tr><td>HSP-meta</td><td class="num">29.8</td><td class="num">30.2</td><td class="num">3.3</td><td class="num">113.2</td><td class="num">20.4</td><td class="num">40.2 / 0.29</td></tr>
+      <tr><td>PACE</td><td class="num best">33.9</td><td class="num">4.4</td><td class="num">2.4</td><td class="num">124.1</td><td class="num">14.9</td><td class="num">36.0 / 0.24</td></tr>
+      <tr><td><strong>CooT</strong></td><td class="num best">38.3</td><td class="num best">46.0</td><td class="num best">28.3</td><td class="num best">129.5</td><td class="num best">101.9</td><td class="num best">68.8 / 0.57</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">Return 平均值（3 seeds × 50 rollouts，綠字 = 論文粗體：落在最佳方法標準差內）。完整 mean±std 與 BR-prox 見論文 Table 1。</p>
+
+  <p>讀法很清楚：<strong>地圖決定需要多少協調，協調需求決定 CooT 領先多少。</strong>在兩人幾乎可以各做各的 Asymm. Adv. 上，BC 和 population 方法就夠用，CooT 只是不輸；到了要同時管五種湯譜的 Multi-recipe，CooT 46.0 對 HSP 的 29.4——差距 57%。GRF 上同樣領先：進球率 <strong>2.50</strong> vs BC 1.97、HSP-ft 1.52、HSP 1.46、MEP 1.11。</p>
+
+  <div class="callout red">
+    <span class="tag">最有意思的負結果</span>
+    HSP-meta 和 PACE——兩個「有 context 條件化」的方法——<strong>雙雙輸給沒有任何適應機制的 vanilla HSP</strong>（Overall 0.29 / 0.24 vs 0.44），調了 7 組超參數也救不回來。論文的診斷：PEARL 式重建 loss 對所有軌跡特徵一視同仁，抓不到「與協調相關」的行為線索；壓出來的雜訊 latent 反而弄壞 policy 訓練；遇到陌生隊友時 encoder 還會給出誤導表徵。PACE 再疊一個猜身分的 peer identifier，三個組件聯合訓練，不穩定被放大。<strong>結論：把互動歷史壓成固定向量這條路本身有坑；CooT 直接餵原始軌跡給 transformer，繞開了整類失敗模式。</strong>
+  </div>
+
+  <p>另兩個公平性檢查值得記：（1）CooT 用的隊友池與 HSP 相同，贏的是<strong>學習範式</strong>不是資料；（2）HSP/MEP 都靠手工 dense reward 訓練，CooT 全程只吃環境 sparse reward——附錄把 HSP/MEP 換成 sparse 訓練後，兩者在重協調地圖直接崩盤。</p>
+</section>
+
+<!-- ─────────── 人類實驗 ─────────── -->
+<section id="human">
+  <h2><span class="num">§5</span>真人實驗：50% 參與者的最愛</h2>
+  <p class="sec-sub">36 人、雙盲、每人 32 局——通過 IRB 審查</p>
+
+  <figure>
+    <img src="figs/fig7.png" alt="真人實驗平台介面" loading="lazy">
+    <figcaption><b>原圖 4</b>真人實驗平台（改自 ZSC-Eval，加入跨局 context 累積）。參與者在 Coord. Ring 地圖與四個匿名 agent（僅以帽子顏色區分）各連打 8 局，事後評分並排序。</figcaption>
+  </figure>
+
+  <p>設計重點：每位參與者與<strong>同一個 agent 連打 8 局</strong>再換下一個（4 個 block，順序隨機、雙盲）——這給了 CooT 累積 context 的機會，也符合真實協作情境。36 位參與者（27 男 9 女，7 人玩過原版 Overcooked）。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>Return</th><th>協作評分</th><th>適應性評分</th><th>被選為最佳隊友</th></tr>
+      <tr><td>BC</td><td class="num">51.0±3.8</td><td class="num">2.0</td><td class="num">1.8</td><td class="num">5 人</td></tr>
+      <tr><td>MEP</td><td class="num">53.0±5.1</td><td class="num">3.4</td><td class="num">2.9</td><td class="num">8 人</td></tr>
+      <tr><td>HSP</td><td class="num">40.5±5.2</td><td class="num">2.7</td><td class="num">2.2</td><td class="num">5 人</td></tr>
+      <tr><td><strong>CooT</strong></td><td class="num best">63.5±9.5</td><td class="num best">4.0</td><td class="num best">3.1</td><td class="num best">18 人（50%）</td></tr>
+    </table>
+  </div>
+
+  <p>質性分析也做得扎實：144 則開放式回饋，用 Gemini 2.5 Flash 依「顯式適應行為」與「負面行為」兩軸分類、再人工逐條稽核。CooT 拿到最多「明顯越打越懂我」類型的評語（9 則，多於任何基線）——真人<strong>感覺得到</strong>它在適應。</p>
+</section>
+
+<!-- ─────────── 適應分析 ─────────── -->
+<section id="adaptation">
+  <h2><span class="num">§6</span>適應力解剖：學得快，還扛得住變臉</h2>
+  <p class="sec-sub">few-shot 曲線 + 隊友中途換人實驗</p>
+
+  <figure>
+    <img src="figs/fig4.png" alt="跨地圖聚合的適應曲線" loading="lazy">
+    <figcaption><b>原圖 5</b>適應曲線（五張地圖聚合，BR-prox vs 局數）。CooT（藍）從約 0.53 一路爬到約 0.58 並維持；HSP／HSP-ft（綠）全程平躺在 0.44 附近；BC（虛線）不會適應；HSP-meta、PACE 在 0.3 以下徘徊。論文：CooT 在<strong>前 15 局內</strong>完成主要提升。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig5.png" alt="各地圖適應曲線" loading="lazy">
+    <figcaption><b>原圖 6</b>逐地圖適應曲線（六格：五張地圖＋Overall 聚合）。差距最懸殊的是 Multi-recipe：CooT 一路爬升到約 40 局才趨於飽和，HSP-ft／HSP-meta 則早早停滯，PACE 甚至跌破不做適應的 HSP 基線。</figcaption>
+  </figure>
+
+  <h3>隊友中途變臉怎麼辦</h3>
+  <p>真人隊友會中途改變策略。論文在 Coord. Ring 設計了「換人實驗」：CooT 先和偏好 A 的隊友打幾局、累積滿 context，然後<strong>突然</strong>換成偏好 B 的隊友。三種偏好：<em>Active</em>（站著不動會被扣分）、<em>Still</em>（站著不動有獎勵）、<em>Dish-averse</em>（從盤架拿盤子重罰）——兩兩對調、雙向都測：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>隊友對（偏好）</th><th>A → B 恢復局數</th><th>B → A 恢復局數</th></tr>
+      <tr><td>（Active, Still）</td><td class="num">6</td><td class="num">5</td></tr>
+      <tr><td>（Active, Dish-averse）</td><td class="num">6</td><td class="num">2</td></tr>
+      <tr><td>（Still, Dish-averse）</td><td class="num">2</td><td class="num">1</td></tr>
+    </table>
+  </div>
+
+  <p>「恢復」的定義是回到「從頭就跟新隊友打」的水準——最多 6 局、平均 <strong>3.67 局</strong>。舊 context 還在 buffer 裡的情況下能這麼快校正，說明 FIFO 視窗＋訓練時 context masking 的組合確實讓模型偏重近期互動。</p>
+</section>
+
+<!-- ─────────── 消融 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§7</span>消融與健全性：三個反直覺的發現</h2>
+  <p class="sec-sub">context 不是越長越好；打亂資料不是都有效；評估池真的沒洩題</p>
+
+  <h3>1 · context 長度存在甜蜜點：5 局</h3>
+  <p>context 從短加到 5 局，表現一路升（Coord. Ring 最佳 41.1）；<strong>超過 5 局反而下降</strong>（7 局時掉頭）。診斷：CooT 會讓隊友互動「進化」，太舊的局面已不能代表隊友現在的行為——證據太多變成證據過期。訓練時的 context masking（隨機丟舊軌跡＝硬性的 recency weighting）能緩解但救不完。</p>
+
+  <h3>2 · 打亂資料：step 級有害，chunk 級無害</h3>
+  <p>DPT 在 Dark-Room 導航裡靠 step 級 shuffle 提升泛化；搬到 Overcooked 卻<strong>掉分</strong>——協調任務裡動作的時序耦合（你放洋蔥我拿盤子）就是資訊，逐步打亂等於毀掉它。保留 20 步連續區塊的 chunk 級 shuffle 則與不打亂持平。</p>
+
+  <h3>3 · 資料縮水時比 BC 耐撞</h3>
+  <p>訓練隊友從 36 砍到 12：CooT −24.0% vs BC −41.5%；軌跡數縮減：CooT −28.6% vs BC −32.1%。</p>
+
+  <figure class="narrow">
+    <img src="figs/fig6.png" alt="訓練/評估隊友交叉配對熱圖" loading="lazy">
+    <figcaption><b>原圖 7</b>洩題檢查（macro 分析）：把訓練池與評估池的隊友和 best responder 交叉配對，只有原配對（對角線）拿高分——<strong>背下訓練隊友的應對方式並不能通吃評估隊友</strong>。micro 分析同向：訓練 vs 評估隊友的平均 JS divergence 0.3314，比「隨機 policy vs 評估隊友」的 0.2976 還大。</figcaption>
+  </figure>
+
+  <h3>為什麼不是「披著 Transformer 皮的 BC」？</h3>
+  <p>附錄有一節專門回應這個質疑。BC 學 <code>s → a</code>，隊友無關：同一個狀態永遠同一個動作，而且誤差沿軌跡複合放大。CooT 學 <code>(C, s) → a</code>：同一狀態、不同隊友 context、不同輸出；query 與 context 脫鉤讓它不依賴軌跡連續性；理論上（引 DPT Corollary 6.2）跨局 context 帶來的資訊量以 O(K) 成長、預測誤差代價只有 Õ(√K)——<strong>資訊比誤差累積得快</strong>，所以曲線是往上走的，與 BC 的 compounding error 恰好相反。局內的誤差複合仍在，論文承認這是所有模仿學習的共同殘留限制。</p>
+
+  <h3>成本備忘</h3>
+  <p>單一地圖單一 seed 訓練約 19 小時（含 1 小時軌跡收集，單 GPU；前提是 behavior-preferring／BR 隊友池已存在）；重現全部實驗約 800 GPU 時。推論每步 2.41 ms——transformer 開銷存在但完全可用。</p>
+</section>
+
+<!-- ─────────── 限制 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§8</span>限制：論文自己劃的邊界</h2>
+  <p class="sec-sub">結論一節列的三條，值得原樣記住</p>
+
+  <ul>
+    <li><strong>只靠行為觀察，沒有溝通。</strong>CooT 讀的是動作歷史；隊友「說」什麼它聽不到。通訊型協調是未來方向。</li>
+    <li><strong>只在協調基準上驗證。</strong>Overcooked 和 GRF 都是遊戲環境；帶豐富感知與控制的 embodied 場景還沒碰。</li>
+    <li><strong>嚴格冷啟動是自縛的枷鎖。</strong>每個新隊友都從全空 context 打起；如果能從「相似舊隊友」檢索出預填 context，前幾局的成本可以再壓。</li>
+  </ul>
+
+  <p>另外兩點論文沒放進 limitation、但讀者該自己補上：隊友多樣性仍靠<strong>手工定義的事件 reward</strong> 製造（HU-MG 的事件集是人挑的）；GRF 也只到 3 人隊伍——論文在實驗節承認「擴展到更大隊伍仍是未解方向」，但沒把它列進結論的 limitation。</p>
+</section>
+
+<!-- ─────────── 筆記 ─────────── -->
+<section id="notes">
+  <h2><span class="num">§9</span>重點筆記：對狀態偵測專案的啟示</h2>
+  <p class="sec-sub">讀後解析——這部分是本站觀點，不是原文內容</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼（一段話定位）</div>
+    <p>CooT 是「DPT 換靶心」：架構、loss 全是現成的，真正的貢獻是<strong>問題重定義</strong>——把「適應陌生隊友」形式化為 in-context learning 的任務分佈，任務 = 隊友的隱藏偏好。加上兩個乾淨的工程決策（query 與 context 脫鉤、原始軌跡不壓 latent），就把一票更複雜的 meta-RL 方法比了下去。負結果（HSP-meta/PACE 輸給 vanilla HSP）跟正結果一樣有價值。</p>
+  </div>
+
+  <p>煮菜狀態偵測沒有「隊友」，但 CooT 的框架翻譯過來意外地貼——把「隊友的隱藏偏好」換成「這一鍋的隱藏條件」（火力、鍋具、食材批次、水量）：</p>
+
+  <ul>
+    <li><strong>「每種隊友＝一個任務」→「每趟錄影＝一個任務」。</strong>35 趟錄影不夠 fine-tune，但夠當 context 池：推論時把「同食譜的過往 1–2 趟片段＋當下畫面」一起餵給模型，讓它 in-context 校準這一鍋的節奏，而不是重訓。CooT 證明了 tens-of-examples 規模下「context 條件化 &gt; 梯度微調」（HSP-ft 對 lr 極敏感、幾乎不動；ICL 曲線持續上升）——這正是 35-run 體制該押的一邊。</li>
+    <li><strong>context 甜蜜點的警告直接適用。</strong>CooT 超過 5 局就因「過期證據」掉分。狀態偵測的滑動視窗同理：煮蛋前段劇變、後段平原（自家已知的難例），太長的觀察窗會讓平原期被前段的劇變主導。窗長要當一個真的超參數掃，且「近期加權」（CooT 用 context masking 硬丟舊資料）值得抄。</li>
+    <li><strong>query 與 context 脫鉤 = 防「順著時間軸腦補」。</strong>訓練進度估計器時如果 query 幀總是 context 的下一幀，模型會學到「時間過了就加進度」的捷徑——正是 egg-type 平原期誤觸發的來源。CooT 的解法（query 從全資料集獨立抽樣）可以原樣搬進進度模型的訓練資料構造。</li>
+    <li><strong>換人實驗 ≈ 中途換條件。</strong>平均 3.67 局恢復對應到：加水、翻面、調火之後，偵測器多久跟上新狀態。這給了一個可量化的驗收指標——「條件突變後 N 個決策週期內恢復」，比只報整段準確率更貼 FSM gating 的實際風險。</li>
+    <li><strong>評估協定值得整套抄：</strong>（1）BR-prox 式正規化——每趟錄影用「該趟最佳可達表現」當分母，不同趟之間才可比；（2）DPP 挑多樣評估集——35 趟裡挑驗證趟不要隨機，用特徵多樣性挑，避免驗證集全是「乖」的 run；（3）洩題檢查（原圖 7 的交叉配對熱圖＋JS divergence）——確認訓練趟和驗證趟真的不同源，小資料體制特別容易在這裡自欺。</li>
+    <li><strong>一個反向教訓：</strong>HSP-meta/PACE 的失敗說明「把歷史壓成 latent 再用」在小資料＋分佈外場景很脆——如果要給狀態偵測模型餵歷史，餵<strong>原始片段</strong>（幀序列）比餵預先壓好的 embedding 穩。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">跟本站另外兩篇對照</span>
+    LC-IL（同是 NTU 系論文）把「回饋」從純量變語言；CooT 把「適應」從梯度變 context——兩篇共同的味道是<strong>把資訊留在原始形式，別急著壓縮</strong>。而 state-detection 選型指南裡 GVL 那條「零訓練吐進度」路線，配上 CooT 式的「過往 run 當 context」正好互補：GVL 給 zero-shot 起點，ICL 給 per-run 校準。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://arxiv.org/abs/2506.23549">CooT: Learning to Coordinate In-Context with Coordination Transformers</a> — Wang, Chuang, Cheng, Wu, Sun（NTU × Utah）, ICML 2026<br>
+    本頁：繁中解析＋自製圖表，含論文 7 張原圖（版權歸原作者所有）· <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
