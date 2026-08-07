@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cache Miss 才是帳單：50 倍價差世界的成本工程 — 圖解速覽</title>
+<meta name="description" content="用 8 張圖解釋 LLM API 快取經濟學：KV cache、prompt caching、hit/miss rate、有效單價、記憶體階層、MLA/DSA/CSA/HCA。為什麼 hit rate 90% 和 99% 帳單差 4 倍、為什麼只有 DeepSeek 敢把 hit/miss 價差開到 50 倍、為什麼 prefix 穩定性是工程師自己的功課。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  svg text{font-family:var(--sans)}
+  svg .mono{font-family:var(--mono)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">AI Infra · Concept Explainer · 繁中圖解</div>
+    <h1>Cache Miss 才是帳單：50 倍價差世界的成本工程</h1>
+    <p class="subtitle">一則談 DeepSeek 快取定價的貼文，塞滿了 KV cache、hit rate、MLA、disk cache 這些行話。本頁把每個術語拆開、畫成圖，並把貼文裡的數字逐一對回官方文件與論文。</p>
+    <div class="meta">
+      主題：LLM API 的快取經濟學——為什麼 token 消耗不再是重點，cache miss rate 才是<br>
+      性質：術語圖解＋數字查證。圖皆為本站自繪；查證註記散見各節<br>
+      日期：2026-08-06（所有價格以此日官方頁面為準；DeepSeek 已預告近期大幅調漲）
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個數字，抓住整件事</p>
+
+  <div class="cards">
+    <div class="kcard c3">
+      <div class="big">50×</div>
+      <div class="lbl">DeepSeek 最新定價中，cache miss（未命中）的輸入單價是 cache hit（命中）的約 50 倍——命中的 token 幾乎免費（§4）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">÷4</div>
+      <div class="lbl">hit rate 從 90% 提到 99%，有效輸入單價從 $0.0165 降到 $0.0042/1M tokens——同樣的用量，帳單差 4 倍（§4）</div>
+    </div>
+    <div class="kcard c1">
+      <div class="big">−93.3%</div>
+      <div class="lbl">MLA（2024/05，DeepSeek-V2）把每個 token 的 KV cache 壓掉 93.3%——KV 夠小，放硬碟的經濟學才成立（§6）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">數天<small> vs 5 分鐘</small></div>
+      <div class="lbl">DeepSeek 把快取放分散式硬碟陣列，可留數小時到數天；Anthropic 快取預設 TTL 5 分鐘（§5）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    當命中的 token 幾乎免費，<strong>帳單就不再由「用了多少 token」決定，而是由「有多少 token 沒命中快取」決定</strong>。模型端把 KV 壓小、放上硬碟，是 DeepSeek 花兩年做完的功課；<em>prefix 穩不穩、快取命不命中，是使用者自己的功課</em>——這件事叫 harness 設計。
+  </div>
+</section>
+
+<!-- ─────────── 名詞速查 ─────────── -->
+<section id="glossary">
+  <h2><span class="num">§1</span>名詞速查表</h2>
+  <p class="sec-sub">先把行話翻成人話，後面各節再逐一畫圖</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>術語</th><th>一句話</th><th>比喻</th></tr>
+      <tr><td><strong>token</strong></td><td>模型處理文字的最小單位，計費也按它算</td><td>模型眼中的「字」</td></tr>
+      <tr><td><strong>KV cache</strong></td><td>注意力機制替每個 token 算出的 Key/Value 中間結果，存著避免重算</td><td>讀書時畫的重點筆記，之後翻筆記不用重讀</td></tr>
+      <tr><td><strong>prompt caching<br>（prefix caching）</strong></td><td>把整段 prompt 的 KV cache 跨請求保存，下次開頭相同就直接沿用</td><td>上次的筆記整本留著，同一本書再來就免讀</td></tr>
+      <tr><td><strong>cache hit / miss</strong></td><td>命中＝找到現成 KV、便宜；未命中＝全價重算，還要重寫一份快取</td><td>翻到筆記 vs 從頭讀起</td></tr>
+      <tr><td><strong>hit rate / miss rate</strong></td><td>命中率／未命中率，兩者相加＝100%</td><td>——</td></tr>
+      <tr><td><strong>有效單價</strong></td><td>hit 價與 miss 價按命中比例加權後，實際付出的平均輸入單價</td><td>混合油價</td></tr>
+      <tr><td><strong>TTL</strong></td><td>time-to-live：快取保存多久沒被用到就清掉</td><td>置物櫃超時清空</td></tr>
+      <tr><td><strong>HBM</strong></td><td>GPU 上的高頻寬記憶體，KV cache 平常住的地方——快、小、極貴</td><td>工作檯面</td></tr>
+      <tr><td><strong>prefill / decode</strong></td><td>讀題（把 prompt 算成 KV）／寫答案（逐 token 生成）</td><td>讀完題目才動筆</td></tr>
+      <tr><td><strong>MLA</strong></td><td>Multi-head Latent Attention：把 K/V 低秩壓縮成小向量再存</td><td>RAW 壓成 JPEG（§6）</td></tr>
+      <tr><td><strong>DSA</strong></td><td>DeepSeek Sparse Attention：輕量索引器替每個 token 挑出最相關的 2048 個 token，只對它們做完整注意力</td><td>只精讀劃線句</td></tr>
+      <tr><td><strong>CSA / HCA</strong></td><td>Compressed Sparse Attention／Heavily Compressed Attention：先壓縮再挑重點（CSA）＋全量超低解析目錄（HCA）</td><td>聯絡印樣＋縮圖目錄（§6）</td></tr>
+      <tr><td><strong>SLO</strong></td><td>Service Level Objective：把某指標當成必須守住的目標來監控</td><td>儀表板紅線</td></tr>
+      <tr><td><strong>harness</strong></td><td>包住模型的工程外殼：prompt 組裝、工具注入、記憶、重試邏輯</td><td>模型的「馬具」——方向由它定</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────── KV cache ─────────── -->
+<section id="kvcache">
+  <h2><span class="num">§2</span>KV cache：一切的起點</h2>
+  <p class="sec-sub">用記憶體換計算——代價是記憶體隨長度一直長</p>
+
+  <p>Transformer 生成每一個新字時，都要「回頭看」前面所有字——這就是注意力（attention）。回頭看的對象，是每個字先前算出來的兩個向量：<strong>Key 和 Value</strong>。如果不存下來，每生成一個字就得把前文全部重算一遍，計算量隨長度平方成長；存下來，每步就只需要算新字自己的 K/V。</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 400" role="img" aria-label="KV cache 原理：無快取每步重算所有 token，有快取只算新 token">
+      <text x="230" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#ff7b72">沒有 KV cache</text>
+      <text x="670" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#7ee787">有 KV cache</text>
+      <!-- left panel rows: all boxes orange (recomputed) -->
+      <!-- row1 -->
+      <g font-size="13" text-anchor="middle">
+        <rect x="88" y="60" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="118" y="80" fill="#ffa657">我</text>
+        <rect x="156" y="60" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="186" y="80" fill="#ffa657">們</text>
+        <text x="250" y="80" fill="#8b949e" font-size="12" text-anchor="start">→ 算 2 份 K/V</text>
+        <!-- row2 -->
+        <rect x="88" y="112" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="118" y="132" fill="#ffa657">我</text>
+        <rect x="156" y="112" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="186" y="132" fill="#ffa657">們</text>
+        <rect x="224" y="112" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="254" y="132" fill="#ffa657">去</text>
+        <text x="318" y="132" fill="#8b949e" font-size="12" text-anchor="start">→ 重算 3 份</text>
+        <!-- row3 -->
+        <rect x="88" y="164" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="118" y="184" fill="#ffa657">我</text>
+        <rect x="156" y="164" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="186" y="184" fill="#ffa657">們</text>
+        <rect x="224" y="164" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="254" y="184" fill="#ffa657">去</text>
+        <rect x="292" y="164" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="322" y="184" fill="#ffa657">吃</text>
+        <text x="386" y="184" fill="#8b949e" font-size="12" text-anchor="start">→ 重算 4 份</text>
+      </g>
+      <text x="230" y="236" text-anchor="middle" font-size="13.5" fill="#ff7b72">每一步全部重算：計算量 ∝ 長度²</text>
+
+      <!-- right panel rows: old boxes green (cached), new box orange -->
+      <g font-size="13" text-anchor="middle">
+        <rect x="528" y="60" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="558" y="80" fill="#ffa657">我</text>
+        <rect x="596" y="60" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="626" y="80" fill="#ffa657">們</text>
+        <text x="690" y="80" fill="#8b949e" font-size="12" text-anchor="start">→ 算好，存起來</text>
+        <rect x="528" y="112" width="60" height="30" rx="6" fill="#16301f" stroke="#7ee787"/><text x="558" y="132" fill="#7ee787">我</text>
+        <rect x="596" y="112" width="60" height="30" rx="6" fill="#16301f" stroke="#7ee787"/><text x="626" y="132" fill="#7ee787">們</text>
+        <rect x="664" y="112" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="694" y="132" fill="#ffa657">去</text>
+        <text x="758" y="132" fill="#8b949e" font-size="12" text-anchor="start">→ 只算 1 份</text>
+        <rect x="528" y="164" width="60" height="30" rx="6" fill="#16301f" stroke="#7ee787"/><text x="558" y="184" fill="#7ee787">我</text>
+        <rect x="596" y="164" width="60" height="30" rx="6" fill="#16301f" stroke="#7ee787"/><text x="626" y="184" fill="#7ee787">們</text>
+        <rect x="664" y="164" width="60" height="30" rx="6" fill="#16301f" stroke="#7ee787"/><text x="694" y="184" fill="#7ee787">去</text>
+        <rect x="732" y="164" width="60" height="30" rx="6" fill="#3d2317" stroke="#ffa657"/><text x="762" y="184" fill="#ffa657">吃</text>
+        <text x="806" y="184" fill="#8b949e" font-size="12" text-anchor="start">→ 1 份</text>
+      </g>
+      <text x="670" y="236" text-anchor="middle" font-size="13.5" fill="#7ee787">舊 token 直接翻筆記：每步只算新 token</text>
+
+      <line x1="450" y1="50" x2="450" y2="250" stroke="#30363d" stroke-dasharray="4 4"/>
+      <rect x="150" y="286" width="600" height="76" rx="12" fill="#1c2330" stroke="#30363d"/>
+      <text x="450" y="318" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">KV cache＝用記憶體換計算</text>
+      <text x="450" y="344" text-anchor="middle" font-size="13" fill="#8b949e">代價：記憶體佔用隨上下文長度線性成長——「KV 有多大」從此變成核心工程問題</text>
+      <g fill="#8b949e" font-size="12">
+        <text x="30" y="80">步驟 1</text>
+        <text x="30" y="132">步驟 2</text>
+        <text x="30" y="184">步驟 3</text>
+        <text x="470" y="80">步驟 1</text>
+        <text x="470" y="132">步驟 2</text>
+        <text x="470" y="184">步驟 3</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 1</b>橘色＝這一步要計算的 K/V，綠色＝已存在快取、直接取用。沒有 KV cache，生成第 N 個字要重算前面全部；有 KV cache，每步只算一份。這是單一請求「之內」的快取，所有推論引擎都內建。</figcaption>
+  </figure>
+
+  <p>圖 1 講的是<strong>一次請求之內</strong>的事。真正跟帳單有關的，是把這份筆記<strong>跨請求</strong>留下來——那就是下一節的 prompt caching。</p>
+</section>
+
+<!-- ─────────── prompt caching ─────────── -->
+<section id="promptcache">
+  <h2><span class="num">§3</span>Prompt caching：同一份前綴，別算第二次</h2>
+  <p class="sec-sub">hit＝翻筆記，miss＝重讀整本書——而且 miss 是全價</p>
+
+  <p>你每次呼叫 API，開頭那一大段其實都一樣：system prompt、工具定義、之前的對話歷史。prompt caching 做的事，是把這段<strong>前綴（prefix）的 KV cache 保存在伺服器上</strong>；下一個請求進來，開頭若與快取裡的內容完全一致，這一段就不必重算——這叫<strong>命中（hit）</strong>，只收很低的價。從第一個不一樣的字開始，後面全部要全價重算——這叫<strong>未命中（miss）</strong>。</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 430" role="img" aria-label="prompt cache 命中與未命中：前綴一致的部分直接載入，分歧點之後全額重算">
+      <text x="30" y="36" font-size="14" font-weight="700" fill="#8b949e">伺服器上已存的快取（上一次請求算好的 KV）</text>
+      <g font-size="13" text-anchor="middle">
+        <rect x="30" y="52" width="180" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="120" y="77" fill="#7ee787">System prompt</text>
+        <rect x="216" y="52" width="160" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="296" y="77" fill="#7ee787">工具定義</text>
+        <rect x="382" y="52" width="200" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="482" y="77" fill="#7ee787">昨天的對話歷史</text>
+      </g>
+      <text x="612" y="77" font-size="12" fill="#6e7681">…存在快取裡</text>
+
+      <!-- matching arrows -->
+      <g stroke="#7ee787" stroke-width="1.5" fill="none" opacity=".7">
+        <path d="M120 96 L120 158" marker-end="url(#arrG)"/>
+        <path d="M296 96 L296 158" marker-end="url(#arrG)"/>
+        <path d="M482 96 L482 158" marker-end="url(#arrG)"/>
+      </g>
+      <defs>
+        <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker>
+      </defs>
+      <text x="700" y="130" font-size="12.5" fill="#7ee787" text-anchor="middle">逐 byte 比對前綴</text>
+
+      <text x="30" y="150" font-size="14" font-weight="700" fill="#8b949e">這一次的新請求</text>
+      <g font-size="13" text-anchor="middle">
+        <rect x="30" y="164" width="180" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="120" y="189" fill="#7ee787">System prompt</text>
+        <rect x="216" y="164" width="160" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="296" y="189" fill="#7ee787">工具定義</text>
+        <rect x="382" y="164" width="200" height="40" rx="8" fill="#16301f" stroke="#7ee787"/><text x="482" y="189" fill="#7ee787">昨天的對話歷史</text>
+        <rect x="608" y="164" width="180" height="40" rx="8" fill="#3a1d1d" stroke="#ff7b72"/><text x="698" y="189" fill="#ff7b72">今天的新提問</text>
+      </g>
+      <line x1="596" y1="150" x2="596" y2="220" stroke="#e6edf3" stroke-dasharray="5 4" stroke-width="1.5"/>
+      <text x="596" y="240" font-size="12.5" fill="#e6edf3" text-anchor="middle">分歧點✂</text>
+
+      <!-- verdict boxes -->
+      <g>
+        <rect x="30" y="272" width="540" height="118" rx="12" fill="#12241a" stroke="#2ea043"/>
+        <text x="52" y="302" font-size="14.5" font-weight="700" fill="#7ee787">前綴一致 → cache HIT</text>
+        <text x="52" y="328" font-size="13" fill="#8b949e">KV 直接從快取載入，GPU 不必重算 prefill</text>
+        <text x="52" y="352" font-size="13" fill="#8b949e">計費：極低的「命中價」（DeepSeek 約為 miss 的 1/50）</text>
+        <text x="52" y="376" font-size="13" fill="#8b949e">延遲：首字回應（TTFT）也大幅縮短</text>
+        <rect x="590" y="272" width="280" height="118" rx="12" fill="#2b1618" stroke="#f85149"/>
+        <text x="612" y="302" font-size="14.5" font-weight="700" fill="#ff7b72">分歧點之後 → MISS</text>
+        <text x="612" y="328" font-size="13" fill="#8b949e">全額重算＋寫回快取</text>
+        <text x="612" y="352" font-size="13" fill="#8b949e">計費：全價（＝50× 命中價）</text>
+        <text x="612" y="376" font-size="13" fill="#8b949e">下次同前綴才會變 hit</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 2</b>快取以「前綴」為單位：伺服器逐 byte 比對新請求的開頭與既有快取，一致的綠色段直接載入（hit），從第一個不同的 byte 起（✂）全部紅色段重算（miss）。所以「開頭有多穩定」直接決定你的帳單。</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="tag">關鍵直覺</span>
+    快取比對的單位不是「意思」而是 <strong>byte</strong>。就算只是 system prompt 開頭多了一個空格、時間戳跳了一秒，對快取而言就是「另一本書」——<em>從那個字之後全部重算</em>。這是 §8 所有工程建議的根源。（實作細節：DeepSeek 的快取以 64 token 為一個儲存區塊，且必須從第 0 個 token 起前綴完全一致才算重複；不足 64 token 的內容不進快取。）
+  </div>
+</section>
+
+<!-- ─────────── miss rate 的帳 ─────────── -->
+<section id="economics">
+  <h2><span class="num">§4</span>Miss rate 的帳：90% 和 99% 為什麼差 4 倍</h2>
+  <p class="sec-sub">有效單價 = hit% × hit 價 + miss% × miss 價</p>
+
+  <p>假設 miss 價是 $0.14/1M tokens，hit 價是它的 1/50（$0.0028）。你的實際單價不是牌價上的任何一個數字，而是兩者按命中比例的<strong>加權平均</strong>：</p>
+
+  <div class="callout purple">
+    <span class="tag">有效單價公式</span>
+    <code>有效單價 = hit rate × hit 價 + miss rate × miss 價</code><br>
+    hit rate 90%：0.90 × $0.0028 + 0.10 × $0.14 = <strong>$0.0165</strong>/1M<br>
+    hit rate 95%：0.95 × $0.0028 + 0.05 × $0.14 = <strong>$0.0097</strong>/1M<br>
+    hit rate 99%：0.99 × $0.0028 + 0.01 × $0.14 = <strong>$0.0042</strong>/1M
+  </div>
+
+  <div class="callout green">
+    <span class="tag">查證 ✓</span>
+    以上全部對回 DeepSeek 官方定價頁（2026-08-06 查證）：<code>deepseek-v4-flash</code> 輸入 cache hit <strong>$0.0028</strong>、cache miss <strong>$0.14</strong>/1M tokens，恰好 50.0 倍；三個有效單價的算術也全部吻合貼文。補充兩點：姊妹模型 <code>deepseek-v4-pro</code> 的價差更誇張——$0.003625 vs $0.435，<strong>120 倍</strong>；且官方頁面已明白預告「近期將大幅調漲」，本頁所有價格都要記得標上日期。
+  </div>
+
+  <figure class="dark">
+    <svg viewBox="0 0 860 430" role="img" aria-label="三個命中率下的有效單價堆疊長條圖：miss 成本佔絕對多數">
+      <text x="430" y="34" text-anchor="middle" font-size="15.5" font-weight="700" fill="#e6edf3">同樣 100 萬個輸入 token，你付的錢（hit/miss 價差 50× 時）</text>
+      <!-- baseline -->
+      <line x1="70" y1="360" x2="790" y2="360" stroke="#30363d"/>
+      <!-- bar 90%: total 264px = miss 224 + hit 40 -->
+      <g>
+        <rect x="150" y="96" width="120" height="224" fill="#8e2a30" stroke="#ff7b72"/>
+        <rect x="150" y="320" width="120" height="40" fill="#1f6e37" stroke="#7ee787"/>
+        <text x="210" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#ff7b72" class="mono">$0.0165</text>
+        <text x="210" y="228" text-anchor="middle" font-size="13" fill="#ffb3ad">miss 10%</text>
+        <text x="210" y="250" text-anchor="middle" font-size="12" fill="#ffb3ad" class="mono">$0.0140</text>
+        <text x="210" y="345" text-anchor="middle" font-size="11.5" fill="#7ee787" class="mono">$0.0025</text>
+        <text x="210" y="386" text-anchor="middle" font-size="14" fill="#e6edf3">hit 90%</text>
+      </g>
+      <!-- bar 95%: total 155 = miss 112 + hit 43 -->
+      <g>
+        <rect x="380" y="205" width="120" height="112" fill="#8e2a30" stroke="#ff7b72"/>
+        <rect x="380" y="317" width="120" height="43" fill="#1f6e37" stroke="#7ee787"/>
+        <text x="440" y="187" text-anchor="middle" font-size="16" font-weight="700" fill="#ffa657" class="mono">$0.0097</text>
+        <text x="440" y="255" text-anchor="middle" font-size="13" fill="#ffb3ad">miss 5%</text>
+        <text x="440" y="277" text-anchor="middle" font-size="12" fill="#ffb3ad" class="mono">$0.0070</text>
+        <text x="440" y="344" text-anchor="middle" font-size="11.5" fill="#7ee787" class="mono">$0.0027</text>
+        <text x="440" y="386" text-anchor="middle" font-size="14" fill="#e6edf3">hit 95%</text>
+      </g>
+      <!-- bar 99%: total 67 = miss 22 + hit 45 -->
+      <g>
+        <rect x="610" y="293" width="120" height="22" fill="#8e2a30" stroke="#ff7b72"/>
+        <rect x="610" y="315" width="120" height="45" fill="#1f6e37" stroke="#7ee787"/>
+        <text x="670" y="275" text-anchor="middle" font-size="16" font-weight="700" fill="#7ee787" class="mono">$0.0042</text>
+        <text x="748" y="308" text-anchor="start" font-size="12" fill="#ffb3ad" class="mono">miss $0.0014</text>
+        <text x="670" y="343" text-anchor="middle" font-size="11.5" fill="#7ee787" class="mono">$0.0028</text>
+        <text x="670" y="386" text-anchor="middle" font-size="14" fill="#e6edf3">hit 99%</text>
+      </g>
+      <!-- bracket -->
+      <path d="M210 92 Q 440 40 670 248" stroke="#79c0ff" fill="none" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrB)"/>
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#79c0ff"/></marker></defs>
+      <text x="452" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#79c0ff">90% → 99%：帳單 ÷ 4</text>
+      <!-- legend -->
+      <g font-size="12.5">
+        <rect x="70" y="406" width="14" height="14" fill="#8e2a30" stroke="#ff7b72"/><text x="92" y="418" fill="#8b949e">miss 部分的成本（全價 $0.14/1M）</text>
+        <rect x="360" y="406" width="14" height="14" fill="#1f6e37" stroke="#7ee787"/><text x="382" y="418" fill="#8b949e">hit 部分的成本（$0.0028/1M）——三根幾乎一樣高</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 3</b>把有效單價拆成兩截：綠色（hit 成本）從頭到尾幾乎不動，紅色（miss 成本）才是變數——hit rate 90% 時 miss 佔帳單 85%，99% 時紅色縮到只剩一小截。價差 50 倍的世界裡，<strong>帳單 ≈ miss 掉的 token 數 × 全價</strong>。</figcaption>
+  </figure>
+
+  <p>這就是「token consumption 不再是重點」的數學根據：當 hit 幾乎免費，帳單近似 <code>miss rate × 全價</code>。miss rate 從 10% 降到 1% 是 10 倍的差距，反映到總帳單就是那個 ÷4。反過來說，<strong>一個把 hit rate 從 99% 打回 90% 的改動，等於把你的價格表調漲 4 倍</strong>——而且不會出現在任何 diff 的 token 統計裡。</p>
+</section>
+
+<!-- ─────────── 記憶體階層 ─────────── -->
+<section id="hierarchy">
+  <h2><span class="num">§5</span>記憶體階層：disk cache 為什麼不是「開個開關」</h2>
+  <p class="sec-sub">HBM 與硬碟差 200～500 倍頻寬——KV 不夠小，落盤＝慢到懷疑人生</p>
+
+  <p>快取要「留得久」，就得離開 GPU。但每往下一層，頻寬掉一個數量級以上：</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 470" role="img" aria-label="記憶體階層：HBM、DRAM、NVMe SSD 的頻寬、容量與價格比較">
+      <text x="450" y="36" text-anchor="middle" font-size="15.5" font-weight="700" fill="#e6edf3">KV cache 可以住的三層樓（頻寬條為對數尺度）</text>
+      <!-- HBM -->
+      <g>
+        <rect x="40" y="64" width="820" height="92" rx="12" fill="#1c2330" stroke="#79c0ff"/>
+        <text x="64" y="96" font-size="15.5" font-weight="700" fill="#79c0ff">GPU HBM　「工作檯面」</text>
+        <rect x="64" y="112" width="494" height="16" rx="8" fill="#1f6feb"/>
+        <text x="570" y="125" font-size="12.5" fill="#79c0ff" class="mono">~3.4 TB/s（H100 SXM，B200 達 8）</text>
+        <text x="64" y="150" font-size="12.5" fill="#8b949e">容量：80 GB／卡　·　價格：~$15/GB 且跟 GPU 綁售　·　誰都想搶的稀缺資源，留不久</text>
+      </g>
+      <!-- DRAM -->
+      <g>
+        <rect x="40" y="172" width="820" height="92" rx="12" fill="#1c2330" stroke="#d2a8ff"/>
+        <text x="64" y="204" font-size="15.5" font-weight="700" fill="#d2a8ff">CPU DRAM　「旁邊的書架」</text>
+        <rect x="64" y="220" width="378" height="16" rx="8" fill="#8957e5"/>
+        <text x="454" y="233" font-size="12.5" fill="#d2a8ff" class="mono">~0.5–0.6 TB/s（DDR5 12 通道/socket）</text>
+        <text x="64" y="258" font-size="12.5" fill="#8b949e">容量：TB 級　·　價格：2026 缺貨暴漲，合約價 ~$14/GB 已貼近 HBM　·　LMCache 的第一層 offload</text>
+      </g>
+      <!-- SSD -->
+      <g>
+        <rect x="40" y="280" width="820" height="92" rx="12" fill="#1c2330" stroke="#ffa657"/>
+        <text x="64" y="312" font-size="15.5" font-weight="700" fill="#ffa657">NVMe SSD／硬碟陣列　「倉庫」</text>
+        <rect x="64" y="328" width="140" height="16" rx="8" fill="#bd561d"/>
+        <text x="216" y="341" font-size="12.5" fill="#ffa657" class="mono">~0.007–0.014 TB/s（單顆 NVMe Gen4/Gen5）</text>
+        <text x="64" y="366" font-size="12.5" fill="#8b949e">容量：百 TB～PB 級　·　價格：≈ $0.1–0.2/GB（2026-08 行情），仍比上兩層便宜約百倍　·　留幾小時～幾天都划算</text>
+      </g>
+      <!-- verdict -->
+      <rect x="40" y="392" width="820" height="62" rx="12" fill="#161b22" stroke="#30363d"/>
+      <text x="450" y="418" text-anchor="middle" font-size="14" font-weight="700" fill="#e6edf3">HBM ↔ SSD 頻寬差 200～500 倍、延遲差 ~100 ns vs ~20–70 µs：KV 太大 → 搬回來比重算還慢</text>
+      <text x="450" y="442" text-anchor="middle" font-size="12.5" fill="#8b949e">KV 夠小 → 倉庫既便宜又夠快。「disk cache 經濟學成立的前提是 KV 夠小」——DeepSeek 花兩年壓 KV 的原因（§6）</text>
+    </svg>
+    <figcaption><b>圖 4</b>三層記憶體的頻寬（條長為對數尺度）、容量與單位成本（2026-08 行情）。快取放得越低層，留得越久、越便宜，但讀回來越慢——除非 KV 本身被壓得夠小。插曲：2025–26 的記憶體大缺貨把 DRAM 合約價推到貼近 HBM，教科書上的價格金字塔中段塌了，但「SSD 便宜百倍」這一層仍然成立。</figcaption>
+  </figure>
+
+  <h3>「那我開 vLLM 的 disk cache 就好啦」——為什麼沒那麼簡單</h3>
+  <p>自架推論的人看到這裡會想：vLLM 本來就有 prefix caching（KV 以 16-token 區塊放在 GPU HBM、按前綴雜湊共用），配 LMCache 還能把 KV 丟到 CPU RAM、本地硬碟甚至遠端儲存（Redis、Mooncake、S3）。功能確實存在，長上下文下實測 TTFT 可以快 1.9～8.1 倍——但帳要算兩筆：</p>
+  <ul>
+    <li><strong>搬運時間</strong>：同樣一段 128K token 的上下文，Llama-3-70B（GQA）的 KV 約 <strong>42 GB</strong>——超過半張 H100 的 HBM，從 SSD 讀回來要幾秒；DeepSeek-V3（MLA）只要約 <strong>9 GB</strong>。研究（Cake, arXiv 2410.03065）指出 A100 的 prefill 吞吐量跟 SSD/網路載入 KV 的吞吐量在同一個量級——<em>KV 不夠小時，「從倉庫搬」根本不比「當場重算」快</em>；幾百 token 的短上下文更是重算穩贏。</li>
+    <li><strong>儲存成本</strong>：要替所有使用者留「幾小時到幾天」的上下文，KV 每大一倍，倉庫就貴一倍。KV 夠小，才敢把保存期拉長、把省下的錢開進牌價。</li>
+  </ul>
+
+  <h3>各家的快取是不同的「產品」：存哪、多久、怎麼收費</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>供應商</th><th>啟用方式</th><th>保存多久</th><th>寫入收費</th><th>命中價</th></tr>
+      <tr>
+        <td><strong>DeepSeek</strong></td>
+        <td>全自動，無需標記</td>
+        <td class="best">分散式硬碟陣列，「通常幾小時到幾天」（不保證）</td>
+        <td class="best">免費（儲存也免費）</td>
+        <td class="best">miss 價的 2%（V4 Flash，50×）；V4 Pro 更達 1/120</td>
+      </tr>
+      <tr>
+        <td><strong>Anthropic</strong></td>
+        <td>要下 <code>cache_control</code> 標記</td>
+        <td>預設 5 分鐘（命中免費刷新）；付費 1 小時檔</td>
+        <td>寫入加價：1.25×（5 分）／2×（1 小時）</td>
+        <td>基價的 0.1×</td>
+      </tr>
+      <tr>
+        <td><strong>OpenAI</strong></td>
+        <td>全自動（≥1024 token）</td>
+        <td>GPT-5.6+ 至少 30 分鐘；較舊模型可選 <strong>24 小時</strong>（非 ZDR 組織已是預設）</td>
+        <td>免費</td>
+        <td>基價的 0.1×（GPT-5.x；舊模型 0.25–0.5×）</td>
+      </tr>
+      <tr>
+        <td><strong>Google Gemini</strong></td>
+        <td>隱式全自動；顯式要自建 cache 物件</td>
+        <td>隱式無公開 TTL；顯式預設 1 小時、可無上限</td>
+        <td>隱式免費；顯式收儲存費 $1–4.5/1M tokens／小時</td>
+        <td>基價的 0.1×</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="callout red">
+    <span class="tag">查證：貼文對一半</span>
+    「Anthropic 預設 TTL 5 分鐘」「DeepSeek 落盤、留幾小時到幾天、2024/08 自稱全球第一家大規模 disk cache」——全部屬實（官方原文是「appears to be the first」，留了餘地）。但「隔天回來別家的早沒了」在 2026 年<strong>已經過時</strong>：OpenAI 對舊款模型提供 24 小時保存（把 KV 下放到 GPU 本地儲存，且已是非 ZDR 組織的預設）、Gemini 顯式快取付儲存費可以無限期留。精確的說法是：<strong>DeepSeek 是唯一「免費＋預設開啟＋可留到隔天」三者兼得的</strong>，而且命中折扣最深（98% off，業界慣例是 90% off）。
+  </div>
+</section>
+
+<!-- ─────────── DeepSeek 兩年功課 ─────────── -->
+<section id="compression">
+  <h2><span class="num">§6</span>DeepSeek 的兩年功課：把 KV 壓小</h2>
+  <p class="sec-sub">MLA 單張變小 · CSA 張數變少 · HCA 縮圖目錄——照片比喻圖解</p>
+
+  <p>disk cache 的經濟學能成立，前提是 KV 夠小。這不是一個開關，而是模型<strong>架構</strong>層的工程——KV 的形狀在訓練那天就決定了。用「相簿」來比喻這三代技術：</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 460" role="img" aria-label="MLA、CSA、HCA 的照片比喻：單張變小、張數變少、縮圖目錄">
+      <!-- panel 1: MLA -->
+      <g>
+        <rect x="20" y="24" width="280" height="330" rx="12" fill="#161b22" stroke="#30363d"/>
+        <text x="160" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="#79c0ff">MLA（2024/05）</text>
+        <text x="160" y="78" text-anchor="middle" font-size="13" fill="#8b949e">每張照片 RAW → JPEG</text>
+        <rect x="55" y="100" width="96" height="76" rx="6" fill="#1c2330" stroke="#79c0ff" stroke-width="1.5"/>
+        <text x="103" y="132" text-anchor="middle" font-size="12.5" fill="#79c0ff" class="mono">RAW</text>
+        <text x="103" y="152" text-anchor="middle" font-size="11" fill="#6e7681">完整 K/V</text>
+        <text x="178" y="142" text-anchor="middle" font-size="18" fill="#7ee787">→</text>
+        <rect x="204" y="122" width="40" height="32" rx="4" fill="#16301f" stroke="#7ee787"/>
+        <text x="224" y="143" text-anchor="middle" font-size="10.5" fill="#7ee787" class="mono">JPEG</text>
+        <text x="160" y="212" text-anchor="middle" font-size="13.5" fill="#e6edf3">低秩壓縮成小 latent 向量</text>
+        <text x="160" y="236" text-anchor="middle" font-size="13.5" fill="#e6edf3">存小的，用時再展開</text>
+        <rect x="70" y="264" width="180" height="46" rx="10" fill="#16301f" stroke="#7ee787"/>
+        <text x="160" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="#7ee787">單張變小 −93.3%</text>
+        <text x="160" y="336" text-anchor="middle" font-size="12" fill="#6e7681">DeepSeek-V2 首發，多家模型跟進</text>
+      </g>
+      <!-- panel 2: CSA -->
+      <g>
+        <rect x="310" y="24" width="280" height="330" rx="12" fill="#161b22" stroke="#30363d"/>
+        <text x="450" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="#ffa657">CSA（2026/04）</text>
+        <text x="450" y="78" text-anchor="middle" font-size="13" fill="#8b949e">先 4 合 1 成「印樣」，再挑重要的</text>
+        <!-- 8 photos, grouped 4+4 into two contact sheets -->
+        <g fill="#1c2330" stroke="#8b949e" stroke-width=".8">
+          <rect x="342" y="96" width="24" height="20" rx="2"/><rect x="370" y="96" width="24" height="20" rx="2"/>
+          <rect x="398" y="96" width="24" height="20" rx="2"/><rect x="426" y="96" width="24" height="20" rx="2"/>
+          <rect x="458" y="96" width="24" height="20" rx="2"/><rect x="486" y="96" width="24" height="20" rx="2"/>
+          <rect x="514" y="96" width="24" height="20" rx="2"/><rect x="542" y="96" width="24" height="20" rx="2"/>
+        </g>
+        <g stroke="#8b949e" stroke-width="1.2" fill="none" opacity=".8">
+          <path d="M396 122 L398 142"/>
+          <path d="M512 122 L512 142"/>
+        </g>
+        <rect x="376" y="146" width="44" height="36" rx="4" fill="#16301f" stroke="#7ee787" stroke-width="1.5"/>
+        <g stroke="#7ee787" stroke-width=".6" opacity=".5">
+          <line x1="398" y1="146" x2="398" y2="182"/><line x1="376" y1="164" x2="420" y2="164"/>
+        </g>
+        <rect x="490" y="146" width="44" height="36" rx="4" fill="#1c2330" stroke="#30363d" opacity=".5"/>
+        <g stroke="#6e7681" stroke-width=".6" opacity=".4">
+          <line x1="512" y1="146" x2="512" y2="182"/><line x1="490" y1="164" x2="534" y2="164"/>
+        </g>
+        <text x="398" y="200" text-anchor="middle" font-size="11" fill="#7ee787">索引器挑中</text>
+        <text x="512" y="200" text-anchor="middle" font-size="11" fill="#6e7681">略過</text>
+        <text x="450" y="228" text-anchor="middle" font-size="13.5" fill="#e6edf3">每 4 個 token 的 KV 壓成一格</text>
+        <text x="450" y="250" text-anchor="middle" font-size="13.5" fill="#e6edf3">再用 top-k 只挑重要的格細看</text>
+        <rect x="360" y="264" width="180" height="46" rx="10" fill="#3d2317" stroke="#ffa657"/>
+        <text x="450" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="#ffa657">張數變少</text>
+        <text x="450" y="336" text-anchor="middle" font-size="12" fill="#6e7681">Compressed Sparse Attention</text>
+      </g>
+      <!-- panel 3: HCA -->
+      <g>
+        <rect x="600" y="24" width="280" height="330" rx="12" fill="#161b22" stroke="#30363d"/>
+        <text x="740" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="#d2a8ff">HCA（2026/04）</text>
+        <text x="740" y="78" text-anchor="middle" font-size="13" fill="#8b949e">每 128 張一張縮圖，整本相簿都有</text>
+        <!-- film strip of tiny thumbs -->
+        <rect x="628" y="104" width="224" height="40" rx="6" fill="#1c2330" stroke="#d2a8ff" opacity=".9"/>
+        <g fill="#2d2440" stroke="#d2a8ff" stroke-width=".8">
+          <rect x="636" y="114" width="16" height="20" rx="2"/><rect x="656" y="114" width="16" height="20" rx="2"/>
+          <rect x="676" y="114" width="16" height="20" rx="2"/><rect x="696" y="114" width="16" height="20" rx="2"/>
+          <rect x="716" y="114" width="16" height="20" rx="2"/><rect x="736" y="114" width="16" height="20" rx="2"/>
+          <rect x="756" y="114" width="16" height="20" rx="2"/><rect x="776" y="114" width="16" height="20" rx="2"/>
+          <rect x="796" y="114" width="16" height="20" rx="2"/><rect x="816" y="114" width="16" height="20" rx="2"/>
+        </g>
+        <text x="740" y="172" text-anchor="middle" font-size="13.5" fill="#e6edf3">超低解析度，但一張不缺</text>
+        <text x="740" y="196" text-anchor="middle" font-size="13.5" fill="#e6edf3">粗看用目錄，細看再調原圖</text>
+        <text x="740" y="220" text-anchor="middle" font-size="12.5" fill="#8b949e">替 CSA 的「捨棄」保底：</text>
+        <text x="740" y="240" text-anchor="middle" font-size="12.5" fill="#8b949e">重要性判斷錯了還有得救</text>
+        <rect x="650" y="264" width="180" height="46" rx="10" fill="#2d2440" stroke="#d2a8ff"/>
+        <text x="740" y="294" text-anchor="middle" font-size="15" font-weight="700" fill="#d2a8ff">全都在，超低解析</text>
+        <text x="740" y="336" text-anchor="middle" font-size="12" fill="#6e7681">Heavily Compressed Attention</text>
+      </g>
+      <!-- bottom equation -->
+      <rect x="20" y="376" width="860" height="66" rx="12" fill="#1c2330" stroke="#30363d"/>
+      <text x="450" y="404" text-anchor="middle" font-size="15" font-weight="700" fill="#e6edf3">單張變小 × 張數變少（＋縮圖目錄保底）＝ KV cache 只剩 GQA-8 基線的 ~2%</text>
+      <text x="450" y="428" text-anchor="middle" font-size="12.5" fill="#8b949e">乘法疊出來的數字：兩層折扣相乘，不是相加（1M context、V4 整體數字，見下方查證）</text>
+    </svg>
+    <figcaption><b>圖 5</b>照片比喻（依 V4 技術報告修正過的版本）：MLA 把每張照片從 RAW 壓成 JPEG（單張變小）；CSA 先把每 4 張合成一張「聯絡印樣」、再用索引器只挑重要的印樣細看（張數變少）；HCA 每 128 張存一張縮圖、覆蓋整本相簿（超低解析但全都在），替 CSA 的取捨保底。兩種層交錯混用，且最近 128 個 token 永遠保持未壓縮——「今天剛拍的照片還原尺寸攤在桌上」。壓縮率相乘，才疊出 ~2%。</figcaption>
+  </figure>
+
+  <h3>MLA：存小的，用時再展開</h3>
+  <p>傳統多頭注意力（MHA）替每個 token、每一層、每一個頭都存一份完整的 K 和 V。<strong>MLA（Multi-head Latent Attention）</strong>的洞察是：這些 K/V 高度冗餘，可以先用低秩投影壓成一個很小的 latent 向量存起來，計算時再展開。DeepSeek-V2（2024/05，arXiv 2405.04434）首發：每個 token 每層只存 512 維 latent＋64 維位置編碼＝<strong>576 個數字</strong>，相當於只有 2.25 組的 GQA、但表現比完整 MHA 還好；對比自家前一代 dense 模型 DeepSeek 67B，KV cache 直接砍掉 <strong>93.3%</strong>。具體感受：DeepSeek-V3 一個 token 的 KV 約 70 KB，Llama-3-70B（GQA）要 328 KB，傳統 MHA 的 70B 級模型要 2.6 MB。這是後面一切的地基。</p>
+
+  <h3>DSA：別每個字都盯著全文看</h3>
+  <p><strong>DSA（DeepSeek Sparse Attention）</strong>處理的是另一個維度：注意力的計算量。長上下文裡，多數 token 之間其實互不相關；DSA 用一個輕量的「lightning indexer」替每個 token 打分，只挑最相關的 <strong>top-k＝2048</strong> 個 token 做完整注意力。2025/09/29 隨 V3.2-Exp 上線（貼文寫的 2025/12 是它進入 stable 版 V3.2 的日期），DeepSeek 同日宣布「API 價格立即降 50% 以上」——cache miss 輸入 $0.56→$0.28（−50%），輸出更是 $1.68→$0.42（−75%）。</p>
+
+  <h3>CSA + HCA：連「存幾張」都動手</h3>
+  <p>MLA 壓的是「每張多大」，V4（2026/04 預覽，arXiv 2606.19348）的兩個新機制進一步壓「存幾張」：<strong>CSA（Compressed Sparse Attention）</strong>把每 4 個連續 token 的 KV 壓成一格，再用 DSA 式的 top-k 只挑重要的格來注意——先做 4 合 1 的「聯絡印樣」，再只翻重要的印樣；<strong>HCA（Heavily Compressed Attention）</strong>更狠，每 128 個 token 壓成一格，但對<em>全部</em>的格做完整（dense）注意力——一份覆蓋整本相簿的縮圖目錄，替 CSA 的取捨保底。兩種層在模型裡交錯混用，而且都保留一條 sliding window：<strong>最近 128 個 token 永遠不壓縮</strong>——今天剛拍的照片還原尺寸攤在桌上。</p>
+
+  <div class="callout red">
+    <span class="tag">查證：兩個數字要加註</span>
+    「KV 壓到 V3.2 的 7%」——官方確有此數，但那是 <strong>V4-Flash 在 1M token 上下文</strong>的數字（V4-Pro 是 10%），同場景的推論 FLOPs 分別剩 10%／27%。「只剩傳統的 2%」——這個數字的基線是 <strong>BF16 GQA-8</strong>（head dim 128），不是傳統 MHA；GQA-8 本身已比 MHA 小一個數量級，所以對真正的 MHA 而言壓縮比其實<em>更誇張</em>。（另註：官方模型卡只給「V3.2 的 7%／10%」；2% 這個對 GQA-8 的換算在技術報告與二手整理間出處不一，量級可信、精確值保留。）另外這些是整個 V4 的整體數字（資料配方、optimizer、殘差連接也都改了），不能全記在 CSA/HCA 一項頭上。
+  </div>
+
+  <div class="callout green">
+    <span class="tag">為什麼別人抄不動</span>
+    vLLM＋LMCache 的 SSD offload 是「功能」，裝了就有；MLA/CSA/HCA 是「模型架構」——<strong>KV 的形狀在訓練那天就決定了</strong>，推論端無法事後改變。MLA 是 2024 年 DeepSeek 原創、已被多家後續模型採用（貼文說「現在也是標配」略有誇大——主流開源模型不少仍用 GQA）；而新一代的壓縮要等別家「下一個從頭訓練的模型」才能跟上。功能能抄，架構抄不動——這就是「領先一個 model 世代」的意思。
+  </div>
+</section>
+
+<!-- ─────────── 時間線 ─────────── -->
+<section id="timeline">
+  <h2><span class="num">§7</span>時間線：三個齒輪怎麼咬合</h2>
+  <p class="sec-sub">架構壓縮 × 硬碟落盤 × 敢開進牌價的定價</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 330" role="img" aria-label="DeepSeek KV 壓縮與快取定價時間線 2024-2026">
+      <line x1="50" y1="165" x2="860" y2="165" stroke="#30363d" stroke-width="2"/>
+      <!-- node 1: MLA (above) -->
+      <g>
+        <circle cx="95" cy="165" r="7" fill="#79c0ff"/>
+        <text x="95" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#79c0ff" class="mono">2024/05</text>
+        <text x="95" y="98" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">MLA</text>
+        <text x="95" y="196" text-anchor="middle" font-size="12" fill="#8b949e">KV cache</text>
+        <text x="95" y="214" text-anchor="middle" font-size="12" fill="#8b949e">−93.3%</text>
+      </g>
+      <!-- node 2: disk cache -->
+      <g>
+        <circle cx="270" cy="165" r="7" fill="#7ee787"/>
+        <text x="270" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#7ee787" class="mono">2024/08</text>
+        <text x="270" y="98" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">Disk cache 上線</text>
+        <text x="270" y="196" text-anchor="middle" font-size="12" fill="#8b949e">hit 價降到 1/10</text>
+        <text x="270" y="214" text-anchor="middle" font-size="12" fill="#8b949e">自稱全球首家大規模落盤</text>
+      </g>
+      <!-- node 3: DSA -->
+      <g>
+        <circle cx="460" cy="165" r="7" fill="#ffa657"/>
+        <text x="460" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#ffa657" class="mono">2025/09</text>
+        <text x="460" y="98" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">DSA（V3.2-Exp）</text>
+        <text x="460" y="196" text-anchor="middle" font-size="12" fill="#8b949e">稀疏注意力，miss 價 −50%</text>
+        <text x="460" y="214" text-anchor="middle" font-size="12" fill="#8b949e">（2025/12 進 stable 版）</text>
+      </g>
+      <!-- node 4: CSA+HCA -->
+      <g>
+        <circle cx="640" cy="165" r="7" fill="#d2a8ff"/>
+        <text x="640" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#d2a8ff" class="mono">2026/04</text>
+        <text x="640" y="98" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">CSA + HCA（V4）</text>
+        <text x="640" y="196" text-anchor="middle" font-size="12" fill="#8b949e">KV 壓到 V3.2 的</text>
+        <text x="640" y="214" text-anchor="middle" font-size="12" fill="#8b949e">7%（Flash）/10%（Pro）</text>
+      </g>
+      <!-- node 5: V4 Flash -->
+      <g>
+        <circle cx="810" cy="165" r="8" fill="#ff7b72"/>
+        <text x="810" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#ff7b72" class="mono">2026/07</text>
+        <text x="810" y="98" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">V4 Flash 0731</text>
+        <text x="810" y="196" text-anchor="middle" font-size="12" fill="#ff7b72">現行牌價 hit/miss 50×</text>
+        <text x="810" y="214" text-anchor="middle" font-size="12" fill="#ff7b72">（V4 Pro 達 120×）</text>
+      </g>
+      <!-- gears note -->
+      <rect x="50" y="252" width="810" height="56" rx="12" fill="#1c2330" stroke="#30363d"/>
+      <text x="455" y="276" text-anchor="middle" font-size="13.5" font-weight="700" fill="#e6edf3">架構把 KV 壓小 → 落盤的儲存與 I/O 成本跟著降 → 省下的成本敢開進牌價</text>
+      <text x="455" y="298" text-anchor="middle" font-size="12.5" fill="#8b949e">三個齒輪咬合，才是「50 倍價差」這個座標的完整解釋——少一個都開不出這個價</text>
+    </svg>
+    <figcaption><b>圖 6</b>兩年時間線（日期已依官方發布記錄校正：DSA 首發於 2025/09/29 的 V3.2-Exp，貼文寫的 2025/12 是 stable 版日期）。每一步架構壓縮（藍/橘/紫）都緊跟著一步定價動作（綠/紅）。注意：50× 為 2026-08-06 查證的現行牌價，其確切生效日未查證——可能自 V4 上市（2026/04）即如此，未必是 0731 更新才開的。</figcaption>
+  </figure>
+
+  <p>值得注意的是順序：<strong>先有架構，才有定價</strong>。2024/08 的 disk cache 敢上線，是因為三個月前 MLA 把 KV 砍到 1/15；V4 世代敢開 50 倍價差，是因為 CSA+HCA 把 KV 又壓了一輪。定價是架構的下游。</p>
+</section>
+
+<!-- ─────────── 工程師三件事 ─────────── -->
+<section id="engineering">
+  <h2><span class="num">§8</span>給工程師的三件事</h2>
+  <p class="sec-sub">模型端的功課人家做完了，prefix 穩不穩是你的功課</p>
+
+  <h3>一、prefix 要 byte-identical 才命中：穩定的往前放，會變的往後放</h3>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 470" role="img" aria-label="prefix 穩定性：穩定內容前置可持續命中；開頭放時間戳會讓整條快取失效">
+      <text x="30" y="36" font-size="14.5" font-weight="700" fill="#7ee787">✓ 快取友善：穩定的往前放，會變的往後放（append-only）</text>
+      <g font-size="12.5" text-anchor="middle">
+        <rect x="30" y="52" width="170" height="42" rx="8" fill="#16301f" stroke="#7ee787"/><text x="115" y="78" fill="#7ee787">System prompt</text>
+        <rect x="206" y="52" width="150" height="42" rx="8" fill="#16301f" stroke="#7ee787"/><text x="281" y="78" fill="#7ee787">工具定義</text>
+        <rect x="362" y="52" width="150" height="42" rx="8" fill="#16301f" stroke="#7ee787"/><text x="437" y="78" fill="#7ee787">few-shot 範例</text>
+        <rect x="518" y="52" width="180" height="42" rx="8" fill="#1c2f3f" stroke="#79c0ff"/><text x="608" y="78" fill="#79c0ff">對話歷史（只增不改）</text>
+        <rect x="704" y="52" width="140" height="42" rx="8" fill="#3d2317" stroke="#ffa657"/><text x="774" y="78" fill="#ffa657">本輪新輸入</text>
+      </g>
+      <path d="M30 112 L698 112" stroke="#7ee787" stroke-width="2"/>
+      <text x="360" y="134" font-size="12.5" fill="#7ee787">← 這一整段每輪都命中（幾乎免費）</text>
+      <text x="774" y="134" font-size="12.5" fill="#ffa657" text-anchor="middle">只有這段付全價</text>
+
+      <text x="30" y="196" font-size="14.5" font-weight="700" fill="#ff7b72">✗ 成本炸彈：開頭插了會變的東西</text>
+      <g font-size="12.5" text-anchor="middle">
+        <rect x="30" y="212" width="170" height="42" rx="8" fill="#2b1618" stroke="#f85149" stroke-width="1.8"/><text x="115" y="231" fill="#ff7b72" class="mono">「現在時刻 09:41:07」</text><text x="115" y="248" fill="#ff7b72">⏰ 每秒都不同</text>
+        <rect x="206" y="212" width="150" height="42" rx="8" fill="#2b1618" stroke="#ff7b72" opacity=".85"/><text x="281" y="238" fill="#ffb3ad">工具定義</text>
+        <rect x="362" y="212" width="150" height="42" rx="8" fill="#2b1618" stroke="#ff7b72" opacity=".85"/><text x="437" y="238" fill="#ffb3ad">few-shot 範例</text>
+        <rect x="518" y="212" width="180" height="42" rx="8" fill="#2b1618" stroke="#ff7b72" opacity=".85"/><text x="608" y="238" fill="#ffb3ad">對話歷史</text>
+        <rect x="704" y="212" width="140" height="42" rx="8" fill="#2b1618" stroke="#ff7b72" opacity=".85"/><text x="774" y="238" fill="#ffb3ad">本輪新輸入</text>
+      </g>
+      <path d="M30 272 L844 272" stroke="#f85149" stroke-width="2"/>
+      <text x="437" y="294" font-size="13" font-weight="700" fill="#ff7b72">開頭第一個 byte 就不同 → 後面全部 MISS，整條付全價（×50）</text>
+
+      <!-- bomb list -->
+      <rect x="30" y="324" width="840" height="122" rx="12" fill="#161b22" stroke="#30363d"/>
+      <text x="52" y="352" font-size="13.5" font-weight="700" fill="#e6edf3">常見的 prefix 炸彈（每一顆都把 hit rate 打回原形）：</text>
+      <g font-size="13" fill="#8b949e">
+        <text x="52" y="378">💣 system prompt 開頭插時間戳／request ID　　💣 每輪動態載入不同的工具集，工具定義段整段變動</text>
+        <text x="52" y="404">💣 few-shot 範例隨機排序（內容一樣、順序不同＝完全不同的 byte 序列）　　💣 中途編輯、壓縮對話歷史</text>
+        <text x="52" y="430">✓ 解法：固定不變的內容放最前面；會變的資訊（時間、動態上下文）盡量往 prompt 尾端放</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 7</b>上：穩定內容前置＋歷史只增不改（append-only），每輪只有最後一小段付全價。下：開頭一顆時間戳，讓整條 prompt 從第一個 byte 起就對不上快取——內容 99% 相同也一樣全滅。</figcaption>
+  </figure>
+
+  <p>真實世界的量級參考：DigitalOcean 的一個生產案例，只因為一個動態識別碼被放在 prompt 中段，hit rate 只有 7%；把它移到 prompt 尾端後 hit rate 升到 74%，當月推論帳單降了 59%——改的不是模型、不是用量，只是一個欄位的<em>位置</em>。</p>
+
+  <h3>二、把 cache hit rate 當 SLO 監控</h3>
+  <p>DeepSeek 的 API 回應裡直接給你 <code>prompt_cache_hit_tokens</code> 和 <code>prompt_cache_miss_tokens</code> 兩個欄位（2024/08 上線第一天就有）。把 hit rate 畫上儀表板、設警報：<strong>它一掉，代表有人動了 prefix，而且正在燒錢</strong>——這比 code review 更早發現成本回歸。下面 qwen-code 的案例裡，發現問題的正是一位自己畫了這條線的使用者。</p>
+
+  <h3>三、評估新功能時，用 miss rate 算帳，不是用 token 數</h3>
+  <p>貼文裡的反例查證屬實，而且細節比貼文更有戲劇性。出處是 qwen-code（阿里的開源 coding CLI）的 GitHub Discussion #4065（2026-05-11）：一位使用者用 DeepSeek V4 Flash 跑 qwen-code（經 OpenRouter 計費），升級 v0.15.10 之後，自己帳務資料顯示——</p>
+  <ul>
+    <li>每日輸入 token：129M → 69.4M（<strong>−46%</strong>，「省 token」是真的）</li>
+    <li>每日帳單：$1.05 → $3.30（<strong>×3.1</strong>，「變貴三倍」也是真的）</li>
+    <li>原因：cache hit rate 從 <strong>97.5% 崩到 81.5%</strong>，未命中 token 從 3M/天暴增到 12.9M/天（4.3 倍）</li>
+  </ul>
+  <p>肇事者不是時間戳也不是隨機排序，而是一個立意良善的「優化」：v0.15.10 引入 ToolSearch（PR #3589），把原本靜態寫死在 system prompt 裡的 MCP 工具定義改成<strong>按需動態載入</strong>——token 因此省了 46%，但工具定義段從此每個請求都長得不一樣，byte-identical 的前綴被打碎。官方隔天就加了關閉開關（PR #4069，<code>tools.toolSearch.enabled: false</code>，恢復預先宣告全部工具）；關掉後該使用者的 hit rate 回穩在 97.8%。</p>
+
+  <figure class="dark narrow">
+    <svg viewBox="0 0 700 390" role="img" aria-label="qwen-code 案例：每日 token 消耗下降 46%，帳單卻變成 3.1 倍">
+      <text x="350" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#e6edf3">「省 token」≠「省錢」：qwen-code v0.15.10 的教訓</text>
+      <!-- left: tokens -->
+      <g>
+        <text x="185" y="76" text-anchor="middle" font-size="14" fill="#8b949e">每日輸入 token</text>
+        <rect x="105" y="120" width="70" height="200" fill="#1c2f3f" stroke="#79c0ff"/>
+        <rect x="205" y="212" width="70" height="108" fill="#16301f" stroke="#7ee787"/>
+        <text x="140" y="108" text-anchor="middle" font-size="12.5" fill="#79c0ff" class="mono">129M</text>
+        <text x="240" y="200" text-anchor="middle" font-size="12.5" fill="#7ee787" class="mono">69.4M</text>
+        <text x="240" y="256" text-anchor="middle" font-size="15" font-weight="700" fill="#7ee787">−46%</text>
+        <text x="185" y="352" text-anchor="middle" font-size="13" fill="#7ee787">看起來像優化 ✓</text>
+      </g>
+      <line x1="350" y1="70" x2="350" y2="340" stroke="#30363d" stroke-dasharray="4 4"/>
+      <!-- right: bill -->
+      <g>
+        <text x="515" y="76" text-anchor="middle" font-size="14" fill="#8b949e">每日帳單</text>
+        <rect x="435" y="256" width="70" height="64" fill="#1c2f3f" stroke="#79c0ff"/>
+        <rect x="535" y="120" width="70" height="200" fill="#3a1d1d" stroke="#ff7b72"/>
+        <text x="470" y="244" text-anchor="middle" font-size="12.5" fill="#79c0ff" class="mono">$1.05</text>
+        <text x="570" y="108" text-anchor="middle" font-size="12.5" fill="#ff7b72" class="mono">$3.30</text>
+        <text x="570" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="#ff7b72">×3.1</text>
+        <text x="515" y="352" text-anchor="middle" font-size="13" fill="#ff7b72">實際是漲價 ✗</text>
+      </g>
+      <line x1="70" y1="320" x2="630" y2="320" stroke="#30363d"/>
+    </svg>
+    <figcaption><b>圖 8</b>同一次升級的兩個讀數（QwenLM/qwen-code Discussion #4065，單一使用者 2026/05/01–10 的帳務資料）：每日 token −46%，每日帳單 ×3.1。中間的變數是 cache hit rate 97.5%→81.5%——動態載入工具定義打碎了前綴，省下的每個 token 都用「把剩下的 token 變成全價」換來（該使用者經 OpenRouter 計費，當時命中價約為全價的 1/10；換到今日 DeepSeek 直連的 50 倍價差，同樣事故只會更貴）。注意這是一位使用者的遙測，量級僅供參考；但機制（PR #3589 → 修正 PR #4069）是官方確認的。</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="tag">為什麼說 harness 會越來越重要</span>
+    prompt 的組裝順序、工具注入的時機、歷史的裁剪策略——這些都不是「人」在每次請求時手動控制的，而是 <strong>harness（agent 框架）</strong>的設計決定的。人無法逐請求保證 byte-identical；能保證的只有架構。在 hit/miss 價差 50 倍的世界裡，<em>harness 設計就是成本工程</em>。
+  </div>
+</section>
+
+<!-- ─────────── 重點筆記 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§9</span>重點筆記：對 agent harness 工程的啟示</h2>
+  <p class="sec-sub">以下為本站觀點，非原貼文內容</p>
+
+  <p>這篇貼文的核心論證鏈——<strong>架構壓縮 → 落盤經濟學 → 定價策略 → 使用者端的 prefix 紀律</strong>——對每天在跑 coding agent 的人有幾個直接可操作的推論：</p>
+
+  <ul>
+    <li><strong>把「快取穩定性」當成 harness 的驗收條件。</strong>檢查你的 agent 框架：system prompt 有沒有嵌時間？工具清單是不是每輪重排？記憶／RAG 內容注入在 prompt 的哪個位置？一個檢查方法：連續發兩個相同請求，diff 實際送出的 byte 序列——任何開頭的差異都是付 50 倍價的洞。</li>
+    <li><strong>「動態載入」和「快取穩定」天生打架，位置決定勝負。</strong>按需載入工具、動態挑 few-shot 都是好功能，但注入點必須在穩定前綴<em>之後</em>。qwen-code 的 ToolSearch 之所以變成三倍帳單，是因為它讓 system prompt 裡的工具定義段隨請求變動；正確的形狀是「宣告段穩定不動、載入的 schema 以訊息形式附加在對話尾端」——append-only 是唯一同時保住兩者的結構。反面對照：專為快取穩定設計成 append-only 的終端 agent DeepSeek-Reasonix，回報 hit rate <strong>99.82%</strong>——同樣 4 億多 input token，帳單是未快取情境的零頭。</li>
+    <li><strong>成本監控的單位要換。</strong>儀表板上「本月 token 用量」是上一個時代的指標；要看的是 <code>hit_tokens / (hit_tokens + miss_tokens)</code> 的趨勢線。任何 prompt 改動上線前後，先看這條線再看 token 數——qwen-code 那種「優化出三倍帳單」的事故，只有這條線抓得到。</li>
+    <li><strong>供應商選型時，「保存多久、預設與否、寫入收不收費」是三個隱藏規格。</strong>同樣標榜 prompt caching，「5 分鐘快取」和「數天硬碟快取」是完全不同的產品：前者只救得了連續對話，後者救得了「隔天回來繼續跑同一個 repo」的工作流。而且規格在快速變動（OpenAI 2026 已把 24 小時保存變成部分情境的預設）——按你的使用節奏算有效單價，不要只看牌價，選型前重查一次官方文件。</li>
+    <li><strong>反向也成立：別為了快取犧牲正確性。</strong>把「會變的資訊」硬塞到尾端，若那個資訊（如當前時間、檔案狀態）是模型決策的關鍵輸入，放太後面可能被稀釋。成本工程和 prompt 工程的張力要明講，不要靜默取捨。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">跟本站另外一篇對照</span>
+    Ponytail 詳解那篇講的是「讓 agent 少寫程式碼」的紀律；這篇講的是「讓 agent 少付 50 倍價」的紀律。兩者共同的底層邏輯：<strong>agent 的行為品質不是靠指令堆出來的，是靠 harness 的結構設計出來的</strong>——指令會漂移，結構不會。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    本頁：術語圖解＋數字查證，圖皆為本站自繪 · 依一則中文技術貼文之論證脈絡整理，並對照官方文件與論文獨立查證<br>
+    主要出處：<a href="https://api-docs.deepseek.com/quick_start/pricing">DeepSeek 定價頁</a>（2026-08-06 查證）· <a href="https://api-docs.deepseek.com/news/news0802/">disk cache 公告 2024/08</a> · <a href="https://arxiv.org/abs/2405.04434">DeepSeek-V2／MLA（arXiv 2405.04434）</a> · <a href="https://api-docs.deepseek.com/news/news250929/">V3.2-Exp／DSA 公告</a> · <a href="https://arxiv.org/abs/2606.19348">DeepSeek-V4／CSA+HCA 技術報告</a> · <a href="https://github.com/QwenLM/qwen-code/discussions/4065">qwen-code Discussion #4065</a> · Anthropic／OpenAI／Gemini 官方快取文件<br>
+    <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>

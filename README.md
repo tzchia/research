@@ -8,6 +8,7 @@
 
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
+| AI Infra · 術語圖解 | [Cache Miss 才是帳單：50 倍價差世界的成本工程](https://tzchia.github.io/research/cache-economics/) | KV cache、hit/miss rate、MLA/DSA/CSA/HCA 逐一圖解：hit rate 90%→99% 帳單差 4 倍，prefix 穩定性是工程師自己的功課 |
 | Multi-Agent RL · ICML 2026 | [CooT：把「隊友」當成 in-context 的題目來解](https://tzchia.github.io/research/coot/) | NTU 孫紹華實驗室：適應陌生隊友 = in-context learning，測試時零參數更新；Overall BR-prox 0.57 vs 0.44，真人實驗 50% 選它當最愛 |
 | Robotics · Blog | [機器人部署資料到底值多少錢？](https://tzchia.github.io/research/robot-deployment-data/) | Chris Paxton 部署飛輪懷疑論：高成功率靠限縮問題，限縮掉的正是資料的新穎性 |
 | Robotics · Tech Blog × 2 | [KinetIQ 兩篇導讀](https://tzchia.github.io/research/kinetiq/) | Humanoid 的 System 0–3 分層架構＋生產級 VLA 真機 RL（78→99%，3–5 天機器時間） |
