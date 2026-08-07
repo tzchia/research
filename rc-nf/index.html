@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RC-NF：給 VLA 請一個 100 ms 反應的「監工」 — CVPR 2026 論文中文速覽</title>
+<meta name="description" content="復旦大學 CVPR 2026 論文 RC-NF 中文速覽：用 robot-conditioned normalizing flow 做機器人操作的即時異常偵測——只用成功示範訓練、不用列舉異常，86.7 ms 算出異常分數。LIBERO-Anomaly-10 平均 AUC 0.9309 vs GPT-5 0.8500；空間錯位異常 VLM 全數近乎亂猜（AUC≈0.5）、RC-NF 0.9676。真機上作為 π0 的插拔式監工，觸發 state-level rollback 與 task-level replanning。含 10 張原圖與方法、消融全解析。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto}
+  figure.narrow{max-width:620px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  svg text{font-family:var(--sans)}
+  svg .mono{font-family:var(--mono)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.worst{color:var(--red)}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">CVPR 2026 · Paper Digest · 繁中速覽</div>
+    <h1>RC-NF：給 VLA 請一個 100 ms 反應的「監工」</h1>
+    <p class="subtitle">復旦大學的即時異常偵測模組：只看成功示範就學會「正常長什麼樣」，用 normalizing flow 逐幀算出異常分數——VLA 一走偏，86.7 ms 內算出異常訊號、觸發喊停，再視情況回捲或重規劃。空間錯位這種幾何異常，GPT-5／Gemini／Claude 全數近乎亂猜，它拿 0.97。</p>
+    <div class="meta">
+      論文：<a href="https://arxiv.org/abs/2603.11106">RC-NF: Robot-Conditioned Normalizing Flow for Real-Time Anomaly Detection in Robotic Manipulation</a>（arXiv 2603.11106，CVPR 2026）<br>
+      作者：Shijie Zhou、Bin Zhu、Jiarui Yang、Xiangyu Zhao、Jingjing Chen*、Yu-Gang Jiang（復旦可信具身智能研究院 × 上海多模態具身智能重點實驗室 × 新加坡管理大學）<br>
+      專案頁：<a href="https://heikaishuizz.github.io/RC-NF/">heikaishuizz.github.io/RC-NF</a>　|　本頁為繁中解析，數字皆出自論文原文；圖除標注「自繪」外皆為原圖
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字，抓住全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">0.931<small> vs 0.850</small></div>
+      <div class="lbl">LIBERO-Anomaly-10 平均 AUC：RC-NF 對上最強基線 GPT-5——比最好的先前方法高約 8 個百分點 AUC、10 個百分點 AP（§7）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">0.49<small>–0.53</small></div>
+      <div class="lbl">三家頂級 VLM（GPT-5／Gemini 2.5 Pro／Claude 4.5）在「空間錯位」異常上的 AUC——近乎亂猜；RC-NF 同項 0.9676（§7）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">86.7<small> ms</small></div>
+      <div class="lbl">單幀端到端延遲（RTX 3090）：SAM2 50 + 格點採樣 1.7 + flow 推論 30 + 其他 5——比人類反應還快，VLM 監工則要多秒（§9）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">0<small> 筆異常標注</small></div>
+      <div class="lbl">訓練只用 LIBERO-10 的成功示範（每任務 50 筆），無監督學「正常的分佈」；異常靠似然低自動浮現，不必列舉（§3）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    VLA 模型是模仿學習訓出來的，環境一偏離訓練分佈（OOD）就照舊硬做、一路錯到底。RC-NF 的解法不是把 VLA 練得更強，而是<strong>旁邊掛一個只認得「正常」的密度模型</strong>：SAM2 把被操作物件變成點集，連同機器人本體狀態、任務 embedding 一起餵進 conditional normalizing flow，逐幀算出精確似然——<em>似然掉下去，就是出事了</em>。分數超標 → 輕則回捲軌跡（state-level），重則上報重規劃（task-level）。
+  </div>
+</section>
+
+<!-- ─────────── 問題 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題：VLA 為什麼需要監工</h2>
+  <p class="sec-sub">模仿學習的老毛病：分佈外不自知</p>
+
+  <p>VLA（Vision-Language-Action）模型把語言指令直接映射成低階控制動作，但它的訓練方式是模仿專家示範——這意味著它只「看過」成功的世界。部署到動態環境，兩種 OOD（Out-of-Distribution，分佈外）狀況會頻繁出現，而 VLA 對兩者都渾然不覺：</p>
+
+  <ul>
+    <li><strong>Task-level OOD：指令已經不成立。</strong>例如指令是「把藍球放進打開的抽屜」，抽屜卻中途被關上——再怎麼執行都是錯的，需要<em>重新規劃任務</em>。</li>
+    <li><strong>State-level OOD：指令還成立，但軌跡飄了。</strong>例如球從夾爪掉回桌上——任務沒變，只要<em>把軌跡調回訓練分佈內</em>就能繼續。</li>
+  </ul>
+
+  <p>監控這件事，先前有兩條路，各有死穴：</p>
+  <ul>
+    <li><strong>狀態分類／行為樹</strong>：把失敗偵測當分類問題，要嘛列舉所有異常型態、要嘛手工定義前置條件——真實操作的組合變化根本列不完。</li>
+    <li><strong>VLM 監工</strong>（如 Sentinel 與各種雙系統架構）：語意理解強，但要多步推理，<em>延遲以秒計</em>——等它想完，機械臂已經把錯誤執行完了。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">RC-NF 的定位</span>
+    不做語意推理，改做<strong>密度估計</strong>：把「機器人狀態 × 物件軌跡 × 任務」的聯合分佈學起來，執行時逐幀問一句「現在這個組合，在正常執行裡常見嗎？」——這個問題可以在 100 ms 內用一次前向傳播回答，而且天生輸出連續分數，不需要枚舉異常型態。
+  </div>
+</section>
+
+<!-- ─────────── 方法總覽 ─────────── -->
+<section id="overview">
+  <h2><span class="num">§2</span>方法總覽：三路輸入，一條 flow</h2>
+  <p class="sec-sub">SAM2 點集 × 任務 embedding × 機器人狀態 → 異常分數 → 分級處置</p>
+
+  <figure>
+    <img src="figs/fig2_method.png" alt="RC-NF 框架總覽：SAM2 點集、任務 embedding、機器人狀態進入 K 層 flow，輸出異常分數與分級處置" loading="lazy">
+    <figcaption><b>原圖</b>框架總覽。（左）鏡頭串流經 SAM2 取得物件遮罩、格點採樣成點集；任務指令經球面均勻編碼成 task embedding；機器人本體提供關節、夾爪、位姿狀態。（中）三路訊號進入 RC-NF：點集走 K 個可逆變換，機器人狀態與任務 embedding 作為 RCPQNet 耦合層的條件。（右）異常分數超過閾值 → task-level 走重規劃（reset 球、開抽屜、再執行），state-level 走 homing 回捲（黃色曲線），修完把控制權還給 VLA（綠色）。</figcaption>
+  </figure>
+
+  <p>整條管線的分工非常清楚：</p>
+  <ul>
+    <li><strong>看物件</strong>：SAM2 從影像流分割出被操作物件的遮罩，格點採樣成點集 <code>x ∈ R^(B×T×N×2)</code>——T 是滑動視窗步數（12），N 是每個遮罩的採樣點數。點集比原始影像特徵抗噪（分割已把背景排除在外），又比稀疏關鍵點多了「形狀」資訊——物件被壓扁、翻倒、滑走，都是點集形狀的變化。</li>
+    <li><strong>看自己</strong>：機器人狀態 s 包含關節角、夾爪開合、末端位姿——「物件沒動、但我的手不在該在的位置」這類異常靠它。</li>
+    <li><strong>知道在做哪件事</strong>：任務 embedding τ 告訴 flow「現在的正常是哪一種正常」——同一段軌跡在任務 A 正常、在任務 B 可能就是異常。</li>
+  </ul>
+</section>
+
+<!-- ─────────── NF 原理 ─────────── -->
+<section id="nf">
+  <h2><span class="num">§3</span>Normalizing Flow：為什麼它天生適合當異常偵測器</h2>
+  <p class="sec-sub">可逆變換 → 精確似然 → 異常分數不用學，直接算</p>
+
+  <p>Normalizing flow 的核心想法：用一串<strong>可逆</strong>的變換 f，把複雜的真實資料分佈 X 拉直成一個簡單的高斯分佈 Z。因為每一步都可逆、且 Jacobian 行列式可算，任何一筆資料的<strong>精確機率密度</strong>都能寫出來：</p>
+
+  <div class="callout purple">
+    <span class="tag">變數變換公式</span>
+    <code>p_X(x) = p_Z(f(x)) · |det(∂f/∂x)|</code><br>
+    訓練＝在成功示範上最大化 log 似然；推論＝把 <strong>−log p</strong> 直接當異常分數。分數是「算」出來的，不是另外訓一個分類頭「學」出來的——這就是為什麼它只需要正樣本。
+  </div>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 380" role="img" aria-label="Normalizing flow 概念圖：複雜資料分佈經 K 個可逆變換映射到高斯分佈，似然可精確計算">
+      <!-- left: complex distribution -->
+      <rect x="30" y="50" width="240" height="220" rx="14" fill="#161b22" stroke="#30363d"/>
+      <text x="150" y="84" text-anchor="middle" font-size="14.5" font-weight="700" fill="#79c0ff">真實資料分佈 X</text>
+      <text x="150" y="104" text-anchor="middle" font-size="12" fill="#8b949e">（正常執行的點集軌跡）</text>
+      <g fill="#79c0ff" opacity=".85">
+        <circle cx="90" cy="150" r="4"/><circle cx="108" cy="141" r="4"/><circle cx="126" cy="136" r="4"/>
+        <circle cx="144" cy="139" r="4"/><circle cx="160" cy="149" r="4"/><circle cx="172" cy="163" r="4"/>
+        <circle cx="181" cy="181" r="4"/><circle cx="186" cy="200" r="4"/><circle cx="119" cy="155" r="4"/>
+        <circle cx="137" cy="156" r="4"/><circle cx="102" cy="163" r="4"/><circle cx="121" cy="172" r="4"/>
+        <circle cx="141" cy="174" r="4"/><circle cx="158" cy="180" r="4"/><circle cx="109" cy="186" r="4"/>
+        <circle cx="130" cy="192" r="4"/><circle cx="150" cy="196" r="4"/><circle cx="168" cy="203" r="4"/>
+        <circle cx="98" cy="203" r="4"/><circle cx="118" cy="210" r="4"/><circle cx="139" cy="214" r="4"/>
+        <circle cx="205" cy="222" r="4"/><circle cx="220" cy="238" r="4"/>
+      </g>
+      <text x="150" y="252" text-anchor="middle" font-size="12" fill="#6e7681">形狀不規則、難直接建模</text>
+
+      <!-- middle: invertible transforms -->
+      <g>
+        <rect x="330" y="120" width="60" height="80" rx="10" fill="#1c2330" stroke="#79c0ff"/>
+        <text x="360" y="166" text-anchor="middle" font-size="13" fill="#79c0ff" class="mono">f₁</text>
+        <rect x="410" y="120" width="60" height="80" rx="10" fill="#1c2330" stroke="#79c0ff"/>
+        <text x="440" y="166" text-anchor="middle" font-size="13" fill="#79c0ff" class="mono">f₂</text>
+        <text x="502" y="166" text-anchor="middle" font-size="14" fill="#6e7681" class="mono">…</text>
+        <rect x="530" y="120" width="60" height="80" rx="10" fill="#1c2330" stroke="#79c0ff"/>
+        <text x="560" y="166" text-anchor="middle" font-size="13" fill="#79c0ff" class="mono">f_K</text>
+        <path d="M280 145 L322 145" stroke="#7ee787" stroke-width="2" marker-end="url(#aG)"/>
+        <path d="M322 178 L280 178" stroke="#ffa657" stroke-width="2" marker-end="url(#aO)"/>
+        <path d="M596 145 L640 145" stroke="#7ee787" stroke-width="2" marker-end="url(#aG)"/>
+        <path d="M640 178 L596 178" stroke="#ffa657" stroke-width="2" marker-end="url(#aO)"/>
+        <defs>
+          <marker id="aG" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker>
+          <marker id="aO" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#ffa657"/></marker>
+        </defs>
+        <text x="460" y="106" text-anchor="middle" font-size="12.5" fill="#8b949e">K＝12 個 flow step，每步＝ActNorm＋Permute＋affine coupling</text>
+        <text x="460" y="228" text-anchor="middle" font-size="12.5" fill="#8b949e">全程可逆（<tspan fill="#7ee787">正向 f</tspan>／<tspan fill="#ffa657">反向 f⁻¹</tspan>）、Jacobian 可算</text>
+        <text x="460" y="250" text-anchor="middle" font-size="12.5" fill="#d2a8ff">條件 c＝(機器人狀態 s, 任務 τ) 從旁注入每一層 →</text>
+      </g>
+
+      <!-- right: gaussian -->
+      <rect x="648" y="50" width="222" height="220" rx="14" fill="#161b22" stroke="#30363d"/>
+      <text x="759" y="84" text-anchor="middle" font-size="14.5" font-weight="700" fill="#7ee787">簡單高斯 Z</text>
+      <text x="759" y="104" text-anchor="middle" font-size="12" fill="#8b949e" class="mono">N(μ_task, I)</text>
+      <circle cx="759" cy="178" r="52" fill="none" stroke="#7ee787" opacity=".35"/>
+      <circle cx="759" cy="178" r="34" fill="none" stroke="#7ee787" opacity=".6"/>
+      <circle cx="759" cy="178" r="16" fill="#16301f" stroke="#7ee787"/>
+      <text x="759" y="183" text-anchor="middle" font-size="11" fill="#7ee787" class="mono">μ_task</text>
+      <text x="759" y="252" text-anchor="middle" font-size="12" fill="#6e7681">中心由任務 embedding 決定</text>
+
+      <!-- bottom verdict -->
+      <rect x="30" y="292" width="840" height="66" rx="12" fill="#1c2330" stroke="#30363d"/>
+      <text x="450" y="320" text-anchor="middle" font-size="14.5" font-weight="700" fill="#e6edf3">正常樣本 → 落在高斯中心附近（似然高）；異常樣本 → 被推到邊緣（似然低）</text>
+      <text x="450" y="344" text-anchor="middle" font-size="12.5" fill="#8b949e">異常分數 ＝ −log p(x|c)，逐幀一次前向傳播就算完——不用列舉異常、不用負樣本、不用分類頭</text>
+    </svg>
+    <figcaption><b>自繪</b>Normalizing flow 概念圖解（本站自繪，非論文原圖）。RC-NF 在標準 Glow 架構上加了兩件事：（1）latent 高斯的中心 μ_task 由任務 embedding 廣播而來——不同任務映到球面上不同的「家」；（2）每層 affine coupling 的參數由條件 c＝(s, τ) 動態生成，即 §4 的 RCPQNet。</figcaption>
+  </figure>
+
+  <p>對照組 FailDetect 用的是 flow matching（一般作法是學向量場、以積分近似似然——本文未詳述其打分機制），並把原始影像特徵與機器人狀態<em>串接</em>後直接餵入。RC-NF 的兩個差異化選擇：<strong>特徵上</strong>用分割後的點集取代原始影像特徵（更抗噪）；<strong>結構上</strong>把條件與資料分開處理（見下節），論文將後面實驗中分數曲線更平滑穩定歸因於此。</p>
+
+  <h3>任務 embedding：把 10 個任務推到球面上最遠的位置</h3>
+  <p>任務指令不走文字編碼器，而是映射到一個 T 維超球面（半徑 R＝5、T＝12）上<strong>均勻分佈</strong>的向量——先用最佳化算法在球面上求出 10 個彼此距離最大化的點，再把 10 個任務一一對應上去。這保證不同任務的 latent「家」離得夠遠，density estimation 才分得開「任務 A 的正常」和「任務 B 的正常」。</p>
+
+  <figure>
+    <img src="figs/fig8_taskemb.png" alt="球面均勻編碼示意：LIBERO-10 十個任務與 T=3 六任務的示例" loading="lazy">
+    <figcaption><b>原圖</b>球面均勻編碼（補充材料）。左：LIBERO-10 的十個任務清單（T＝12）。右：T＝3、6 個任務的示意——6 個球面向量恰好落在三軸交點上，彼此最大分離。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── RCPQNet ─────────── -->
+<section id="rcpq">
+  <h2><span class="num">§4</span>RCPQNet：讓「機器人狀態」當提問者</h2>
+  <p class="sec-sub">query＝任務調制的機器人狀態，memory＝雙分支編碼的點集——decouple 而不斷開</p>
+
+  <p>Flow 的每個 step 裡，affine coupling layer 要用一半的輸入算出另一半的縮放 γ 與平移 β。RC-NF 把這個「算參數的網路」換成自家的 <strong>RCPQNet</strong>——名字長，但結構就是一個 cross-attention 的 transformer decoder，關鍵在「誰當 query、誰當 memory」：</p>
+
+  <figure class="narrow">
+    <img src="figs/fig3_rcpq.png" alt="RCPQNet 結構：條件經 FiLM 與 Linear 生成 query token；點集經雙分支 GRU 與 Transformer encoder 生成 memory token；兩者 cross-attention 後輸出仿射參數" loading="lazy">
+    <figcaption><b>原圖</b>RCPQNet。左路（條件）：機器人狀態經線性層投影、再被任務 embedding 以 FiLM 調制 → <strong>query token</strong>。右路（資料）：點集經 MLP 升維後走雙分支——Dynamic Shape GRU 與 Positional Residual GRU——再由 Transformer encoder 融合 → <strong>memory token</strong>。兩者在 Transformer decoder 裡 cross-attention，輸出切成 γ 與 β，套用到另一半點集 x_t 上。</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Task-aware Robot-Conditioned Query</strong>：機器人狀態先投影到 latent 空間，再用 FiLM 被任務 embedding 調制。直覺：讓「帶著任務意圖的機器人狀態」去<em>質詢</em>物件的運動——「照這個任務、我現在這個姿勢，你（物件）應該在哪、長什麼樣？」</li>
+    <li><strong>Dual-Branch Point Feature Encoding</strong>：點集特徵走兩條互補的路——<em>Dynamic Shape branch</em> 對每幀做中心化＋正規化，只留「形狀怎麼變」（平移、尺度都消掉）；<em>Positional Residual branch</em> 補回被正規化丟掉的絕對位置資訊。各自過 GRU 抓時間相依，最後由 Transformer encoder 融合。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="tag">跟 FailDetect 的根本差異</span>
+    FailDetect 把影像特徵和機器人狀態<strong>串接成一條</strong>餵進 flow matching——表徵糾纏、模態失衡。RC-NF 讓兩者<strong>分路處理、在 attention 裡互動</strong>：條件歸條件（query）、資料歸資料（memory）。§8 的消融會證明這個分工的每一塊都有實際貢獻——而且缺了哪一塊、哪種異常先崩，完全可以事前推理。
+  </div>
+</section>
+
+<!-- ─────────── 判定與處置 ─────────── -->
+<section id="handling">
+  <h2><span class="num">§5</span>異常判定與處置：閾值怎麼定、超標之後做什麼</h2>
+  <p class="sec-sub">conformal 式校準 + 兩級處置：先試 rollback，不行再 replan</p>
+
+  <h3>閾值：從成功示範裡「校準」出來，不是拍腦袋</h3>
+  <p>對每個任務 T，從成功示範切出兩份校準集 S₁、S₂：S₁ 算平均分數 μ_T，S₂ 算每筆分數對 μ_T 的偏差集合 D_T，取其 (1−α) 分位數：</p>
+  <div class="callout purple">
+    <span class="tag">閾值公式</span>
+    <code>Upper_T = μ_T + Q_(1−α)(D_T)</code>　（真機實驗 α＝0.05，沿用 FailDetect 的設計）<br>
+    訓練時另做了 <strong>debiasing</strong>：機械臂起步段軌跡高度一致、近抓取段變化大，樣本分佈天然不均——用 BalancedHardSampler 兩階段訓練壓掉冗餘樣本、加重稀有樣本，讓分數曲線在時間上平滑，閾值才能用一條<em>不隨時間變動</em>的靜態線。
+  </div>
+
+  <h3>處置：先輕後重</h3>
+  <ul>
+    <li><strong>State-level（任務還成立）</strong>：觸發 homing 程序做<em>任務回捲</em>——不是完整回到原點，而是局部調整軌跡直到異常分數降回閾值以下，然後把控制權無縫還給 VLA。</li>
+    <li><strong>Task-level（指令已不成立）</strong>：上報高層（人類操作員或 LLM 規劃器）做<em>任務重規劃</em>，生成新的子任務序列（例：重置球 → 先開抽屜 → 再執行原任務）。</li>
+  </ul>
+  <p>實務上系統先做輕量的 state-level 恢復，不行才升級到 task-level 重規劃。</p>
+</section>
+
+<!-- ─────────── benchmark ─────────── -->
+<section id="benchmark">
+  <h2><span class="num">§6</span>LIBERO-Anomaly-10：自建的三軸異常考卷</h2>
+  <p class="sec-sub">每種異常考一個不同的偏差軸——這是本文比較的主場</p>
+
+  <figure>
+    <img src="figs/fig1_benchmark.png" alt="LIBERO-Anomaly-10 三種異常與真機異常場景總覽" loading="lazy">
+    <figcaption><b>原圖</b>論文首圖。上排：LIBERO-Anomaly-10 的三種模擬異常——(a) Gripper Open（夾爪該夾時保持張開）、(b) Gripper Slippage（摩擦力歸零、物件滑落）、(c) Spatial Misalignment（走向錯誤的隔間）。下排：真機異常——(A) 抽屜被關上（task-level）、(B) 球被移回桌面／滾到夾爪後方（state-level）。</figcaption>
+  </figure>
+
+  <p>基於 LIBERO-10 建構，在 t_anomaly 時刻注入異常，之前標正常、之後標異常。三種異常各考一個軸：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>異常</th><th>注入方式</th><th>考什麼</th></tr>
+      <tr><td><strong>Gripper Open</strong></td><td>該抓取時夾爪保持張開，物件原地不動</td><td>物件位置完全正常、只有機器人狀態不對——考「機器人–物件相對關係」的建模</td></tr>
+      <tr><td><strong>Gripper Slippage</strong></td><td>夾持中把摩擦力設為零，物件滑落</td><td>物件軌跡出現異常波動——考對物件運動的敏感度</td></tr>
+      <tr><td><strong>Spatial Misalignment</strong></td><td>機械臂走向錯誤隔間（左/前/右，正確是後）</td><td>語意–空間錯位：動作流暢合理、只是方向錯了——考幾何而非語意</td></tr>
+    </table>
+  </div>
+
+  <p>前兩種對 LIBERO-10 全部十個任務生成；Spatial Misalignment 針對「把書放進置物架<strong>後</strong>隔間」這個任務做三個錯誤方向。與先前聚焦「廣義任務失敗」的資料集不同，這三種都是<em>操作特有</em>（manipulation-specific）的異常。</p>
+</section>
+
+<!-- ─────────── 主結果 ─────────── -->
+<section id="results">
+  <h2><span class="num">§7</span>主結果：VLM 的死穴在幾何</h2>
+  <p class="sec-sub">AUC＝整體判別力，AP＝不平衡資料下的查準查全——都與閾值無關</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr>
+        <th>方法</th>
+        <th colspan="2">Gripper Open</th>
+        <th colspan="2">Gripper Slippage</th>
+        <th colspan="2">Spatial Misalign.</th>
+        <th colspan="2">平均</th>
+      </tr>
+      <tr><th></th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th></tr>
+      <tr><td>GPT-5</td><td class="num">0.9137</td><td class="num">0.9642</td><td class="num">0.8941</td><td class="num">0.8720</td><td class="num worst">0.4904</td><td class="num worst">0.4015</td><td class="num">0.8500</td><td class="num">0.8507</td></tr>
+      <tr><td>Gemini 2.5 Pro</td><td class="num">0.8644</td><td class="num">0.9333</td><td class="num">0.8633</td><td class="num">0.8505</td><td class="num worst">0.5167</td><td class="num worst">0.4271</td><td class="num">0.8186</td><td class="num">0.8313</td></tr>
+      <tr><td>Claude 4.5</td><td class="num">0.8754</td><td class="num">0.9401</td><td class="num">0.8551</td><td class="num">0.8285</td><td class="num worst">0.5292</td><td class="num worst">0.4290</td><td class="num">0.8214</td><td class="num">0.8249</td></tr>
+      <tr><td>FailDetect</td><td class="num">0.7883</td><td class="num">0.9032</td><td class="num">0.6665</td><td class="num">0.6932</td><td class="num">0.6557</td><td class="num">0.5820</td><td class="num">0.7181</td><td class="num">0.7700</td></tr>
+      <tr><td><strong>RC-NF（本文）</strong></td><td class="num best">0.9312</td><td class="num best">0.9781</td><td class="num best">0.9195</td><td class="num best">0.9180</td><td class="num best">0.9676</td><td class="num best">0.9585</td><td class="num best">0.9309</td><td class="num best">0.9494</td></tr>
+    </table>
+  </div>
+
+  <p>表格裡最有戲的一欄是 <strong>Spatial Misalignment</strong>：三家 VLM 全部掉到 AUC≈0.5、AP≈0.4——跟丟銅板差不多。機械臂朝「左隔間」走和朝「後隔間」走，在語意層面都是「一隻手臂拿著書靠近置物架」，VLM 分不出來；RC-NF 不做語意，直接比對物件與機械臂的空間軌跡是否偏離該任務的正常分佈，拿下 0.9676。反過來，Gripper Open／Slippage 這種「畫面上有明顯事件」的異常，VLM 表現尚可（0.85–0.91）——<em>VLM 的能力邊界劃在語意與幾何之間</em>。</p>
+
+  <figure>
+    <img src="figs/fig4_simcurves.png" alt="五種方法在三種異常下的異常分數曲線比較" loading="lazy">
+    <figcaption><b>原圖</b>異常分數曲線（任務：把書放進置物架後隔間；紅虛線＝t_anomaly）。RC-NF（左一）：異常前穩定在約 −2，異常後迅速爬升。FailDetect（左二）：全程劇烈震盪，異常前後難以區分。三家 VLM（右三欄）：1 Hz 的階梯狀輸出；在 Spatial Misalignment（下排）中 GPT-5 在 t_anomaly <em>之前</em>就升到 3、異常真正發生後反而掉回 1；Gemini 幾乎全程為 0、Claude 大半平坦，兩者都到片尾才跳起——沒有一家在異常點附近給出可用訊號。</figcaption>
+  </figure>
+
+  <div class="callout green">
+    <span class="tag">曲線比數字更誠實</span>
+    AUC 差 8 個百分點聽起來不大，看曲線就懂了：異常偵測器要能用，前提是<strong>正常段安靜、異常段果斷</strong>。FailDetect 的分數全程亂跳，閾值怎麼畫都會誤報；VLM 是階梯狀延遲反應。RC-NF 的「−2 平原 → 陡升」形狀才是能直接接控制迴路的訊號——這個平滑性正是 debiasing＋結構化特徵解耦買來的。
+  </div>
+</section>
+
+<!-- ─────────── 消融 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§8</span>消融：哪一塊壞了，哪種異常先瞎</h2>
+  <p class="sec-sub">四個組件、三種異常——缺陷模式完全可預測，這是設計合理的最好證據</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr>
+        <th>變體</th>
+        <th colspan="2">Gripper Open</th>
+        <th colspan="2">Gripper Slippage</th>
+        <th colspan="2">Spatial Misalign.</th>
+        <th colspan="2">平均</th>
+      </tr>
+      <tr><th></th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th><th>AUC</th><th>AP</th></tr>
+      <tr><td><strong>RC-NF 完整版</strong></td><td class="num best">0.9312</td><td class="num best">0.9781</td><td class="num best">0.9195</td><td class="num best">0.9180</td><td class="num best">0.9676</td><td class="num best">0.9585</td><td class="num best">0.9309</td><td class="num best">0.9494</td></tr>
+      <tr><td>去掉任務 embedding</td><td class="num">0.8769</td><td class="num">0.9603</td><td class="num">0.8668</td><td class="num">0.8680</td><td class="num">0.8139</td><td class="num">0.8118</td><td class="num">0.8643</td><td class="num">0.9008</td></tr>
+      <tr><td>去掉機器人狀態</td><td class="num worst">0.6327</td><td class="num">0.8621</td><td class="num">0.7443</td><td class="num">0.8116</td><td class="num">0.8929</td><td class="num">0.8617</td><td class="num">0.7152</td><td class="num">0.8401</td></tr>
+      <tr><td>去掉 Positional Residual 分支</td><td class="num">0.9045</td><td class="num">0.9712</td><td class="num">0.8971</td><td class="num">0.9085</td><td class="num">0.8543</td><td class="num">0.8072</td><td class="num">0.8947</td><td class="num">0.9225</td></tr>
+      <tr><td>去掉 Dynamic Shape 分支</td><td class="num">0.7666</td><td class="num">0.9234</td><td class="num">0.7763</td><td class="num">0.8108</td><td class="num worst">0.1022</td><td class="num worst">0.2755</td><td class="num">0.6841</td><td class="num">0.7899</td></tr>
+    </table>
+  </div>
+
+  <p>這張表好看的地方在於：<strong>每個組件的死法都對得上它的職責</strong>——</p>
+  <ul>
+    <li><strong>去掉機器人狀態 → Gripper Open 崩最慘（0.93→0.63）</strong>。夾爪張開不會移動物件，異常只存在於「機器人–物件相對關係」裡——沒有機器人狀態，這種異常根本無從看見。反之 Spatial Misalignment 掉最少（物件位置本身就偏了）。</li>
+    <li><strong>去掉任務 embedding → Spatial Misalignment 掉最多（跌幅約為其他兩項的三倍）</strong>。latent 退化成 N(0, I)，模型只能偵測「整個資料集層級」的 OOD，分不出「這條軌跡對<em>這個任務</em>而言是不是異常」。</li>
+    <li><strong>去掉 Dynamic Shape 分支 → Spatial Misalignment 的 AUC 掉到 0.1022</strong>——注意，這比亂猜（0.5）還低得多，代表模型給正常樣本的異常分數<em>系統性高於</em>異常樣本，判斷方向直接反了。物件間的相對運動被這個分支表示為整體點集的形狀變化，拿掉它，時間維度的形狀演化訊號就沒了。</li>
+  </ul>
+
+  <h3>補充實驗：把「異常」加進訓練集，誰還分得出來？</h3>
+  <figure>
+    <img src="figs/fig9_te_ablation.png" alt="把三個空間錯位任務加入訓練集前後的 AUC/AP 比較" loading="lazy">
+    <figcaption><b>原圖</b>（補充材料）把左/前/右三個「錯誤方向」任務加進訓練集後：RC-NF 幾乎不掉（仍約 0.95）——因為任務 embedding 讓每個任務有自己的「正常」；去掉任務 embedding 的版本掉到約 0.62，FailDetect 掉到約 0.57——對它們而言這些軌跡已是 in-distribution，再也分不出「對這個任務來說走錯方向」。淺色＝加入前，深色＝加入後。</figcaption>
+  </figure>
+
+  <div class="callout purple">
+    <span class="tag">這個實驗在說什麼</span>
+    它把「dataset-level OOD 偵測」和「task-specific 異常偵測」切開了：前者只要資料夠怪就抓得到，後者要求模型知道<strong>「怪不怪」取決於「在做哪件事」</strong>。任務條件化（per-task latent 中心）是後者的必要條件——所有把任務混在一起學一個大分佈的方法，在這關全數陣亡。
+  </div>
+</section>
+
+<!-- ─────────── 真機 ─────────── -->
+<section id="realworld">
+  <h2><span class="num">§9</span>真機實驗：π0 的插拔式監工</h2>
+  <p class="sec-sub">Franka Research 3 ＋ 雙 RealSense D435；監控只用第三人稱視角</p>
+
+  <p>真機設定：π0 當基線 VLA，與 RC-NF 用<strong>同一批</strong>示範資料訓練；π0 吃腕部＋第三人稱雙視角，RC-NF 只吃第三人稱。SAM2 需要的第一幀 bounding box 由 Gemini 2.5 Pro 零樣本生成。單幀延遲拆解：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>SAM2 推論</th><th>格點採樣</th><th>RC-NF 推論</th><th>其他</th><th>總計（RTX 3090）</th></tr>
+      <tr><td class="num">50 ms</td><td class="num">1.7 ms</td><td class="num">30 ms</td><td class="num">5 ms</td><td class="num best">86.7 ms</td></tr>
+    </table>
+  </div>
+
+  <h3>Task-level：抽屜被關上</h3>
+  <figure>
+    <img src="figs/fig5_task_ood.png" alt="任務級 OOD 處置：抽屜中途被關，π0 照舊執行失敗；π0+RC-NF 上報重規劃後成功" loading="lazy">
+    <figcaption><b>原圖</b>任務「把藍球放進打開的抽屜」執行中，抽屜被人關上。純 π0（上排橘）：繼續移動、把球放向關閉的抽屜、失敗。π0＋RC-NF（右欄藍）：異常分數陡升超標（左下曲線紅段），上報高層（人或 LLM 規劃器）重規劃成三步——重置球、開抽屜、再執行——最終成功。</figcaption>
+  </figure>
+
+  <h3>State-level：球被移走、又滾到夾爪後面</h3>
+  <figure>
+    <img src="figs/fig6_state_ood.png" alt="狀態級 OOD 處置時間線：π0+RC-NF 快速反應並經 homing 修正；純 π0 延遲反應、抓空失敗" loading="lazy">
+    <figcaption><b>原圖</b>連續兩次 state-level 擾動的時間線對比。t₁ₐ：球被移回桌面——RC-NF 立即察覺並調整到球上方，純 π0 反應延遲、先跑去抽屜上方。t₂ₐ：抓取瞬間球滾到夾爪後方——RC-NF 觸發 homing 向上修正軌跡，π0 抓空並舉起空爪。t₃ᵣ：分數回落，控制權交還 VLA，任務成功；純 π0 失敗。</figcaption>
+  </figure>
+
+  <figure class="narrow">
+    <img src="figs/fig7_state_score.png" alt="state-level OOD 序列的異常分數曲線：兩次黃色 homing 尖峰" loading="lazy">
+    <figcaption><b>原圖</b>上述序列的異常分數曲線：綠色＝VLA 正常執行（穩定在約 −2），黃色＝偵測到異常、homing 接管的兩段尖峰；t₃ᵣ 後分數回穩、綠色恢復。整段其餘時間曲線平穩——沒有誤報。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 查證與限制 ─────────── -->
+<section id="caveats">
+  <h2><span class="num">§10</span>查證筆記與限制</h2>
+  <p class="sec-sub">照本站慣例：好結果和它的邊界一起看</p>
+
+  <ul>
+    <li><strong>對 VLM 的比較不完全對等。</strong>VLM 監工走 Sentinel 改的 prompt、1 Hz 取樣、輸入是 256×256 影像序列＋時間進度——<em>沒有本體感覺輸入</em>。「VLM 幾何弱」的結論在此設定下成立，但給 VLM 加上機器人狀態文字描述會不會好一些，論文沒測。延遲劣勢倒是結構性的，換 prompt 救不了。</li>
+    <li><strong>Benchmark 是自建的，比較對象有限。</strong>LIBERO-Anomaly-10 由作者設計並標注（t_anomaly 前正常、後異常）；非 VLM 基線只有 FailDetect 一個（其參數照官方開源碼）。三種異常型態遠不足以覆蓋真實世界的失敗空間——這是「三個軸」，不是「全景」。</li>
+    <li><strong>真機驗證只有一個場景家族。</strong>「藍球＋抽屜」與衍生任務，定性為主；state-level 擾動是人工介入（手動把球從夾爪移回桌面）。86.7 ms 延遲數字是單幀推論拆解，可信；但「rollback／replan 帶來多少成功率提升」沒有量化統計。</li>
+    <li><strong>上游依賴：SAM2 要第一幀 bbox。</strong>模擬用 CG 投影生成（可重現），真機靠 Gemini 2.5 Pro 零樣本給框（見下圖）——監工自己也有一個需要監工的上游。SAM2 佔掉延遲預算的 58%（50/86.7 ms）。</li>
+    <li><strong>任務集是封閉的。</strong>球面均勻編碼要先知道任務總數、離線最佳化 embedding；新任務進來要重排球面、重訓 flow。K＝12、T＝12、R＝5、每任務 50 筆示範、100 epochs——都是 LIBERO-10 尺度的配置，開放任務集下的擴展性未驗證。</li>
+    <li><strong>閾值假設分數時間平穩。</strong>靜態閾值的前提是 debiasing 把分數曲線壓平；若任務天然有「合法的高變異段」（例如快速甩動），靜態線可能誤報——論文未討論。</li>
+    <li><strong>順手抓到一個原文小勘誤：</strong>state-level 時間線那張圖（本頁 §9 第二張）的原文圖說寫「two consecutive <em>task-level</em> OOD events」，但內文與圖內容（移球、球滾走）都是 state-level——本頁依內文標示。</li>
+  </ul>
+
+  <figure>
+    <img src="figs/fig10_bbox_prompt.png" alt="真機部署中用 Gemini 2.5 Pro 從任務指令生成 SAM2 所需 bounding box 的提示流程" loading="lazy">
+    <figcaption><b>原圖</b>（補充材料）真機的 bbox 生成流程：從任務描述抽出物件清單（blue ball、drawer），連同首幀影像交給 Gemini 2.5 Pro，產出 JSON 格式的框給 SAM2 起始。整條監控管線的「第 0 步」交給了一個 VLM——諷刺的是，正是被它在 §7 打趴的那一類模型。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 重點筆記 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§11</span>重點筆記：對狀態偵測專案的啟示</h2>
+  <p class="sec-sub">以下為本站觀點，非論文內容</p>
+
+  <p>把「機械臂操作」換成「鍋裡的菜」，這篇的框架翻譯得異常順：任務 embedding ↔ 食譜/步驟，機器人狀態 ↔ 火力、計時、FSM 所在步驟，物件點集 ↔ SAM2 分割出的食材遮罩。幾條直接可操作的推論：</p>
+
+  <ul>
+    <li><strong>「只用正樣本」正中 35 趟錄影的體制。</strong>成功的烹飪錄影就是完整訓練集——燒焦、溢鍋、忘放料這些異常<em>不必列舉、不必收集、不必標注</em>，NF 學會「正常煮法的密度」後，低似然自動涵蓋所有沒見過的壞事。這跟選型指南裡三條路線（CLIP 相似度／VLM 問答／自訓 TCN）互補而不重疊：那三條在答「現在進行到哪一步」，RC-NF 型監工在答「現在是不是不對勁」——<em>FSM gating 其實兩個訊號都要</em>：進度估計器推進狀態機，異常偵測器扣住狀態機。</li>
+    <li><strong>Dynamic Shape branch 對食材狀態是量身訂做。</strong>蛋液凝固、麵條軟化、洋蔥透明化——在「遮罩格點採樣的點集」表示下全是<em>形狀隨時間的演化</em>，正是這個分支負責的訊號軸。消融裡它被拿掉後 AUC 崩到 0.10 的教訓反過來讀：這個訊號軸在「空間/形狀變化」型異常裡承載了幾乎全部資訊。</li>
+    <li><strong>VLM 在 Spatial Misalignment 全滅（AUC≈0.5），佐證選型指南的邊界劃分。</strong>「鍋裡看起來是不是在正常收汁」這類語意題 VLM 行；「鏟子有沒有伸錯鍋」「食材有沒有掉出鍋緣」這類幾何題，別指望 VLM——而且它 1 Hz＋多秒延遲，本來就進不了即時 gate。</li>
+    <li><strong>閾值校準公式可以原樣抄。</strong><code>Upper = μ + Q_(1−α)(D)</code>，用兩份成功 run 切 S₁/S₂ 校準——35 趟資料完全夠切。比手調閾值多了統計語意（α＝誤報率預算），驗收時說得清楚。</li>
+    <li><strong>Debiasing 呼應煮蛋的「前段劇變、後段平原」。</strong>機械臂是「起步一致、抓取多變」，烹飪是反過來，但問題同構：軌跡樣本在時間軸上分佈不均 → 分數曲線不平穩 → 靜態閾值失效。BalancedHardSampler 的兩階段重採樣（先正常訓、再按難度重加權）值得抄進進度/異常模型的訓練配方。</li>
+    <li><strong>Latency budget 的啟示：SAM2 是大頭（50/86.7 ms）。</strong>固定鏡頭的烹飪場景比機械臂更友善——鍋的位置不動，遮罩可以低頻刷新（甚至只在 FSM 換步驟時重算 bbox），把高頻迴圈留給輕量的 flow 推論（30 ms）。同樣的預算拆法，煮菜場景能跑得比機器人更省。</li>
+    <li><strong>一個反向警告：封閉任務集的球面編碼。</strong>每加一道新食譜就要重排 embedding、重訓 flow——如果食譜庫會長大，這裡要嘛換成可增量的任務表徵（文字編碼器＋正規化），要嘛接受「加食譜＝重訓一次」的維運成本。小食譜庫（≤10 道）內照抄無妨。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">跟本站另外兩篇對照</span>
+    KinetIQ 那篇的 System 0–3 分層裡，RC-NF 就是「System 1 旁邊的哨兵」——比 VLA 快、比 frontier model 便宜，填的是「秒級太慢、毫秒級沒腦」中間的空隙。而 state-detection 選型指南的三階段行動方案裡，它給了第三條腿一個具體配方：進度估計（GVL/CLIP）管「推進」，RC-NF 型密度監工管「煞車」——兩者共用同一顆 SAM2，邊際成本只有一個 30 ms 的 flow。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://arxiv.org/abs/2603.11106">RC-NF: Robot-Conditioned Normalizing Flow for Real-Time Anomaly Detection in Robotic Manipulation</a> — Zhou, Zhu, Yang, Zhao, Chen, Jiang（Fudan × SMU）, CVPR 2026<br>
+    本頁：繁中解析，含論文 10 張原圖（版權歸原作者所有）＋ 1 張自繪概念圖 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
