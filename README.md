@@ -8,6 +8,7 @@
 
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
+| Engineering · Blog | [AI 時代怎麼面試工程師？Coinbase 重建一年實錄](https://tzchia.github.io/research/coinbase-ai-interviews/) | AI 產碼 5.7%→50%+、兩輪面試 84% 相關的冗餘；重建成三訊號＋不加輪鐵律＋題目半衰期季度汰換，附查證：數字全自報 |
 | Robotics · CVPR 2026 | [RC-NF：給 VLA 請一個 100 ms 反應的「監工」](https://tzchia.github.io/research/rc-nf/) | 復旦：只用成功示範訓練的即時異常偵測，平均 AUC 0.931 vs GPT-5 0.850；空間錯位 VLM 近乎亂猜、RC-NF 0.968；86.7 ms 接管 π0 rollback/replan |
 | AI Infra · 術語圖解 | [Cache Miss 才是帳單：50 倍價差世界的成本工程](https://tzchia.github.io/research/cache-economics/) | KV cache、hit/miss rate、MLA/DSA/CSA/HCA 逐一圖解：hit rate 90%→99% 帳單差 4 倍，prefix 穩定性是工程師自己的功課 |
 | Multi-Agent RL · ICML 2026 | [CooT：把「隊友」當成 in-context 的題目來解](https://tzchia.github.io/research/coot/) | NTU 孫紹華實驗室：適應陌生隊友 = in-context learning，測試時零參數更新；Overall BR-prox 0.57 vs 0.44，真人實驗 50% 選它當最愛 |

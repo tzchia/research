@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 時代怎麼面試工程師？Coinbase 重建一年實錄 — 繁中圖解</title>
+<meta name="description" content="Coinbase 工程部落格中文圖解：當 AI 產碼從 2025 Q1 的 5.7% 衝到 Q4 過半、新 code 幾乎全由 AI 生成＋人類審查，手寫演算法面試還測得到什麼？舊流程兩種失效（背題的假陽性、有判斷力的假陰性）、兩輪面試 84% 相關的冗餘、三階段重建（前端 pilot→後端 repo 題→全面 AI Fluency）、三個基線訊號與「不加輪」鐵律、題目半衰期問題。6 張自繪圖解＋查證筆記。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#79c0ff; --accent-deep:#1f6feb; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(121,192,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto}
+  figure.narrow{max-width:620px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  svg text{font-family:var(--sans)}
+  svg .mono{font-family:var(--mono)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Engineering Culture · Coinbase Blog · 繁中圖解</div>
+    <h1>AI 時代怎麼面試工程師？Coinbase 重建一年實錄</h1>
+    <p class="subtitle">當新 code 幾乎全由 AI 生成、人類負責審查，還叫候選人在 45 分鐘內憑記憶手寫演算法，到底在測什麼？Coinbase 把整條工程師面試流程拆掉重建：測「怎麼指揮 AI、怎麼挑它毛病、什麼時候該否決它」。這頁把一年的重建過程畫成圖。</p>
+    <div class="meta">
+      原文：<a href="https://www.coinbase.com/blog/interviewing-engineers-in-the-ai-era-lessons-from-a-year-of-rebuilding">Interviewing Engineers in the AI Era: Lessons from a Year of Rebuilding</a>（Coinbase Blog，2026-07-13，署名 Coinbase）<br>
+      性質：本頁為繁中重述＋自繪圖解——原文為純文字、無任何圖表，本頁 6 張圖皆為本站自繪；數字皆出自原文（全屬 Coinbase 自報，見 §7 查證）
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個數字，抓住整篇骨架</p>
+
+  <div class="cards">
+    <div class="kcard c2">
+      <div class="big">5.7%→50%+</div>
+      <div class="lbl">AI 產碼佔合併進 codebase 的比例：2025 Q1 → Q4 首度過半；發文時新 code 已「幾乎全部」AI 生成、人類審查（§1）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">84%</div>
+      <div class="lbl">內部分析發現兩輪不同面試的相關性——兩輪昂貴的面試量出幾乎同一個訊號，而且都不是最需要的那個（§2）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">3<small> 階段 / 1 年</small></div>
+      <div class="lbl">前端 pilot（2025 H2）→ 後端 repo 實戰題（2026/01）→ 全面 AI Fluency（2026/03）——當工程專案跑：先試點、看數據、再擴大（§3）</div>
+    </div>
+    <div class="kcard c1">
+      <div class="big">+0<small> 輪</small></div>
+      <div class="lbl">重建全程的鐵律：不增加面試輪次——新訊號必須取代舊輪，或證明量到了現有流程量不到的東西（§5）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    Coinbase 的核心論點：<strong>面試的門檻要對齊工作的門檻</strong>。工作已經變成「指揮 AI、審查產出、在模型自信地犯錯時抓住它」，面試卻還在測「不用 AI 能不能默寫模板」——等於在選一批跟實際工作脫節的人。原文一位工程主管的話（改述）：<em>當建造的成本趨近於零，「決定建什麼、驗證它是對的、安全地把它送出去」就成了瓶頸</em>。
+  </div>
+</section>
+
+<!-- ─────────── 背景 ─────────── -->
+<section id="context">
+  <h2><span class="num">§1</span>背景：一年之內，寫 code 不再是價值所在</h2>
+  <p class="sec-sub">產碼佔比三級跳，工程師的時間去了哪</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 400" role="img" aria-label="Coinbase AI 產碼佔比曲線：2025 Q1 5.7%，Q4 過半，2026 年中約 100%；人類審查全程 100%">
+      <text x="450" y="34" text-anchor="middle" font-size="15.5" font-weight="700" fill="#e6edf3">合併進 Coinbase codebase 的新 code，AI 生成佔比（原文自報）</text>
+      <!-- axes -->
+      <line x1="80" y1="320" x2="850" y2="320" stroke="#30363d"/>
+      <line x1="80" y1="60" x2="80" y2="320" stroke="#30363d"/>
+      <g font-size="11.5" fill="#6e7681" class="mono">
+        <text x="70" y="324" text-anchor="end">0%</text>
+        <text x="70" y="194" text-anchor="end">50%</text>
+        <text x="70" y="70" text-anchor="end">100%</text>
+      </g>
+      <line x1="80" y1="190" x2="850" y2="190" stroke="#30363d" stroke-dasharray="3 5" opacity=".6"/>
+      <line x1="80" y1="66" x2="850" y2="66" stroke="#30363d" stroke-dasharray="3 5" opacity=".6"/>
+      <!-- human review flat 100% -->
+      <line x1="80" y1="66" x2="820" y2="66" stroke="#7ee787" stroke-width="2.5" opacity=".85"/>
+      <text x="240" y="56" font-size="12.5" fill="#7ee787">人類審查覆蓋率：全程 100%（這條沒變過）</text>
+      <!-- AI share curve: Q1'25 (140,305) 5.7%; Q4'25 (500,190) 50%; mid'26 (760,80) ~100% -->
+      <path d="M140 305 C 260 300, 400 265, 500 190 C 580 130, 680 92, 760 80" fill="none" stroke="#ffa657" stroke-width="3"/>
+      <circle cx="140" cy="305" r="6" fill="#ffa657"/>
+      <circle cx="500" cy="190" r="6" fill="#ffa657"/>
+      <circle cx="760" cy="80" r="6" fill="#ffa657"/>
+      <g font-size="13" fill="#ffa657" font-weight="700" class="mono">
+        <text x="140" y="285" text-anchor="middle">5.7%</text>
+        <text x="500" y="170" text-anchor="middle">50%+</text>
+        <text x="762" y="112" text-anchor="middle">≈100%</text>
+      </g>
+      <g font-size="12" fill="#8b949e" text-anchor="middle">
+        <text x="140" y="342">2025 Q1</text>
+        <text x="500" y="342">2025 Q4（首度過半）</text>
+        <text x="768" y="342">2026 年中（發文時）</text>
+      </g>
+      <text x="450" y="376" text-anchor="middle" font-size="12.5" fill="#8b949e">同一時間：人類「撰寫」的 code 驟降（被 background agent 產碼取代），人類「審查」一行都沒少</text>
+    </svg>
+    <figcaption><b>自繪</b>依原文數字重繪（原文無圖）。三個錨點：2025 Q1 AI 產碼佔 5.7% → 2025 Q4 首度突破 50% → 發文時「幾乎全部」新 code 由 AI 生成；曲線僅為示意內插。綠線是本文反覆強調的前提：所有 code 仍由人類審查。「≈100%」的原文語句有歧義，見 §7 查證。</figcaption>
+  </figure>
+
+  <p>佔比翻轉的同時，資深工程師的工時結構整個換掉了。原文列出的新日常：<strong>寫規格、指揮 AI 生成實作、審查 AI 的 PR（正確性與安全性）、抓出模型「自信地」引入的架構錯誤、做模型還做不可靠的取捨判斷</strong>（trade-off、rollback 風險、系統邊界）。從頭手寫 code，已經不是價值產生的地方。</p>
+
+  <p>於是一個不舒服的問題浮上來：<em>如果我們出貨的 code 幾乎都是 AI 生成＋人類審查，憑什麼還要求候選人在 45 分鐘的倒數計時裡，不查資料、憑記憶手寫程式？</em>這篇部落格就是他們花一年回答這個問題的過程記錄。</p>
+</section>
+
+<!-- ─────────── 舊流程失效 ─────────── -->
+<section id="failure">
+  <h2><span class="num">§2</span>舊面試的兩種失效＋一個冗餘</h2>
+  <p class="sec-sub">假陽性收錯人、假陰性刷掉對的人、兩輪面試 84% 相關</p>
+
+  <p>傳統面試題（「設計一個短網址服務」「造一個 message queue」）誕生於<strong>架構知識還是稀缺資源</strong>的年代：能背出 caching、sharding、一致性取捨的人，代表下過功夫。現在任何工程師問一句 AI，一分鐘內就能拿到一份站得住腳的參考架構——這道門檻測的東西不稀缺了。更糟的是，舊流程發展出兩種方向相反的失效：</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 430" role="img" aria-label="舊面試的兩種失效模式：假陽性（背題者通過）與假陰性（有判斷力者被刷）">
+      <!-- false positive panel -->
+      <rect x="30" y="30" width="410" height="250" rx="14" fill="#161b22" stroke="#ff7b72"/>
+      <text x="235" y="64" text-anchor="middle" font-size="15.5" font-weight="700" fill="#ff7b72">假陽性：收錯人</text>
+      <g font-size="13" fill="#e6edf3" text-anchor="middle">
+        <rect x="70" y="86" width="330" height="40" rx="8" fill="#1c2330" stroke="#30363d"/>
+        <text x="235" y="112">狂刷題、背熟短網址／分散式佇列模板</text>
+        <text x="235" y="150" fill="#8b949e">↓ 面試答得漂亮 → 通過</text>
+        <rect x="70" y="166" width="330" height="40" rx="8" fill="#2b1618" stroke="#ff7b72"/>
+        <text x="235" y="192" fill="#ffb3ad">上工後：工作需要的判斷力，幾乎沒展現過</text>
+      </g>
+      <text x="235" y="252" text-anchor="middle" font-size="12.5" fill="#ff7b72">量到的是「準備程度」，不是「能力」</text>
+
+      <!-- false negative panel -->
+      <rect x="460" y="30" width="410" height="250" rx="14" fill="#161b22" stroke="#79c0ff"/>
+      <text x="665" y="64" text-anchor="middle" font-size="15.5" font-weight="700" fill="#79c0ff">假陰性：刷掉對的人</text>
+      <g font-size="13" fill="#e6edf3" text-anchor="middle">
+        <rect x="500" y="86" width="330" height="40" rx="8" fill="#1c2330" stroke="#30363d"/>
+        <text x="665" y="112">架構判斷力強，但模板背得較少</text>
+        <text x="665" y="150" fill="#8b949e">↓ 卡在「憑記憶默寫」型題目 → 被刷</text>
+        <rect x="500" y="166" width="330" height="40" rx="8" fill="#12241a" stroke="#7ee787"/>
+        <text x="665" y="192" fill="#7ee787">而他們往往正是能在 AI 原生環境</text>
+      </g>
+      <text x="665" y="230" text-anchor="middle" font-size="12.5" fill="#7ee787">如魚得水的人：會指揮、評估、糾正 AI 產出</text>
+      <text x="665" y="252" text-anchor="middle" font-size="12.5" fill="#79c0ff">兩種失效方向相反、同時發生</text>
+
+      <!-- redundancy -->
+      <rect x="30" y="304" width="840" height="106" rx="14" fill="#161b22" stroke="#30363d"/>
+      <circle cx="150" cy="357" r="34" fill="none" stroke="#d2a8ff" stroke-width="2"/>
+      <circle cx="186" cy="357" r="34" fill="none" stroke="#79c0ff" stroke-width="2"/>
+      <text x="168" y="405" text-anchor="middle" font-size="11.5" fill="#8b949e">兩輪面試，圈幾乎重疊</text>
+      <text x="255" y="348" font-size="15" font-weight="700" fill="#d2a8ff">內部分析：兩輪不同面試相關性 84%</text>
+      <text x="255" y="374" font-size="13" fill="#8b949e">＝花兩輪昂貴的人力，量出幾乎同一個訊號——而且都不是最需要量的「怎麼用 AI」。</text>
+      <text x="255" y="396" font-size="13" fill="#8b949e">另：工程主管（EM）的面試流程已兩年沒實質更新。</text>
+    </svg>
+    <figcaption><b>自繪</b>舊流程的三個病灶（依原文重繪）。左：背題型候選人通過但缺乏工作所需判斷（訊號＝準備而非能力）。右：判斷力強、模板背得較少的人反而被刷——往往正是能在 AI 原生環境如魚得水的工程師。下：兩輪面試 84% 相關（原文未說明是哪兩輪、以何指標計算），冗餘一目了然。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 三階段 ─────────── -->
+<section id="phases">
+  <h2><span class="num">§3</span>三階段重建：把改面試當工程專案跑</h2>
+  <p class="sec-sub">pilot → 對照退場條件量數據 → 數據支持才擴大</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 460" role="img" aria-label="三階段重建時間線：2025 H2 前端 pilot、2026 年 1 月後端 repo 題、2026 年 3 月全面 AI Fluency">
+      <line x1="60" y1="90" x2="850" y2="90" stroke="#30363d" stroke-width="2"/>
+      <circle cx="140" cy="90" r="8" fill="#79c0ff"/>
+      <circle cx="450" cy="90" r="8" fill="#ffa657"/>
+      <circle cx="740" cy="90" r="8" fill="#7ee787"/>
+      <g font-size="13.5" font-weight="700" text-anchor="middle" class="mono">
+        <text x="140" y="60" fill="#79c0ff">2025 H2</text>
+        <text x="450" y="60" fill="#ffa657">2026/01</text>
+        <text x="740" y="60" fill="#7ee787">2026/03</text>
+      </g>
+      <!-- phase 1 card -->
+      <rect x="40" y="120" width="260" height="300" rx="14" fill="#161b22" stroke="#79c0ff"/>
+      <text x="170" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#79c0ff">Phase 1：前端 pilot</text>
+      <g font-size="12.5" fill="#8b949e">
+        <text x="60" y="184">第一個教訓：</text>
+        <text x="60" y="206" fill="#ff7b72">舊題直接開放 AI</text>
+        <text x="60" y="226" fill="#ff7b72">→ 大多數題目被直接解掉</text>
+        <text x="60" y="252">舊題測的是「人腦工作記憶</text>
+        <text x="60" y="272">能裝多少」，不是 AI 時代技能</text>
+        <text x="60" y="302" fill="#e6edf3">→ 題目整批重寫：訊號改成</text>
+        <text x="60" y="324" fill="#e6edf3">prompt 品質、怎麼評估產出、</text>
+        <text x="60" y="344" fill="#e6edf3">怎麼抓錯、怎麼迭代</text>
+        <text x="60" y="378" fill="#7ee787">結果：面試官效率有感提升、</text>
+        <text x="60" y="398" fill="#7ee787">候選人早期回饋正面 → 擴大</text>
+      </g>
+      <!-- phase 2 card -->
+      <rect x="320" y="120" width="260" height="300" rx="14" fill="#161b22" stroke="#ffa657"/>
+      <text x="450" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#ffa657">Phase 2：擴到後端</text>
+      <g font-size="12.5" fill="#8b949e">
+        <text x="340" y="184">不是改舊題，是造新題型：</text>
+        <text x="340" y="210" fill="#e6edf3">repo 實戰題——在擬真</text>
+        <text x="340" y="230" fill="#e6edf3">codebase 裡 debug、審 code、</text>
+        <text x="340" y="250" fill="#e6edf3">推理 rollback 情境，AI 工具全開</text>
+        <text x="340" y="284">測的是工程師真正在做的事：</text>
+        <text x="340" y="308">・能不能分診真實 issue？</text>
+        <text x="340" y="330">・能不能抓 AI 埋的隱性 bug？</text>
+        <text x="340" y="352">・接受 AI 改動時，知道自己</text>
+        <text x="340" y="372">　接受了什麼嗎？</text>
+        <text x="340" y="394" fill="#ffa657">從「白紙寫起」→「與既有</text>
+        <text x="340" y="412" fill="#ffa657">codebase 和 AI 協作者共事」</text>
+      </g>
+      <!-- phase 3 card -->
+      <rect x="600" y="120" width="280" height="300" rx="14" fill="#161b22" stroke="#7ee787"/>
+      <text x="740" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#7ee787">Phase 3：全面上線</text>
+      <g font-size="12.5" fill="#8b949e">
+        <text x="620" y="184" fill="#e6edf3">AI 訊號進入面試流程的</text>
+        <text x="620" y="204" fill="#e6edf3">每一關——不是外掛，</text>
+        <text x="620" y="224" fill="#e6edf3">是評估每位候選人的方式</text>
+        <text x="620" y="254">同時定義 AI Fluency 三維度</text>
+        <text x="620" y="274">（§4），初階資深一體適用</text>
+        <text x="620" y="308" fill="#7ee787">早期訊號（樣本仍小）：</text>
+        <text x="620" y="330" fill="#7ee787">通過 AI 輔助 coding 測驗者，</text>
+        <text x="620" y="350" fill="#7ee787">onsite 通過率明顯高於舊制</text>
+        <text x="620" y="378">方向對了——是選對人進</text>
+        <text x="620" y="398">onsite，不是加高門檻</text>
+      </g>
+    </svg>
+    <figcaption><b>自繪</b>三階段時間線（依原文重繪）。關鍵不是三個日期，是操作模型：每一步都是「pilot → 明確退場條件 → 數據支持才擴大」——他們把改面試當成一個工程專案在跑，而不是一次性的制度改革。</figcaption>
+  </figure>
+
+  <div class="callout red">
+    <span class="tag">Phase 1 最值錢的教訓</span>
+    「在舊題目上把 AI 打開」不等於 AI-native 面試——AI 會把大多數題目直接解掉。<strong>為「人腦記憶」設計的題目，加上 AI 之後幾乎測不到原本要測的訊號</strong>；題目必須從頭為「AI 在場」的環境設計，讓訊號落在人怎麼用 AI，而不是 AI 能不能解題。生成一個解答很容易；生成一個<em>好</em>解答、知道何時該信它、何時該推回去，才是技能。
+  </div>
+</section>
+
+<!-- ─────────── AI Fluency ─────────── -->
+<section id="fluency">
+  <h2><span class="num">§4</span>AI Fluency 的三個維度</h2>
+  <p class="sec-sub">用得好、用得對、知道哪裡會爆——初階資深同一把尺</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 360" role="img" aria-label="AI Fluency 三維度：Usage、Application、Understanding Limits">
+      <text x="450" y="40" text-anchor="middle" font-size="15.5" font-weight="700" fill="#e6edf3">AI Fluency＝三個維度，適用所有年資</text>
+      <!-- pillar 1 -->
+      <rect x="40" y="70" width="260" height="230" rx="14" fill="#161b22" stroke="#79c0ff"/>
+      <text x="170" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="#79c0ff">Usage 用得好</text>
+      <g font-size="13" fill="#8b949e" text-anchor="middle">
+        <text x="170" y="140">有效且負責任地使用工具</text>
+        <text x="170" y="176" fill="#e6edf3">・選對工具</text>
+        <text x="170" y="200" fill="#e6edf3">・用在工作流對的環節</text>
+        <text x="170" y="224" fill="#e6edf3">・產出可量測的更好結果</text>
+      </g>
+      <text x="170" y="276" text-anchor="middle" font-size="12" fill="#6e7681">「會用」的基本功</text>
+      <!-- pillar 2 -->
+      <rect x="320" y="70" width="260" height="230" rx="14" fill="#161b22" stroke="#ffa657"/>
+      <text x="450" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="#ffa657">Application 用得對</text>
+      <g font-size="13" fill="#8b949e" text-anchor="middle">
+        <text x="450" y="140">知道 AI 何時是、何時不是解方</text>
+        <text x="450" y="176" fill="#e6edf3">・設計出創造真實商業影響</text>
+        <text x="450" y="200" fill="#e6edf3">　的 AI 工作流</text>
+        <text x="450" y="224" fill="#e6edf3">・而不只是把任務自動化</text>
+      </g>
+      <text x="450" y="276" text-anchor="middle" font-size="12" fill="#6e7681">「該不該用」的判斷</text>
+      <!-- pillar 3 -->
+      <rect x="600" y="70" width="260" height="230" rx="14" fill="#161b22" stroke="#ff7b72"/>
+      <text x="730" y="106" text-anchor="middle" font-size="16" font-weight="700" fill="#ff7b72">Understanding Limits 知道極限</text>
+      <g font-size="13" fill="#8b949e" text-anchor="middle">
+        <text x="730" y="140">理解 AI 在哪裡會壞掉</text>
+        <text x="730" y="176" fill="#e6edf3">・辨識隱私與安全隱患</text>
+        <text x="730" y="200" fill="#e6edf3">・把人類判斷當 guardrail</text>
+        <text x="730" y="224" fill="#e6edf3">　放在對的位置</text>
+      </g>
+      <text x="730" y="276" text-anchor="middle" font-size="12" fill="#6e7681">「何時不能信」的警覺</text>
+      <text x="450" y="336" text-anchor="middle" font-size="13" fill="#d2a8ff">（本站連結：原文把「judgment 與 taste」放在 §5 的三訊號——每一關最終讀的都是它）</text>
+    </svg>
+    <figcaption><b>自繪</b>AI Fluency 三維度（依原文重繪）。注意原文的定位：這不是一個獨立的面試關卡，而是貫穿每一關的評估透鏡；且「對初階與資深工程師同等適用」——年資不豁免任何一維。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 三訊號 ─────────── -->
+<section id="signals">
+  <h2><span class="num">§5</span>三個基線訊號＋一條鐵律</h2>
+  <p class="sec-sub">題型會過時，訊號要耐久——以及：絕不加輪</p>
+
+  <p>一年迭代後，他們收斂出「一條完整的工程師面試流程必須產出的三個訊號」。題目格式會隨 AI 能力演進而改，但訊號本身對齊工作的實際需求，所以耐久：</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 430" role="img" aria-label="三個基線訊號卡片與不加輪鐵律">
+      <!-- signal 1 -->
+      <rect x="30" y="24" width="840" height="106" rx="14" fill="#161b22" stroke="#7ee787"/>
+      <rect x="742" y="42" width="108" height="26" rx="13" fill="#12241a" stroke="#7ee787"/>
+      <text x="796" y="60" text-anchor="middle" font-size="12" font-weight="700" fill="#7ee787" class="mono">Live 上線中</text>
+      <text x="52" y="60" font-size="15.5" font-weight="700" fill="#7ee787">① Repo 實戰：coding 與 debugging</text>
+      <text x="52" y="88" font-size="13" fill="#8b949e">在既有 codebase 裡分診 issue、debug 別人寫的 code、推理效能與相容性、有效地用 AI——</text>
+      <text x="52" y="110" font-size="13" fill="#8b949e">並分辨「正確的改動」和「只是看起來合理的改動」。最貼近真實工作：你幾乎不會從白紙開始。</text>
+      <!-- signal 2 -->
+      <rect x="30" y="146" width="840" height="106" rx="14" fill="#161b22" stroke="#ffa657"/>
+      <rect x="700" y="164" width="150" height="26" rx="13" fill="#3d2317" stroke="#ffa657"/>
+      <text x="775" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#ffa657" class="mono">Early Testing 測試中</text>
+      <text x="52" y="182" font-size="15.5" font-weight="700" fill="#ffa657">② 與 AI 共作的系統設計</text>
+      <text x="52" y="210" font-size="13" fill="#8b949e">指揮 AI 探索設計空間——生 schema、擬 API 合約、壓測失效模式——同時持續套用 AI 無法替代的判斷。</text>
+      <text x="52" y="232" font-size="13" fill="#8b949e">稀缺資源不再是模板背誦，是「哪些約束真的重要、哪些取捨是真的、何時否決模型」。未來幾季 pilot。</text>
+      <!-- signal 3 -->
+      <rect x="30" y="268" width="840" height="106" rx="14" fill="#161b22" stroke="#79c0ff"/>
+      <rect x="742" y="286" width="108" height="26" rx="13" fill="#1c2f3f" stroke="#79c0ff"/>
+      <text x="796" y="304" text-anchor="middle" font-size="12" font-weight="700" fill="#79c0ff" class="mono">Live 上線中</text>
+      <text x="52" y="304" font-size="15.5" font-weight="700" fill="#79c0ff">③ 領導力與行為面</text>
+      <text x="52" y="332" font-size="13" fill="#8b949e">目的沒變：怎麼做決策、判斷什麼值得做、處理歧見、建立信任、成長。變的是一個維度——</text>
+      <text x="52" y="354" font-size="13" fill="#8b949e">直接問「你日常怎麼用 AI」，要具體的行為證據，不是抽象的能力宣稱。</text>
+      <!-- rule bar -->
+      <rect x="30" y="390" width="840" height="28" rx="8" fill="#2b1618" stroke="#ff7b72"/>
+      <text x="450" y="409" text-anchor="middle" font-size="13" font-weight="700" fill="#ff7b72">鐵律：不加輪——新訊號必須「取代」舊輪，或證明量到現有流程量不到的東西；加長面試＝更差的候選人體驗</text>
+    </svg>
+    <figcaption><b>自繪</b>三個基線訊號與各自的成熟度標籤（依原文重繪；標籤為原文自標）。三張卡共同讀的仍是 judgment 與 taste——不設獨立關卡，每一關都在讀。</figcaption>
+  </figure>
+
+  <h3>Working group 模型：面試流程是活的系統</h3>
+  <p>整套重建不是高層一聲令下，而是一個由工程師、hiring manager、招募組成的<strong>跨職能工作小組</strong>持有整條流程：每個改動都從「帶明確成功標準的 pilot」開始、數據支持才上線、定期回頭檢視。原文自評：面試流程不是每幾年翻新一次的東西，是<em>隨工作本身變化持續調校的活系統</em>——這是他們能在一年內走完三階段的主因。</p>
+
+  <div class="callout green">
+    <span class="tag">給求職者的白話版</span>
+    「帶著你上班會用的工具來。我們不測默寫、不測模板回憶；我們看你怎麼指揮 AI、怎麼批判它的產出、怎麼判斷模型什麼時候錯了。最好的準備，就是做你入職第一天會做的那種工作。」——換句話說，<strong>刷題無法準備這種面試，日常認真用 AI 工作就是準備</strong>。
+  </div>
+</section>
+
+<!-- ─────────── 未解 ─────────── -->
+<section id="open">
+  <h2><span class="num">§6</span>他們自己承認還沒解的三件事</h2>
+  <p class="sec-sub">題目半衰期、面試→工作的預測力、下一版 loop</p>
+
+  <figure class="dark">
+    <svg viewBox="0 0 900 400" role="img" aria-label="題目半衰期問題與季度審查循環">
+      <!-- left: decay -->
+      <rect x="30" y="30" width="400" height="330" rx="14" fill="#161b22" stroke="#30363d"/>
+      <text x="230" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#ff7b72">題目的半衰期問題</text>
+      <line x1="70" y1="300" x2="400" y2="300" stroke="#30363d"/>
+      <line x1="70" y1="100" x2="70" y2="300" stroke="#30363d"/>
+      <path d="M75 120 C 140 130, 180 170, 220 220 C 260 268, 320 292, 390 297" fill="none" stroke="#ff7b72" stroke-width="3"/>
+      <text x="80" y="110" font-size="12" fill="#8b949e">題目鑑別度</text>
+      <text x="235" y="330" text-anchor="middle" font-size="12" fill="#8b949e">時間（每一季都有更強的模型出來）</text>
+      <circle cx="220" cy="220" r="5" fill="#ff7b72"/>
+      <text x="228" y="212" font-size="12" fill="#ffb3ad">下一季的模型把這題直接解掉</text>
+      <text x="170" y="286" text-anchor="middle" font-size="12" fill="#6e7681">今天有鑑別度的題，下季可能歸零</text>
+      <!-- right: quarterly loop -->
+      <rect x="470" y="30" width="400" height="330" rx="14" fill="#161b22" stroke="#30363d"/>
+      <text x="670" y="64" text-anchor="middle" font-size="15" font-weight="700" fill="#7ee787">解法：把流程變成活系統</text>
+      <g font-size="13" text-anchor="middle">
+        <rect x="560" y="90" width="220" height="44" rx="10" fill="#1c2330" stroke="#79c0ff"/>
+        <text x="670" y="117" fill="#79c0ff">季度審查週期</text>
+        <rect x="560" y="164" width="220" height="44" rx="10" fill="#1c2330" stroke="#d2a8ff"/>
+        <text x="670" y="191" fill="#d2a8ff">監測每題是否仍產出訊號</text>
+        <rect x="560" y="238" width="220" height="44" rx="10" fill="#1c2330" stroke="#ffa657"/>
+        <text x="670" y="265" fill="#ffa657">汰換不再有效的題目</text>
+      </g>
+      <g stroke="#7ee787" stroke-width="1.8" fill="none">
+        <path d="M670 134 L670 158" marker-end="url(#gA)"/>
+        <path d="M670 208 L670 232" marker-end="url(#gA)"/>
+        <path d="M560 260 C 510 220, 510 140, 554 112" marker-end="url(#gA)"/>
+      </g>
+      <defs><marker id="gA" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7ee787"/></marker></defs>
+      <text x="670" y="316" text-anchor="middle" font-size="12.5" fill="#8b949e">working group 持牌，「需要持續的真實投資」</text>
+      <text x="670" y="340" text-anchor="middle" font-size="12.5" fill="#8b949e">——跟多數公司的面試維運模式根本不同</text>
+    </svg>
+    <figcaption><b>自繪</b>半衰期問題與對策（依原文重繪）。左：為「測 AI fluency」設計的題目，可能被下一季的模型直接解掉——題庫像 prompt 一樣會腐化。右：對策不是出更難的題，是建立汰換機制。</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>面試表現能不能預測工作表現？</strong>還不知道。他們給每位新人排了 45 天與 90 天的 pulse survey，目標是 100% 新人在這兩個檢查點維持或提升 AI Fluency 評級、且可量測地在工作中使用 AI 工具——並承諾公開結果。</li>
+    <li><strong>V2 已在探索：</strong>合併前期輪次縮短「到訊號的時間」、用 A/B 測試隔離每個改動的效果、可能加一個 onsite 前的訊號關卡；同時盯著三個基線訊號會不會隨技術演進而失效。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 查證 ─────────── -->
+<section id="caveats">
+  <h2><span class="num">§7</span>查證筆記：讀這篇要帶的濾鏡</h2>
+  <p class="sec-sub">數字全是自報、關鍵句有歧義、原文疑似漏了一張表</p>
+
+  <ul>
+    <li><strong>所有數字皆 Coinbase 自報，無第三方可驗。</strong>5.7%、50%、84% 都沒有給計算方法——尤其「AI-generated code」怎麼歸類（自動補全算不算？半改寫算誰的？），原文隻字未提。同類統計在業界的口徑差異極大，跨公司比較時要小心。</li>
+    <li><strong>「≈100%」那句原文有歧義。</strong>原句是「While humans still review all of our code, that share has reached roughly 100%」——「that share」文法上指涉不明。本頁採用 TL;DR「nearly all of our new code is AI generated」支持的讀法：<em>AI 產碼佔新 code 的比例</em>≈100%；但也存在「人類審查覆蓋率 100%」的讀法（該讀法下前半句就成了同義反覆）。圖 1 已按前者繪製並標注。</li>
+    <li><strong>「Here is what changed at each stage:」之後，原文直接跳到 AI Fluency 定義。</strong>逐關對照的內容（極可能原是一張表格或圖）在頁面上不存在——已用瀏覽器直接檢查過 DOM，文章本體確實沒有任何圖片或表格。這是原文的缺漏，本頁無從重建。</li>
+    <li><strong>「早期訊號令人鼓舞」沒有數字。</strong>新舊測驗的 onsite 通過率差異只有「meaningfully higher」的定性描述＋「樣本仍小」的自我保留；84% 相關那條也沒說是哪兩輪、用什麼指標。承諾「樣本變大後公布更精確數據」——值得追蹤但目前只能記為方向性主張。</li>
+    <li><strong>這也是一篇雇主品牌文。</strong>結尾直接接招募 CTA；「透明分享」與「吸引 AI 原生工程師投遞」是同一枚硬幣的兩面。內容的工程含量是真的，但敘事上對自家改革只呈現正面證據（沒有任何「改了之後發現更糟」的反例）。</li>
+    <li><strong>EM 面試「兩年沒更新」提了一句，之後就沒下文</strong>——三階段描述的全是 coding／系統設計等 IC 題型，EM 流程改成什麼樣，原文沒交代。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 重點筆記 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§8</span>重點筆記：這篇對工程師個人的意義</h2>
+  <p class="sec-sub">以下為本站觀點，非原文內容</p>
+
+  <ul>
+    <li><strong>「建造成本→0，驗證成本＝瓶頸」是全文最硬的一句，而且是可操作的。</strong>它把工程價值的重心從「寫」搬到「規格—指揮—驗證—出貨」這條鏈上。對個人的直接推論：你的 code review 能力、寫 spec 的能力、設計驗證迴路的能力，升值速度遠快於手寫 code 的熟練度。這與本站 cache-economics 篇的結論同構：<em>AI 時代的工程槓桿都在 harness（外圍結構），不在單次產出</em>。</li>
+    <li><strong>三個基線訊號＝一份自我檢核表。</strong>①你能在陌生 repo 裡帶著 AI 高效除錯嗎？②你能用 AI 掃完設計空間、然後在關鍵取捨上否決它嗎？③你講得出自己日常用 AI 的具體行為證據嗎？——不管去不去 Coinbase，這三題就是 2026 年工程師的市場定價維度。</li>
+    <li><strong>「84% 相關」是評估設計的通用教訓。</strong>兩個高度相關的評估器，第二個幾乎是純成本——這對面試如此，對 eval suite、對多 agent 驗證管線也如此：加訊號之前先量相關性，訊號的<em>去重</em>比數量重要。本站驗證 workflow 用「不同視角的 checker」而非「多個同質 checker」，就是同一原則。</li>
+    <li><strong>「不加輪」是克制的流程設計。</strong>每個新訊號都要付「取代舊輪或證明獨特性」的入場費——這是把「最小表面積」原則用在制度上。任何想在流程里「多加一關以求安心」的組織都該先回答同一題。</li>
+    <li><strong>題目半衰期＝「會腐化的 prompt」問題。</strong>為特定模型能力邊界設計的東西（面試題、prompt 裡的防禦性補丁、guardrail），模型一升級就失效或變噪音——Coinbase 的解法（季度審查、主動汰換、專人持牌），加上本站慣用的「掛上日期與理由」，可以原樣搬到 prompt 與 eval 維運上。沒有汰換機制的題庫／prompt 庫，默認是在腐化。</li>
+    <li><strong>保留一個懷疑：面試場景測得出「判斷力」嗎？仍未被證明。</strong>他們最誠實的地方是承認 interview→job 的預測力還沒數據。45/90 天 pulse survey 的結果值得等——在那之前，這套流程的先進性是「對齊了工作型態」，不是「證明了預測效度」。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">跟本站另外兩篇對照</span>
+    cache-economics 篇說「harness 設計就是成本工程」；這篇把同一邏輯推到人才市場——<strong>公司開始按「你會不會經營 harness」定價工程師</strong>。而 Ponytail 篇的「最懶資深工程師」人格，恰好就是 Coinbase 三訊號的具象化：不從白紙寫起（repo 實戰）、先問該不該做（judgment）、用最小改動出貨（taste）。三篇連起來讀：工具、成本、職涯，同一場典範轉移的三個切面。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    原文：<a href="https://www.coinbase.com/blog/interviewing-engineers-in-the-ai-era-lessons-from-a-year-of-rebuilding">Interviewing Engineers in the AI Era: Lessons from a Year of Rebuilding</a> — Coinbase Blog, 2026-07-13<br>
+    本頁：繁中重述＋ 6 張自繪圖解（原文無圖）· 數字皆出自原文、屬 Coinbase 自報，查證註記見 §7 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
