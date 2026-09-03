@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生成一百個世界,別在真實世界過擬合 — Horizon Robotics VLA sim-to-real RL 論文中文速覽</title>
+<meta name="description" content="Horizon Robotics 論文中文速覽:用 EmbodiedGen 從文字全自動生成 100 個可互動 3D 場景,以 PPOFlow(ReinFlow 的 PPO 變體)大規模平行 RL 微調 π0 VLA。模擬成功率 9.7%→79.8%,真實世界 21.7%→75.0%(12 場景 240 trials),完成時間各加速 1.25×/1.13×;場景數 1→50 讓 zero-shot OOD 成功率 +24.7pp。含 K=1 單步高斯化、手工場景過擬合等消融與負結果,9 張原圖全解析。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#7ee787; --accent-deep:#1f6e37; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(126,231,135,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  /* 三步驟流程 */
+  .steps{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .steps .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .steps .step .t{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .steps .step .d{color:var(--muted);font-size:13px;line-height:1.55}
+  .steps .step strong{display:block;font-size:15px;margin-bottom:4px}
+  .steps .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;padding:0 8px;font-family:var(--mono)}
+  @media(max-width:720px){
+    .steps{grid-template-columns:1fr}
+    .steps .arr{transform:rotate(90deg);padding:4px 0}
+  }
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Robotics · arXiv 2603.18532 · Paper Digest · 繁中速覽</div>
+    <h1>生成一百個世界,別讓 VLA 在單一場景過擬合</h1>
+    <p class="subtitle">Horizon Robotics:真實世界 RL 微調會把「廣泛預訓練的 VLA」練成「單場景特化策略」。解法是把 3D 世界生成模型當無限場景印表機——文字進、可互動世界出,100 個生成場景平行 RL,真實世界成功率 21.7% → 75.0%。</p>
+    <div class="meta">
+      論文:<a href="https://arxiv.org/abs/2603.18532">Scaling Sim-to-Real Reinforcement Learning for Robot VLAs with Generative 3D Worlds</a>(arXiv 2603.18532, v2 2026-03-28)<br>
+      作者:Andrew Choi、Xinjie Wang、Zhizhong Su、Wei Xu(Horizon Robotics)<br>
+      授權:CC BY 4.0 | 本頁為繁中解析,所有數字皆出自論文原文
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字,抓住全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">21.7 → 75.0<small> %</small></div>
+      <div class="lbl">真實世界任務成功率:純模仿 π0 基線 vs RL 微調後。12 個實體場景 × 240 trials,完成時間還快 1.13×(Table 2)</div>
+    </div>
+    <div class="kcard">
+      <div class="big">9.7 → 79.8<small> %</small></div>
+      <div class="lbl">模擬成功率(100 個生成場景),+70.1 個百分點,完成時間 ~10s → 8s(1.25×)。全程只用稀疏獎勵(§4)</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">100<small> 場景 / 516 資產</small></div>
+      <div class="lbl">GPT-4o 場景設計師 + EmbodiedGen 全自動生成;46.8 分/場景(有資產庫 ~2 分),85% 免人工直接可用(App C)</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">+24.7<small> pp</small></div>
+      <div class="lbl">訓練場景 1 → 50,zero-shot OOD 成功率 53.2% → 77.9%;ID−OOD 差距從 41.1pp 縮到 2.6pp——多樣性直接買泛化(§4)</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    RL 微調 VLA 的瓶頸不在演算法,在<em>場景分佈</em>——真實世界擴不了場景數,手工模擬場景又貴。這篇把 EmbodiedGen 3D 世界生成模型接上 GPT-4o 場景設計師,自動生出 100 個可互動訓練世界,用 <strong>PPOFlow</strong>(ReinFlow 的 PPO 變體)大規模平行微調 flow-matching VLA π0,證明<strong>場景多樣性可以規模化地換 zero-shot 泛化</strong>,而且靠生成場景的擬真度 + 樸素 domain randomization 就能 sim-to-real。
+  </div>
+</section>
+
+<!-- ─────────── 問題背景 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題:微調的弔詭——越練越窄</h2>
+  <p class="sec-sub">broadly pretrained → overfitted, scene-specific:論文開篇點名的悖論</p>
+
+  <p>VLA 訓練管線的第三階段(任務特定微調)是人力黑洞。模仿學習要人收資料;真實世界 RL 要人管獎勵、管重置、還常要 human-in-the-loop 陪練。更被忽視的問題是:<strong>在實體世界擴展場景多樣性貴到不可行</strong>,所以 RL-in-real 幾乎都在少數場景上微調——結果是把一個泛化的預訓練模型,練成只認自家桌子的特化策略。論文把既有路線的短板排開:</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>路線</th><th>代表做法</th><th>短板(論文說法)</th></tr>
+      <tr><td>模仿學習微調</td><td>task-specific SFT</td><td>OOD 狀態下表現滑落;資料碎片化引發 shortcut learning</td></tr>
+      <tr><td>真實世界 RL</td><td>ConRFT、π*0.6 等</td><td>獎勵要靠訓練的 reward model / 人工標註;重置要手動或另學一個 policy;樣本效率靠 HIL 撐。90%+ 成功率多出自窄設定,場景多樣性無法擴展</td></tr>
+      <tr><td>模擬 RL(手工場景)</td><td>SimplerEnv 等</td><td>oracle 成功偵測、自動重置都免費,但 3D 場景本身要人設計——本文實測:3 個手工場景練出的 policy 換到生成場景直接掉到 36.0%(§5)</td></tr>
+      <tr><td>real-to-sim 路線</td><td>場景重建、影片合成、世界模型</td><td>仍以真實資料為錨,多樣性上限受制於收了多少真實場景</td></tr>
+      <tr><td>3D 生成模型(前代)</td><td>TRELLIS、WorldGen</td><td>只生靜態視覺資產,沒有物理互動性,不能直接當 RL 訓練場</td></tr>
+    </table>
+  </div>
+
+  <p>缺口很明確:要一個<strong>文字進、可互動物理世界出</strong>的生成引擎,把「場景數」從人力成本變成算力成本。論文押注的是同門(Horizon Robotics)的 <em>EmbodiedGen</em>,並回答兩個問題:生成場景擬真度夠不夠撐起 sim-to-real?場景多樣性拉高後,zero-shot 泛化是不是真的跟著上去?</p>
+</section>
+
+<!-- ─────────── 方法 ─────────── -->
+<section id="method">
+  <h2><span class="num">§2</span>方法:文字 → 世界 → 平行 RL → 真機</h2>
+  <p class="sec-sub">EmbodiedGen 生成世界 × PPOFlow 微調 flow-matching VLA</p>
+
+  <figure>
+    <img src="figs/fig1.png" alt="整體管線:模仿預訓練、場景生成、平行 RL、真機部署" loading="lazy">
+    <figcaption><b>原圖 1</b>整體管線(論文 Fig. 1)。真實資料先練出模仿策略 π<sub>pre</sub>;任務描述餵給語言驅動的場景設計師,轉成版面配置後交給 3D 世界生成模型產出完整場景;π<sub>θ</sub> 從 π<sub>pre</sub> 初始化,在大量平行環境 + domain randomization 下 RL 微調;最後直接部署到真實世界。</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step">
+      <div class="t">Step 1 · 造世界</div>
+      <strong>GPT-4o 場景設計師</strong>
+      <div class="d">任務描述(「把筆放進筆筒」)→ 結構化 scene graph:背景、目標物、干擾物、機器人 + 空間關係(ON/IN),可系統性調控難度與干擾密度</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 2 · 品管迴圈</div>
+      <strong>EmbodiedGen + GPT-4o QA</strong>
+      <div class="d">text-to-3D 資產生成 + 版面合成;三段檢查(外觀語意/網格幾何/文字-3D 一致性)不過就重抽,平均 1.37 次嘗試出一個合格資產</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 3 · 平行 RL</div>
+      <strong>ManiSkill3 × 192 環境</strong>
+      <div class="d">PPOFlow 微調 π0,稀疏接觸獎勵 + domain randomization;練完直接上 WidowX 真機(PD 控制 + 重力補償)</div>
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/fig2.png" alt="模擬環境生成管線" loading="lazy">
+    <figcaption><b>原圖 2</b>場景生成管線(論文 Fig. 2)。GPT-4o 把任務描述解析成語意角色 + 空間關係的 scene graph,實例化成可互動 3D 世界;自動 QA 迴圈在模擬前過濾物理不合理的配置,做到「按需生成」訓練環境。</figcaption>
+  </figure>
+
+  <h3>學習問題的形狀</h3>
+  <p>POMDP:觀測 = 單張 RGB 影像 + 語言指令 + 7 維末端執行器姿態(xyz、rpy、gripper);動作 = 長度 C=4 的 action chunk(每步 7 維:delta-pose + 夾爪開合),<strong>一個 chunk 當一個決策步</strong>。獎勵是純稀疏的規則式成功判定(式 A.1):物體 A 接觸目標 B、且不碰桌面、不碰機器人,才算成功——沒有任何 reward shaping。撐得起稀疏獎勵的前提,是 π0(3B,SigLIP+Gemma 骨幹 + action expert)先在 BridgeV2(70% 以上是 pick-and-place)上做過模仿預訓練。</p>
+
+  <h3>PPOFlow:讓 flow-matching 策略能吃 PPO</h3>
+  <p>Flow-matching 模型的動作生成是確定性的 ODE 積分,算不出 importance ratio,標準 PPO 直接卡死。ReinFlow 的解法是往每一步積分注入<strong>可學習的噪音頭</strong> σ<sub>φ</sub>,把每步積分變成一個高斯取樣——整條 denoising 鏈的聯合 log-prob 就能寫出來(式 5),再套 PPO clipped objective。本文的 PPOFlow 加了兩個工程關鍵:(1)importance ratio 上加冪次縮放係數 <code>s=0.2</code>,否則 log-prob 會飆到大量梯度被 clip 掉、訓練立即崩潰(App A);(2)積分步數直接設 <code>K=1</code>。</p>
+
+  <figure>
+    <img src="figs/fig3.png" alt="π0 架構與 RL 微調修改" loading="lazy">
+    <figcaption><b>原圖 3</b>架構圖(論文 Fig. 3)。左:π0 作為模仿預訓練模型 π<sub>pre</sub>(VLM 骨幹 E<sub>θ</sub> + flow-matching action expert v<sub>θ</sub>);右:RL 微調版 π<sub>θ</sub>,加上噪音頭 σ<sub>φ</sub> 與價值頭 V<sub>ψ</sub>(皆為淺層 MLP),VLM 用 LoRA 微調、action expert 全參數微調。</figcaption>
+  </figure>
+
+  <div class="callout green">
+    <span class="tag">設計亮點:K=1,把 flow-matching「降級」成單步高斯——反而更好</span>
+    先前文獻(DPPO)認為把多步 flow/diffusion 策略壓成單步高斯會傷表現;本文直接反著做:<strong>K=1 的成功率(79.75%)比 K=2(77.23%)、K=4(77.29%)都高</strong>,還把推論延遲從 K=10 模仿設定的 0.172s 壓到 0.073s(torch.compile,2.36×)、反向傳播時間比 K=4 省 1.45×。這直接呼應 Pan et al. 的「多模態迷思」論點:<strong>reward-guided 微調下,策略的多模態表達力不是重點</strong>,單模高斯就夠了——省下的算力全部投給平行度。
+  </div>
+
+  <h3>Sim-to-real 三件套</h3>
+  <p>遷移靠三個樸素因子:(1)生成物體與場景的<strong>高擬真度</strong>;(2)簡單 domain randomization——物體位姿、環境光 RGB [0,0.6]³、方向光亮度 [0.5,1.5]、相機位置 ±5cm(重新對準原注視點)、機器人關節擾動 ±0.1 rad;(3)<strong>PD 控制 + 重力補償</strong>——只要模擬和真機控制器都能以夠低的追蹤誤差到達目標姿態,連顯式系統辨識都可省。控制延遲隨機化也不用做:action chunk(C=4)天然吸收了延遲。</p>
+</section>
+
+<!-- ─────────── 實驗設定 ─────────── -->
+<section id="setup">
+  <h2><span class="num">§3</span>實驗設定:一個任務族,兩個世界</h2>
+  <p class="sec-sub">100 個生成場景掃 N-scaling;12 個實體場景驗 sim-to-real</p>
+
+  <figure>
+    <img src="figs/fig4.png" alt="生成的模擬場景範例" loading="lazy">
+    <figcaption><b>原圖 4</b>生成場景範例(論文 Fig. F.8)。100 個場景全是桌面 pick-and-place:「小黃瓜 → 濾盆」「棋子 → 棋盤」「海綿 → 水槽」……每景平均 5.16 個互動資產,背景、桌面、干擾物皆由文字生成。</figcaption>
+  </figure>
+
+  <p><strong>任務</strong>:語言指令下的抓取放置(把 A 放到 B 上),場景裡有數個干擾物。<strong>N-scaling 設計</strong>:從 100 個場景的全集 𝒲 隨機抽三個 50-scene 子集 ℋ<sub>i</sub>,各自訓練 N∈{1,3,10,25,50}(3 個獨立 run 取均值±標準差),OOD 集是補集 𝒲∖ℋ<sub>i</sub>;另外用全部 100 個場景單獨訓一個 run。<strong>基線</strong>:模仿策略 π<sub>pre</sub>(N=0),以及在 SimplerEnv 三個<em>手工設計</em> Bridge 桌面場景上 RL 微調的對照組——用來隔離「生成場景多樣性」本身的貢獻。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>項目</th><th>規格</th></tr>
+      <tr><td>模型</td><td>π0(3B;取第三方 open-pi-zero 的 BridgeV2 預訓練檢查點)。也試過 OpenVLA(real-to-sim 落差大、7B 太重)與 SpatialVLA(延遲過高);官方 π0.5 在此設定反而比 π0 差(App D)</td></tr>
+      <tr><td>模擬器</td><td>ManiSkill 3(GPU 平行),192 個平行環境,episode 長度 25 步,控制頻率 5 Hz</td></tr>
+      <tr><td>訓練</td><td>8× RTX 6000 Ada,5 天;VLM LoRA(rank 32)+ action expert 全參數;batch 19200、lr 2e-5(Table A.1)</td></tr>
+      <tr><td>真機</td><td>Interbotix WidowX 250S(夾爪最大開度僅 74mm,過大生成物體自動縮放)+ 單顆外接 Logitech C922 webcam;推論用一張 RTX 4090</td></tr>
+      <tr><td>評估</td><td>模擬:每場景 100 episodes。真機:12 場景 × 每策略 10 trials,共 240 次實驗;指標含 SR、部分成功 PSR(抓起並舉起)、動力學失敗率 DFR、語意失敗率 SFR、完成時間 TF</td></tr>
+    </table>
+  </div>
+
+  <figure class="narrow">
+    <img src="figs/fig5.png" alt="真機實驗設置" loading="lazy">
+    <figcaption><b>原圖 5</b>真機設置(論文 Fig. 4)。WidowX 250S + 單顆外接 webcam 的極簡配置——視覺輸入就是一路 RGB,沒有深度、沒有腕上相機。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 主結果 ─────────── -->
+<section id="results">
+  <h2><span class="num">§4</span>主結果:多樣性買泛化,泛化撐真機</h2>
+  <p class="sec-sub">模擬 N-scaling + 真實世界 12 場景;綠字 = 該列較優</p>
+
+  <h3>模擬:場景數 N 是主旋鈕</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>訓練配置</th><th>EG 訓練場景(ID)</th><th>EG 未見場景(OOD)</th><th>SimplerEnv(OOD)</th><th>ID−OOD 差距</th></tr>
+      <tr><td>π<sub>pre</sub> 模仿基線(N=0)</td><td class="num">9.7%</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>EG N=1</td><td class="num">94.3%</td><td class="num">53.2%</td><td class="num">36.1%</td><td class="num">41.1 pp</td></tr>
+      <tr><td>EG N=50</td><td class="num">80.5%</td><td class="num best">77.9%</td><td class="num">68.4%</td><td class="num best">2.6 pp</td></tr>
+      <tr><td>EG N=100(全集,單一 run)</td><td class="num">79.8%</td><td class="num">—</td><td class="num best">74.3%</td><td class="num">—</td></tr>
+      <tr><td>SimplerEnv 手工 3 景(對照)</td><td class="num">36.0%</td><td class="num">—</td><td class="num">96.7%(自家場景)</td><td class="num">60.7 pp</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">N≤50 為 3 個獨立 run 均值;中間點的差距收斂:41.1pp(N=1)→ 27.4(N=3)→ 14.6(N=10)→ 2.6(N=50)。註:論文 Table 1 詳表在 arXiv HTML 版渲染失敗(nicematrix),本表數字取自內文文字;完整逐格數據見 PDF。</p>
+
+  <p>三條訊息:(1)N 越大,訓練場景成功率越低(94.3 → 80.5)——這部分是 batch 固定、每景樣本數 ∝1/N 的人為效應——但 <strong>OOD 成功率單調上升</strong>(53.2 → 77.9),ID−OOD 差距幾乎歸零,代表 policy 從「背場景」轉向「學任務」。(2)N=100 的 policy 在<strong>從沒見過的 SimplerEnv</strong> 拿到 74.3%,是所有配置最高。(3)反向對照最狠:手工 3 景練出來的 policy 在自家場景 96.7%,換到生成場景崩到 36.0%——<em>RL-in-real 論文裡漂亮的 90%+,很可能就是這種窄分佈產物</em>(論文原話:此類結果「typically obtained in narrowly defined settings」)。</p>
+
+  <h3>真機:12 場景 × 240 trials</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>場景(指令 → 目標)</th><th>π<sub>pre</sub> SR</th><th>RL(N=100)SR</th><th>π<sub>pre</sub> TF</th><th>RL TF</th></tr>
+      <tr><td>0 香蕉 → 碗</td><td class="num">0.6</td><td class="num best">0.9</td><td class="num">10.7s</td><td class="num best">7.4s</td></tr>
+      <tr><td>1 花椰菜 → 馬克杯</td><td class="num">0.2</td><td class="num best">0.7</td><td class="num">13.3s</td><td class="num best">10.4s</td></tr>
+      <tr><td>2 蘑菇 → 碗</td><td class="num">0.1</td><td class="num best">0.9</td><td class="num">11.5s</td><td class="num best">8.4s</td></tr>
+      <tr><td>3 湯匙 → 餐巾</td><td class="num">0.1</td><td class="num best">0.7</td><td class="num best">6.1s</td><td class="num">12.2s</td></tr>
+      <tr><td>4 (粉紅)橡皮擦 → 筆記本</td><td class="num">0.3</td><td class="num best">1.0</td><td class="num">11.0s</td><td class="num best">10.2s</td></tr>
+      <tr><td>5 (黃)刷子 → 碗</td><td class="num">0.3</td><td class="num best">1.0</td><td class="num">10.5s</td><td class="num best">9.5s</td></tr>
+      <tr><td>6 白橡皮擦 → 馬克杯</td><td class="num">0.2</td><td class="num best">0.7</td><td class="num best">7.8s</td><td class="num">11.1s</td></tr>
+      <tr><td>7 紅刀 → 砧板</td><td class="num">0.2</td><td class="num best">0.8</td><td class="num">14.6s</td><td class="num best">12.2s</td></tr>
+      <tr><td>8 藍筆 → (藍)碗</td><td class="num">0.1</td><td class="num best">0.7</td><td class="num">29.6s</td><td class="num best">12.2s</td></tr>
+      <tr><td>9 綠麥克筆 → 籃子</td><td class="num">0.3</td><td class="num best">0.6</td><td class="num">9.2s</td><td class="num best">8.8s</td></tr>
+      <tr><td>10 螺絲起子 → 籃子(訓練分佈外物體)</td><td class="num">0.0</td><td class="num best">0.5</td><td class="num">—</td><td class="num best">10.4s</td></tr>
+      <tr><td>11 藍茶杯 → 疊上黃茶杯(未見物件+任務組合)</td><td class="num">0.2</td><td class="num best">0.5</td><td class="num">11.6s</td><td class="num best">11.0s</td></tr>
+      <tr><td><strong>全部(240 trials)</strong></td><td class="num">SR 0.217 / PSR 0.45</td><td class="num best">SR 0.75 / PSR 0.883</td><td class="num">11.5s</td><td class="num best">10.2s</td></tr>
+    </table>
+  </div>
+
+  <p>失敗剖面更有資訊量:模仿基線的失敗以<strong>動力學失誤為主</strong>(DFR 66.7%——抓空、掉落),RL 後降到 18.3%;語意失誤(拿錯物體)18.3% → 6.7%。也就是說 RL 微調同時修了「手笨」和「看錯」,但修「手笨」修得更多。兩個 OOD 場景值得單獨看:<strong>螺絲起子</strong>(訓練分佈裡完全沒有)從 0% → 50%;<strong>茶杯疊茶杯</strong>(物件與任務組合皆未見)20% → 50% 且 PSR 100%——泛化不只保住,還被 RL 放大。</p>
+
+  <figure>
+    <img src="figs/fig6.png" alt="螺絲起子場景:模仿 vs RL 策略對比" loading="lazy">
+    <figcaption><b>原圖 6</b>真機 rollout 對比(論文 Fig. H.13,場景 10「螺絲起子 → 籃子」)。上:模仿策略抓空後「精神錯亂」,改抓旁邊的刀放進籃子——語意+動力學雙失敗;下:RL 策略正確抓起訓練時從沒見過的螺絲起子放進籃子。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 消融與負結果 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§5</span>消融與負結果:高訓練分數是警訊,不是成績</h2>
+  <p class="sec-sub">訓練曲線、手工場景對照、K 消融、生成管線翻車率</p>
+
+  <figure class="narrow">
+    <img src="figs/fig7.png" alt="各 N 的訓練曲線" loading="lazy">
+    <figcaption><b>原圖 7</b>訓練曲線(論文 Fig. 5)。N 越大,最終訓練成功率越低——batch 固定下每景樣本 ∝1/N 的直接後果。但下一節的評估顯示:<strong>低 N 的高訓練分數換不到 OOD 表現</strong>,方向恰好相反。</figcaption>
+  </figure>
+
+  <div class="callout red">
+    <span class="tag">最有意思的負結果:96.7% 的漂亮數字,泛化時剩 36.0%</span>
+    在 SimplerEnv 三個手工場景上 RL 微調的對照組,自家場景拿 <strong>96.7%</strong>——比任何 EG 配置都高——但換到生成場景直接崩到 <strong>36.0%</strong>,掉 60.7 個百分點,比 N=1 的 EG policy 崩得還慘。同時,EG N=1 的訓練分數 94.3% 也對應最差的 OOD(53.2%)。兩件事指向同一結論:<strong>在少數場景上刷出的高成功率,本身就是過擬合的量測值</strong>。任何只報「自家場景成功率」的 RL 微調結果,都該先問一句:換個桌子還剩多少?
+  </div>
+
+  <h3>K 消融:多模態表達力不值錢(在 RL 微調裡)</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>積分步數 K</th><th>RL SR(%)</th><th>反向傳播時間(s)</th><th>推論延遲 reg / compile(s)</th></tr>
+      <tr><td>K=10(模仿原設定,未 RL)</td><td class="num">—</td><td class="num">—</td><td class="num">0.267 / 0.172</td></tr>
+      <tr><td>K=4</td><td class="num">77.29</td><td class="num">108.80</td><td class="num">0.153 / 0.107</td></tr>
+      <tr><td>K=2</td><td class="num">77.23</td><td class="num">87.55</td><td class="num">0.120 / 0.086</td></tr>
+      <tr><td>K=1(單步高斯)</td><td class="num best">79.75</td><td class="num best">74.74</td><td class="num best">0.098 / 0.073</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">論文自註:K 消融差距僅 2–2.5% 且各為單一 run——結論是「多模態沒幫助」,不是「K=1 顯著更強」。</p>
+
+  <h3>訓練配方裡的地雷(App A)</h3>
+  <ul>
+    <li><strong>凍結 VLM = 慢性死亡</strong>:只微調 action head 的配置,成功率先衝高、再飽和、最後<em>掉到零</em>(model collapse)。更新 VLM(LoRA 即可)是穩定學習的必要條件;凍結 SigLIP 視覺編碼器也會單調掉幾個百分點。</li>
+    <li><strong>importance ratio 不加冪次縮放(s=0.2)= 立即崩潰</strong>:log-prob 飆高導致多數梯度被 clip,訓練直接失效。</li>
+  </ul>
+
+  <h3>生成管線自己的翻車率</h3>
+  <p>論文沒有把生成品質說成 solved:單次通過率<strong>外觀語意 83.3%、網格幾何僅 75.2%</strong>、文字-3D 一致性 91.9%;全自動 QA 後仍有 <strong>15% 場景需要人工修正</strong>(尺度錯誤、初始擺放不穩);全新生成一個場景要 46.8±5.0 分鐘(其中背景就佔 25 分鐘)。另外 WidowX 夾爪只有 74mm,過大物體得自動縮小才能抓——「生成的世界」實際上是向硬體妥協過的世界。</p>
+
+  <figure>
+    <img src="figs/fig8.png" alt="生成管線代表性失敗案例" loading="lazy">
+    <figcaption><b>原圖 8</b>生成失敗案例(論文 Fig. C.1)。上排:自動 QA 攔下的——語意錯誤、網格破損、文字-3D 語意漂移;下排:<strong>全部檢查通過後仍漏網</strong>的初始化錯誤、尺度不符、擺放不穩,要靠人工挑掉。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig9.png" alt="RL 策略真機失敗案例:花椰菜滾出可達範圍" loading="lazy">
+    <figcaption><b>原圖 9</b>RL 策略的真機失敗(論文 Fig. H.16,場景 1)。RL policy 快速抓起花椰菜、嘗試放入馬克杯,撞到杯緣滾出機械臂可達範圍——論文承認<strong>相當比例的殘餘失敗是物體滾出工作空間、無法重抓</strong>,這類失敗 RL 也救不了。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 限制 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§6</span>限制:論文自己說的,和沒說的</h2>
+  <p class="sec-sub">Limitations 一節只有一段——邊界要自己補</p>
+
+  <p><strong>論文自列</strong>:實驗只做 pick-and-place——直接受限於 EmbodiedGen 目前能可靠生成的物體類型;未來要往鉸接物體、工具使用、多階段任務擴展。(論文也緩頰:BridgeV2 裡 70% 以上本來就是 pick-and-place。)</p>
+
+  <p><strong>本站補充(作者未列)</strong>:</p>
+  <ul>
+    <li><strong>獎勵是模擬器特權。</strong>稀疏成功判定(式 A.1)讀的是模擬器的 oracle 接觸狀態——這正是「為什麼在模擬做 RL」的核心紅利,但也意味著整套方法只覆蓋「成功可以用剛體接觸關係定義」的任務;成功條件是連續狀態變化(加熱、變形、混合)的任務,獎勵從何而來,論文沒有觸及。</li>
+    <li><strong>真機評估統計功效有限。</strong>每場景每策略只有 10 trials,單場景 SR 的差距(如 0.5 vs 0.6)在這個 n 下噪音很大;N=100 的主力 policy 也是單一 run、單一具身(WidowX)、單一相機配置。方向性結論可信,逐格數字別過度解讀。</li>
+    <li><strong>「多樣性」仍是同一族的多樣性。</strong>100 個場景全是 GPT-4o 模板化的桌面抓放,語言指令句式單一(「put the A on the B」);跨任務、跨句式、跨視角的泛化並未被這組實驗檢驗。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 對煎蛋機器人感知的啟示 ─────────── -->
+<section id="insights">
+  <h2><span class="num">§7</span>對煎蛋機器人感知任務的啟示</h2>
+  <p class="sec-sub">讀後解析——這部分是本站觀點,不是原文內容;對象:固定相機 RGBT、數十支影片體制的煮食感知堆疊</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼(一段話定位)</div>
+    <p>這是一篇「資料側」論文:演算法組件(π0、PPO、ReinFlow、ManiSkill3、EmbodiedGen)全是現成的,真正的論點是<strong>VLA 微調的瓶頸在場景分佈,而場景分佈可以用 3D 生成模型從人力成本變成算力成本</strong>。21.7%→75.0% 的頭條數字背後,最值錢的曲線其實是 N-scaling:場景數 1→50,OOD +24.7pp、ID−OOD 差距 41.1→2.6pp。對煎蛋感知堆疊,可以抄的是這套「多樣性紀律」和評估方法論;不可抄的是核心賣點本身——蛋的熟度是連續、細微、物理驅動的外觀變化,今天的 3D 生成引擎(論文自己承認只能生成剛體 pick-and-place 資產)做不出「一顆正在凝固的蛋」,更沒有 RGBT 熱通道。</p>
+  </div>
+
+  <ul>
+    <li><strong>生成世界買得到的:感知的「環境穩健性」。</strong>wok masking 這種幾何分割任務,失敗模式主要來自光照、背景、相機位移——正是論文 DR 清單覆蓋的軸(環境光 RGB [0,0.6]³、方向光亮度 [0.5,1.5]、相機位置 ±5cm 重新對準)。固定相機被碰歪幾公分後 mask 還準不準,可以直接抄相機 DR 當增強與驗收協定;數十支影片的小資料體制,合成光照/背景擾動是把「等效場景數 N」拉高最便宜的方式。</li>
+    <li><strong>生成世界買不到的:熟度本身。</strong>蛋液攤開、蛋白由透明轉白、邊緣焦化、氣泡與油面反光——這是<em>同一物體的連續狀態演變</em>,不是資產庫裡的剛體;熱像通道更是無生成模型支援。sim gap 不在控制端(論文用 PD+重力補償就跨過去了),卡死在<strong>感知目標的資料生成端</strong>。熟度估計器的訓練資料,短期內仍得靠真實影片 + 時間軸標註,生成式世界幫不上忙。</li>
+    <li><strong>獎勵依賴是方向性的:感知在 RL 上游。</strong>本文 RL 全靠模擬器 oracle 接觸判定發獎勵;煎蛋的「成功」= 熟度達標,物理世界沒有 oracle。若有朝一日要 RL 微調煮食操作策略,<strong>可靠的熟度偵測器是獎勵模型的前置依賴</strong>——先把感知堆疊做穩,才輪得到談 RL;不是反過來等 RL 取代感知。</li>
+    <li><strong>N=1 的崩法是同構警告。</strong>單場景 94.3%→OOD 53.2%、手工 3 景 96.7%→36.0%——換到煮食感知:只用自家那一口鍋、一盞燈訓練的 doneness 模型,在自家驗證集刷高分同樣證明不了什麼。驗收指標應該學這篇的做法:<strong>固定報一組「換鍋/換灶/換光」的 OOD 分數</strong>,把 ID−OOD 差距當一級公民指標,而不是只報整體準確率。</li>
+    <li><strong>DFR/SFR 失敗二分法直接可抄進 FSM gating。</strong>把 gate 的失敗拆成「語意失誤」(狀態判錯:平原期誤觸發、階段跳變漏偵測)與「動力學失誤」(時序偏移:判對但慢/快 N 個週期),分開計量、分開歸因——本文正是靠這個二分看出 RL 修「手笨」多於修「看錯」;煮食 FSM 同樣需要知道該修偵測器還是修去抖動邏輯。</li>
+    <li><strong>GPT-4o QA 迴圈是小資料管線的可抄件。</strong>三段式 VLM 檢查(語意/幾何/一致性)+ 不過就重抽,讓 516 個資產平均 1.37 次嘗試過關、85% 場景免人工。同樣模式可以用 VLM 自動審核合成增強幀(「這還像一顆正常的煎蛋嗎?光照可信嗎?」),把增強管線的人工抽檢變成自動守門——但記得本文的警示:全自動 QA 後仍有 15% 漏網,人工抽查不能歸零。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">跟本站另一篇對照</span>
+    CooT(見本站 CooT 頁)證明 few-shot 適應裡「context 條件化 &gt; 梯度微調」;這篇證明 RL 微調裡「場景分佈 &gt; 演算法花樣」。兩篇的共同味道:<strong>瓶頸都在資訊/資料側,不在模型側</strong>——一個把資訊留在原始軌跡不壓縮,一個把資料生成從人力變算力。對數十支影片體制的煮食感知,這兩條腿正好一人一邊:過往 run 當 context 做 per-run 校準,合成多樣性把訓練分佈撐寬。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文:<a href="https://arxiv.org/abs/2603.18532">Scaling Sim-to-Real Reinforcement Learning for Robot VLAs with Generative 3D Worlds</a> — Choi, Wang, Su, Xu(Horizon Robotics), arXiv 2603.18532, CC BY 4.0<br>
+    本頁:繁中解析,含論文 9 張原圖(版權歸原作者所有)· <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>

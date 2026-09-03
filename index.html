@@ -79,6 +79,39 @@
     <div class="sec-label">已發佈</div>
     <div class="grid">
 
+      <a class="card" href="sim2real-gen3d/index.html">
+        <div class="kicker">Robotics · arXiv 2603.18532 · 2026-03</div>
+        <h2>生成一百個世界，別讓 VLA 在單一場景過擬合</h2>
+        <p>真實世界 RL 會把 VLA 練成單場景特化策略；Horizon 用 EmbodiedGen 文字生成 100 個互動 3D 世界 + PPOFlow 平行微調 π0：模擬 9.7%→79.8%、真機 21.7%→75.0%（240 trials）。場景 1→50 買到 OOD +24.7pp；負結果同樣精彩——手工 3 景 96.7% 換場景剩 36.0%，K=1 單步高斯反而最強。含 9 張原圖。</p>
+        <div class="foot">
+          <span class="pill">paper digest</span>
+          <span class="pill">Sim-to-Real RL</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+      <a class="card" href="last-r1/index.html">
+        <div class="kicker">Robotics · arXiv 2604.28192 · 2026-04</div>
+        <h2>LaST-R1：先在潛空間想一想，再出手</h2>
+        <p>RL 補完潛在推理 VLA：LAPO 用高斯替身讓連續 latent 也能算 PPO ratio，獎勵同時塑形動作與思考，「想多久」也交給 RL。LIBERO 一條示範 warm-up 打到 99.9%，真實四任務 52.5→93.75%、unseen 物體掉幅 ≤15%。負結果：早退點全開（M=8）反而掉分，RL 後推理長度塌到 2–4 token。9 張原圖。</p>
+        <div class="foot">
+          <span class="pill">paper digest</span>
+          <span class="pill">潛在推理 × RL</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+      <a class="card" href="activesam/index.html">
+        <div class="kicker">Computer Vision · arXiv 2606.16996 · 2026-06</div>
+        <h2>ActiveSAM：先點名、再切圖——SAM 3 的免訓練加速</h2>
+        <p>MBZUAI VILA Lab 把凍結 SAM 3 的 presence head 從「解碼後過濾器」升級成「解碼前路由器」：672² 預覽點名在場類別，只對 active set 全解析度解碼。8 個 OVSS 基準平均 mIoU 65.3（+1.4），大詞彙最高快 5.5×、vs 原生 SAM 3 達 15.1×，零權重更新。負結果誠實：剪枝的精度貢獻是 0.0；小詞彙（V≤40）機制自動旁路、加速為零。含 6 張原圖。</p>
+        <div class="foot">
+          <span class="pill">paper digest</span>
+          <span class="pill">Training-free OVSS</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
       <a class="card" href="coinbase-ai-interviews/index.html">
         <div class="kicker">Engineering Culture · Coinbase Blog · 2026-07</div>
         <h2>AI 時代怎麼面試工程師？Coinbase 重建一年實錄</h2>

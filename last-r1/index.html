@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaST-R1：先在潛空間想一想再出手 — arXiv 2026 論文中文速覽</title>
+<meta name="description" content="北大 × 港中文 LaST-R1 中文速覽：把 VLA 的 Chain-of-Thought 從文字換成 DINOv3 錨定的連續 latent，再用 LAPO 讓 RL 獎勵同時塑形動作與推理空間，還讓模型自己學「想多久」。LIBERO 每任務 1 條示範 warm-up 打到 99.9% 平均成功率；真實四任務（含雙臂）52.5%→93.75%，勝過 100 條示範全量 SFT 的 π0.5。含 9 張原圖與方法、消融、負結果全解析。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#ffa657; --accent-deep:#bd561d; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(255,166,87,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  /* 三步驟流程 */
+  .steps{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .steps .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .steps .step .t{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .steps .step .d{color:var(--muted);font-size:13px;line-height:1.55}
+  .steps .step strong{display:block;font-size:15px;margin-bottom:4px}
+  .steps .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;padding:0 8px;font-family:var(--mono)}
+  @media(max-width:720px){
+    .steps{grid-template-columns:1fr}
+    .steps .arr{transform:rotate(90deg);padding:4px 0}
+  }
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Robotics · arXiv 2604.28192 · Paper Digest · 繁中速覽</div>
+    <h1>LaST-R1：先在潛空間想一想再出手，連「想多久」都交給 RL 學</h1>
+    <p class="subtitle">北大 × 港中文的 VLA 後訓練框架：把 Chain-of-Thought 從離散文字換成 DINOv3 錨定的連續 latent，再用 LAPO 讓環境獎勵同時雕塑「動作」與「思考」——LIBERO 每任務只用 1 條示範 warm-up，打到 99.9% 平均成功率。</p>
+    <div class="meta">
+      論文：<a href="https://arxiv.org/abs/2604.28192">LaST-R1: Reinforcing Robotic Manipulation via Adaptive Physical Latent Reasoning</a>（arXiv 2604.28192，v1 2026-04-30 / v3 2026-05-07）<br>
+      作者：Hao Chen、Jiaming Liu、Zhonghao Yan*、Nuowei Han*（*共同貢獻）、Renrui Zhang†（†project lead）、Chenyang Gu、Jialin Gao、Ziyu Guo、Siyuan Qian、Yinxi Wang、Peng Jia、Shanghang Zhang、Pheng-Ann Heng（北京大學多媒體資訊處理全國重點實驗室 × 香港中文大學）<br>
+      專案頁：<a href="https://siriyep.github.io/last-r1/">siriyep.github.io/last-r1</a>　|　本頁為繁中解析，所有數字皆出自論文原文
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字，抓住全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">99.9<small>% LIBERO</small></div>
+      <div class="lbl">四套件平均成功率全數第一，每任務只用 1 條示範軌跡 warm-up；最難的 LIBERO-Long 99.8 vs 最強 RL 基線 π<sub>RL</sub> 94.0（§4）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">52.5→93.75<small>%</small></div>
+      <div class="lbl">真實四任務（單臂＋雙臂）：30 條示範 warm-up 後線上 RL，平均勝過用 100 條示範全量 SFT 的 π<sub>0.5</sub>（71.25%）達 22.5 個百分點（§4）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">2–4<small> tokens</small></div>
+      <div class="lbl">RL 之後，自適應推理長度分佈塌縮到以 2–4 個 latent token 為主（上限 8）——多數決策其實是反射，不必想滿（§5）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">−45%<small> vs −15%</small></div>
+      <div class="lbl">真實世界遇到 unseen 物體：π<sub>0.5</sub> 最多崩掉 45%，LaST-R1 掉幅壓在 15% 內；換背景、換光照幾乎零損（§4）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    既有的「潛在推理 VLA」只會模仿學習，既有的「VLA RL 後訓練」只優化動作空間；LaST-R1 把兩邊接起來——讓模型在出手前先自迴歸吐幾個<em>連續 latent 推理 token</em>（以 DINOv3 全域特徵為錨），再用 <strong>LAPO</strong> 透過統一的 step-level ratio 讓環境獎勵<strong>同時塑形動作與推理空間</strong>；外加一個 <code>&lt;latent_end&gt;</code> 早退機制，讓「想多久」本身也變成 RL 學出來的決策。
+  </div>
+</section>
+
+<!-- ─────────── 問題背景 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題：VLA 的「思考」卡在哪</h2>
+  <p class="sec-sub">文字 CoT 太慢、latent 推理不會互動、action-only RL 不會思考</p>
+
+  <p>VLA（Vision-Language-Action）模型這兩年學會了「先推理再行動」，但論文把三條既有路線的失敗模式排得很清楚：</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>路線</th><th>代表方法</th><th>失敗模式（論文說法）</th></tr>
+      <tr><td>顯式 CoT（文字／未來影像）</td><td>ECoT、CoT-VLA、OneTwoVLA 等</td><td>解碼中間文字或影像帶來<strong>不可忽略的推理延遲＋離散化瓶頸</strong>——抓不住連續、高頻的物理動態</td></tr>
+      <tr><td>潛在推理 VLA</td><td>近期 latent-reasoning 工作</td><td>推理搬進緊湊潛空間、能容納難以語言化的物理知識，但<strong>全數困在模仿學習</strong>：吃大量專家示範、無閉環互動、compounding error、泛化受限</td></tr>
+      <tr><td>VLA 的 RL 後訓練</td><td>GRAPE（DPO）、VLA-RL／π<sub>RL</sub>（PPO）、SimpleVLA-RL／TGRPO／RLinf（GRPO）</td><td>只支援 vanilla 架構、<strong>只在動作空間做監督</strong>——「想」和「做」之間的內在連結完全沒被優化</td></tr>
+    </table>
+  </div>
+
+  <p>缺口因此很具體：<strong>怎麼對「先潛在推理、再生成動作」的策略做 RL 後訓練？</strong>難點在於 latent token 是連續向量，沒有離散機率可以算 PPO 的 likelihood ratio——獎勵訊號進不了思考空間。LaST-R1 的答案是一套專為此設計的演算法：Latent-to-Action Policy Optimization（LAPO）。</p>
+</section>
+
+<!-- ─────────── 核心方法 ─────────── -->
+<section id="method">
+  <h2><span class="num">§2</span>方法：讓獎勵同時雕塑「思考」與「動作」</h2>
+  <p class="sec-sub">LaST-R1 VLA 架構 + LAPO 演算法 + 自適應推理長度</p>
+
+  <figure>
+    <img src="figs/fig1.png" alt="LaST-R1 總覽：vanilla RL 只優化動作，LAPO 聯合優化 latent CoT 與動作" loading="lazy">
+    <figcaption><b>原圖 1</b>LaST-R1 總覽。(a) 既有 RL 基線只在動作空間優化；(b) LAPO 聯合優化自適應 latent CoT 與物理執行；(c) 收斂更快、模擬成功率更高；(d) 真實世界泛化更強。</figcaption>
+  </figure>
+
+  <h3>架構：Qwen3-VL-4B 底座 + DINOv3 認知錨</h3>
+  <p>LaST-R1 VLA 以 <strong>Qwen3-VL-4B</strong>（SigLIP2-Large 視覺編碼器 + LLM backbone）為底座。推理時模型先<strong>自迴歸</strong>生成 N<sub>z</sub> 個 latent 推理 embedding（模擬對未來狀態的推演），吐出 <code>&lt;latent_end&gt;</code> 後切換到<strong>平行解碼</strong>：8 步動作 chunk（56 個離散 action token，256 檔離散化）靠雙向注意力一次 forward 全部解出，並重用 latent 階段的 KV cache。<code>&lt;latent_end&gt;</code> 的最終 hidden state 另接一個 4 層 MLP value head 估狀態價值，供 RL 使用。</p>
+  <p>latent 的<strong>監督目標</strong>是全篇最務實的一手：抽 <strong>DINOv3</strong> 的 <code>&lt;CLS&gt;</code> token（4096 維），沿通道取 magnitude top-k（k=2560）對齊 VLA 隱藏維度——不用 pooling 抹平空間結構、不用 Q-Former 從頭學查詢，直接借用視覺基礎模型結構豐富、語義緻密的特徵空間當「認知錨」。而且<strong>全部離線預計算</strong>，訓練與推理零額外開銷。</p>
+
+  <figure>
+    <img src="figs/fig2.png" alt="LaST-R1 框架：統一 VLA 模型 + LAPO RL 後訓練 + 自適應推理" loading="lazy">
+    <figcaption><b>原圖 2</b>LaST-R1 框架。(a) 統一 VLA：視覺基礎模型提供物理錨定的 latent 目標，引導動作前的 latent CoT；(b) LAPO 後訓練：閉環互動收集 latents／actions／rewards，聯合重塑兩個空間，並學習發射 <code>&lt;latent_end&gt;</code> 動態調整推理長度；(c) 訓練後不同任務自動長出不同推理深度。</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step">
+      <div class="t">Step 1 · 想</div>
+      <strong>自迴歸 latent 推理</strong>
+      <div class="d">吐出至多 N<sub>max</sub>=8 個連續 latent token，錨定於 DINOv3 &lt;CLS&gt; top-k 特徵，承載未來物理動態</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 2 · 停</div>
+      <strong>&lt;latent_end&gt; 決定想夠沒</strong>
+      <div class="d">推理時信心 p≥0.99 即早退；只允許在 M=4 個候選位置停，訓練時以溫度 β 抽樣長度探索</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Step 3 · 做</div>
+      <strong>平行解碼動作 chunk</strong>
+      <div class="d">8 步動作 56 token 一次 forward 解出（雙向注意力＋重用 KV cache），value head 同步估值</div>
+    </div>
+  </div>
+
+  <h3>LAPO：連續 latent 怎麼算 PPO ratio</h3>
+  <p>離散 action token 的 ratio 好辦（聯合 log-prob 相減取 exp）；連續 latent 沒有機率。LAPO 的解法：把 rollout 時的舊 latent 視為從「以新策略輸出為中心的等向高斯」取樣而來。舊策略對自己取樣點的密度只剩正規化常數，一相除常數對消，latent ratio 化簡成一個乾淨的距離函數：<code>r_z = exp(−Σ‖z_old − z_θ‖² / 2σ²)</code>。把 r<sub>a</sub>、r<sub>z</sub> 各自套 PPO clipped surrogate 後相加，advantage 為正時，優化等於<strong>把新策略的 latent 拉向「成功軌跡當時的推理」流形</strong>。總損失 <code>L = L_action + λ1·L_latent + λ2·L_value + λ3·L_end</code>（λ1=0.1、λ2=1、λ3=0.1）。</p>
+
+  <div class="callout green">
+    <span class="tag">設計亮點：高斯替身讓「思考」變得可獎勵</span>
+    整篇的樞紐就是式 (3) 這一行：用固定方差的等向高斯當替身分佈，讓連續推理 embedding 也有了 likelihood ratio，環境獎勵從此能<strong>直接流進思考空間</strong>，不必先把思考離散化成文字。搭配另一手「DINOv3 latent 目標全離線預計算」，推理階段的認知能力<em>零推理開銷</em>——反觀文字 CoT，每一步都要付解碼延遲。附錄 B 有完整推導：正規化常數 (2πσ²)<sup>−D/2</sup> 在分子分母間精確對消，沒有任何近似落差。
+  </div>
+
+  <h3>自適應推理長度：把「想多久」也變成決策</h3>
+  <p>固定長度推理對簡單動作浪費算力、對複雜操作又不夠想。LaST-R1 把 <code>&lt;latent_end&gt;</code> 從固定終止符改成<strong>可學習的動態轉換訊號</strong>：rollout 時從 M 個候選位置的 logits（溫度 β 軟化）抽樣推理長度做探索；更新時對該 token 額外算一條離散 ratio（L<sub>end</sub>），由 advantage 引導——可預測的狀態獎勵早退，難的操作懲罰想太少。推理部署時改用信心閾值 p≥0.99 早退。</p>
+</section>
+
+<!-- ─────────── 實驗設定 ─────────── -->
+<section id="setup">
+  <h2><span class="num">§3</span>實驗設定：LIBERO 四套件 + 真實四任務</h2>
+  <p class="sec-sub">先 400K 軌跡預訓練，再走「少量 SFT warm-up → 線上 RL」兩段式</p>
+
+  <p><strong>預訓練</strong>：自建 400K 軌跡／28M 幀混合語料（Open-X-Embodiment、DROID、RoboMIND；BridgeV2 20.8%、Kuka 20.2%、Fractal 13.7% 為前三大來源），DINOv3 latent 目標全數離線預計算。</p>
+
+  <p><strong>模擬（LIBERO）</strong>：Spatial／Object／Goal／Long 四套件各 10 任務，模擬 Franka Panda，單一前視 256×256。兩段式訓練：每任務<strong>隨機取 1 條示範</strong>做 SFT warm-up（8×H20，10K 迭代），再進模擬器線上 RL——verl + Ray + FSDP，每輪 rollout <strong>512 條軌跡</strong>、切 4 個 mini-batch 跑 4 個 PPO epoch；稀疏二元獎勵於終點放大 5 倍；GAE（γ=0.99、λ=0.95）、非對稱 clip（0.2／0.28）、取樣溫度 1.6。指標為每任務 50 個 held-out 場景的平均成功率（SR）。</p>
+
+  <p><strong>真實世界</strong>：兩支 Franka Research 3 + 3D 列印 UMI 夾爪；RealSense D455 第三人稱 + 兩支 D435 腕視角；RTX 4090 上推理。四個任務——插六角積木（單臂）、拉開袋子拉鏈、海綿擦花瓶、旋開瓶蓋（皆雙臂）。每任務 30 條 SpaceMouse 示範 warm-up，之後走<strong>非同步 actor-learner 的人在迴路線上 RL</strong>：凍結底座只更新 LoRA（r=32），人工介入軌跡進專用 buffer，成功由操作員確認（+10 終點獎勵、每步 −0.05）。評估每格 20 次 rollout、人工判定成敗。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>基線</th><th>範式</th><th>測試什麼假設</th></tr>
+      <tr><td>OpenVLA、GR00T-N1、π<sub>0</sub>、π<sub>0.5</sub>、OpenVLA-OFT</td><td>SFT（每任務全量 50 條示範）</td><td>吃滿專家資料的模仿學習天花板在哪</td></tr>
+      <tr><td>GRAPE、TGRPO、VLA-RL</td><td>RL（全軌跡 warm-up †）</td><td>偏好對齊／群組相對優化能否補上互動能力</td></tr>
+      <tr><td>SimpleVLA-RL、RLinf-GRPO</td><td>RL（單軌跡 warm-up）</td><td>與 LaST-R1 同資料條件下的 GRPO 路線</td></tr>
+      <tr><td>π<sub>RL</sub></td><td>RL（單軌跡，但用雙相機視角 ‡）</td><td>PPO 路線的最強代表——注意其輸入比 LaST-R1 多一路相機</td></tr>
+    </table>
+  </div>
+
+  <p>真實世界的對照組是 <strong>π<sub>0.5</sub> 用 100 條專家示範做全量 SFT</strong>——3.3 倍於 LaST-R1 的示範量，但沒有線上互動。</p>
+</section>
+
+<!-- ─────────── 主結果 ─────────── -->
+<section id="results">
+  <h2><span class="num">§4</span>主結果：一條示範 warm-up，四套件全數第一</h2>
+  <p class="sec-sub">LIBERO 12 方法對決 + 真實四任務含泛化壓力測試；綠字 = 該欄第一（並列含）</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>範式</th><th>Spatial</th><th>Object</th><th>Goal</th><th>Long</th><th>平均 SR</th></tr>
+      <tr><td>OpenVLA</td><td>SFT</td><td class="num">84.7</td><td class="num">88.4</td><td class="num">79.2</td><td class="num">53.7</td><td class="num">76.5</td></tr>
+      <tr><td>GR00T-N1</td><td>SFT</td><td class="num">94.4</td><td class="num">97.6</td><td class="num">93.0</td><td class="num">90.6</td><td class="num">93.9</td></tr>
+      <tr><td>π<sub>0</sub></td><td>SFT</td><td class="num">96.8</td><td class="num">98.8</td><td class="num">95.8</td><td class="num">85.2</td><td class="num">94.2</td></tr>
+      <tr><td>π<sub>0.5</sub></td><td>SFT</td><td class="num">98.8</td><td class="num">98.2</td><td class="num">98.0</td><td class="num">92.4</td><td class="num">96.9</td></tr>
+      <tr><td>OpenVLA-OFT</td><td>SFT</td><td class="num">97.6</td><td class="num">98.4</td><td class="num">97.9</td><td class="num">94.5</td><td class="num">97.1</td></tr>
+      <tr><td>GRAPE†</td><td>RL·DPO</td><td class="num">88.5</td><td class="num">92.1</td><td class="num">83.1</td><td class="num">57.2</td><td class="num">80.2</td></tr>
+      <tr><td>TGRPO†</td><td>RL·GRPO</td><td class="num">90.4</td><td class="num">92.2</td><td class="num">81.0</td><td class="num">59.2</td><td class="num">80.7</td></tr>
+      <tr><td>VLA-RL†</td><td>RL·PPO</td><td class="num">90.2</td><td class="num">91.8</td><td class="num">82.2</td><td class="num">59.8</td><td class="num">81.0</td></tr>
+      <tr><td>SimpleVLA-RL</td><td>RL·GRPO</td><td class="num">98.2</td><td class="num">98.7</td><td class="num">98.8</td><td class="num">91.7</td><td class="num">96.9</td></tr>
+      <tr><td>RLinf-GRPO</td><td>RL·GRPO</td><td class="num">98.9</td><td class="num">99.7</td><td class="num">98.3</td><td class="num">93.6</td><td class="num">97.6</td></tr>
+      <tr><td>π<sub>RL</sub>‡</td><td>RL·PPO</td><td class="num">99.6</td><td class="num best">100.0</td><td class="num">99.6</td><td class="num">94.0</td><td class="num">98.3</td></tr>
+      <tr><td><strong>LaST-R1</strong></td><td>RL·LAPO</td><td class="num best">99.8</td><td class="num best">100.0</td><td class="num best">100.0</td><td class="num best">99.8</td><td class="num best">99.9</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">† = 全軌跡 warm-up；‡ = 雙相機視角訓練。LaST-R1 為單軌跡 warm-up、單視角（論文 Table 1）。</p>
+
+  <p>兩個讀點：（1）<strong>一條示範的 RL 打贏吃滿 50 條的 SFT</strong>——π<sub>0.5</sub> 96.9、OpenVLA-OFT 97.1 都被越過；（2）差距集中在最需要「想」的 <strong>LIBERO-Long 長程任務：99.8 vs π<sub>RL</sub> 的 94.0</strong>。學習曲線（原圖 3）顯示同樣的故事：Action-Only + PPO 在 Long 上收斂又慢又低，latent CoT 像一層「認知緩衝」把 RL 的優化地形抹平了。</p>
+
+  <figure>
+    <img src="figs/fig3.png" alt="LIBERO 四套件 one-shot 線上 RL 學習曲線" loading="lazy">
+    <figcaption><b>原圖 3</b>One-shot 線上 RL 學習曲線（四套件）。LaST-R1 + LAPO（紅）收斂顯著快於 Action-Only + PPO（藍）；後者在 LIBERO-Long 上耗費更多步數仍停在次優。</figcaption>
+  </figure>
+
+  <h3>真實世界：52.5% → 93.75%，順帶把泛化也修了</h3>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>任務</th><th>π<sub>0.5</sub>（100 條全量 SFT）</th><th>LaST-R1（30 條 SFT→RL）</th><th>Unseen 物體（π<sub>0.5</sub> / LaST-R1）</th><th>換背景</th><th>換光照</th></tr>
+      <tr><td>插六角積木（單臂）</td><td class="num">65</td><td class="num best">45 → 90</td><td class="num">35 (−30%) / 75 (−15%)</td><td class="num">55 / 85</td><td class="num">40 / 80</td></tr>
+      <tr><td>拉開袋子拉鏈（雙臂）</td><td class="num">75</td><td class="num best">55 → 95</td><td class="num">30 (−45%) / 80 (−15%)</td><td class="num">70 / 95</td><td class="num">60 / 90</td></tr>
+      <tr><td>海綿擦花瓶（雙臂）</td><td class="num">75</td><td class="num best">65 → 95</td><td class="num">45 (−30%) / 80 (−15%)</td><td class="num">65 / 90</td><td class="num">50 / 95</td></tr>
+      <tr><td>旋開瓶蓋（雙臂）</td><td class="num">70</td><td class="num best">45 → 95</td><td class="num">50 (−20%) / 95 (−0%)</td><td class="num">55 / 80</td><td class="num">55 / 85</td></tr>
+      <tr><td><strong>平均</strong></td><td class="num">71.25 ±4.5</td><td class="num best">52.5 → 93.75 ±1.25</td><td class="num">π<sub>0.5</sub> 最多 −45%；LaST-R1 ≤ −15%</td><td class="num">近零損</td><td class="num">近零損</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">每格 20 次 rollout 的成功率（%）；std 取自三次獨立重跑（論文 Table 2）。括號為相對 Original 的掉幅。</p>
+
+  <figure>
+    <img src="figs/fig4.png" alt="真實四任務與泛化設定示例" loading="lazy">
+    <figcaption><b>原圖 4</b>真實四任務與三種泛化設定（unseen 物體／背景／光照，紅框標示變動處）：插六角積木、拉開袋子拉鏈、海綿擦花瓶、旋開瓶蓋。</figcaption>
+  </figure>
+
+  <p>值得注意的細節：warm-up 剛結束時 LaST-R1 只有 52.5%（明顯輸給 π<sub>0.5</sub> 的 71.25%）——是<strong>線上 RL 補回了 41 個百分點</strong>，並把瓶蓋這種需要建模「隨時間演化的物理接觸」的任務從 45% 拉到 95%。</p>
+
+  <h3>泛化：held-out 任務上，action-only 躺平、LaST-R1 一路爬</h3>
+  <p>模擬側的 OOD 協定：每套件 9 個任務做 RL、留 1 個從不訓練。Action-Only + PPO 的 OOD 曲線早早躺平甚至倒退（Goal／Long 套件）；LaST-R1 + LAPO 持續上升——Long-Task4 上基線始終不過 20%，LaST-R1 爬到 54%；Spatial-Task0、Object-Task0、Goal-Task5 更收斂到 100%。</p>
+
+  <figure>
+    <img src="figs/fig5.png" alt="LIBERO OOD 泛化曲線" loading="lazy">
+    <figcaption><b>原圖 5</b>泛化分析（9 個任務訓練、1 個 held-out 評估）。Action-Only PPO（藍）OOD 成功率停滯，LaST-R1 + LAPO（紅）持續改善——證據指向：優化 latent 推理空間學到的是可遷移的空間／語義概念，而非背下 9 個任務的運動軌跡。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 消融與負結果 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§5</span>消融與負結果：推理深度是「被管制的自由」</h2>
+  <p class="sec-sub">除註明外皆在 LIBERO-Spatial 上評估</p>
+
+  <h3>1 · latent 推理本身值多少：SFT 階段就先贏 12.9 個百分點</h3>
+  <p>one-shot SFT warm-up 對決：帶 latent 推理 63.9% vs Action-Only 51.0%（四套件平均）；差距在 LIBERO-Long 最誇張——<strong>26.2% → 49.6%，接近翻倍</strong>。RL 後差距仍在：LaST-R1 + LAPO 99.9 vs Action-Only + PPO 95.2。</p>
+
+  <h3>2 · latent 表徵怎麼做：免訓練的 DINOv3 贏過所有可學習壓縮器</h3>
+  <p>RL 後對比四種構造：<strong>DINOv3 &lt;CLS&gt; top-k 99.8%</strong> &gt; 卷積下採樣 98.4% &gt; Q-Former 97.2% &gt; 全域池化 96.8%。加參數學壓縮反而輸給直接借基礎模型的先驗——池化抹掉空間細節、Q-Former 從頭學查詢引入雜訊偏置。</p>
+
+  <h3>3 · 想多久：1→8 token 單調上升，但 4→8 已見邊際遞減</h3>
+  <p>固定長度掃描：無推理 95.0% → 1 token 96.2% → 8 tokens 98.4%，單調上升但 4→8 增益有限，故上限鎖 8。</p>
+
+  <h3>4 · 早退點設幾個：M=4 最好，全開反而掉</h3>
+  <p>N<sub>max</sub>=8 之下掃描候選早退位置數 M∈{1,2,4,8}：<strong>M=4 最佳（99.8%）</strong>，優於固定長度（98.4%）；但 M=8（每個 token 後都能退）反而降到 99.0%。</p>
+
+  <figure>
+    <img src="figs/fig6.png" alt="消融：latent 表徵、固定長度、自適應早退策略" loading="lazy">
+    <figcaption><b>原圖 6</b>消融三連：(a) latent 表徵構造法、(b) 固定推理長度 N<sub>z</sub>、(c) 自適應長度的 <code>&lt;latent_end&gt;</code> 發射策略（M 個候選位置）。</figcaption>
+  </figure>
+
+  <div class="callout red">
+    <span class="tag">最有意思的負結果：自由度給太多，推理反而學壞</span>
+    三條證據指向同一件事——<strong>思考需要被管制</strong>：（1）早退點全開 M=8 輸給 M=4（99.0 vs 99.8），論文歸因於優化不穩定；（2）latent 損失權重 λ1 從 0.1 加到 1，掉到 99.0——推理目標壓過了物理執行主任務；λ1=0（只靠動作 loss 隱式回傳梯度）更只有 97.2，證明顯式 latent 監督不可省；（3）<code>&lt;latent_end&gt;</code> 懲罰 λ3 加重到 2，掉到 98.6——過度懲罰打斷長度探索。另一個該記的坦白：主表全體已擠在 99+ 的天花板下，消融差距多在 1–3 個百分點內，而論文<strong>沒有報告模擬消融的標準差</strong>——這些排序的統計強度，讀者只能自行打折。
+  </div>
+
+  <h3>RL 學會的「想多久」長什麼樣</h3>
+  <p>warm-up 階段推理長度是隨機抽的，分佈近乎均勻；LAPO 之後分佈劇烈塌縮——<strong>四個套件全數以 2 或 4 token 為主</strong>，模型學會「狀態表徵夠了就停」的 early-exit，在不犧牲成功率的前提下大砍每步 token 數。</p>
+
+  <figure>
+    <img src="figs/fig7.png" alt="自適應推理長度的頻率分佈：SFT 前後對比" loading="lazy">
+    <figcaption><b>原圖 7</b>自適應推理長度頻率分佈（上限 8）。SFT warm-up（藍）近乎均勻；RL 優化後（紅）重心移向 2–4 token——簡單狀態反射、複雜狀態深想，且不犧牲近乎完美的成功率。</figcaption>
+  </figure>
+
+  <p>還有一個超出預期的副產品：RL 後的<strong>執行步數在 Spatial／Object／Goal 三套件比專家示範還少</strong>（500 條測試軌跡、不分成敗全計）。SFT 後的策略遇到 OOD 狀態會陷入無效繞圈逼近步數上限；RL 後的策略反而找到比腳本專家更直接的路徑。</p>
+
+  <figure>
+    <img src="figs/fig8.png" alt="LIBERO 平均執行步數對比：專家 vs RL 前 vs RL 後" loading="lazy">
+    <figcaption><b>原圖 8</b>平均執行步數：專家示範 vs RL 前 vs RL 後。LAPO 優化後大幅縮短執行步數，多數套件甚至比模擬器內建專家更省——「想清楚再動」反而動得更快。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 限制 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§6</span>限制：論文自己認的，和沒認的</h2>
+  <p class="sec-sub">附錄 H 列了兩條；我們再補四條</p>
+
+  <p><strong>論文自列（附錄 H）</strong>：</p>
+  <ul>
+    <li><strong>推理長度仍是手工框架。</strong>上限 N<sub>max</sub>=8、早退只能發生在人為預設的 M 個候選位置——「自適應」是在被設計好的選項裡選，不是完全動態的推理架構。</li>
+    <li><strong>只驗證了單臂／雙臂平台。</strong>靈巧手、人形全身控制還沒碰。</li>
+  </ul>
+
+  <p><strong>失敗案例（附錄 G）也值得原樣記</strong>：模擬側，碗放偏滑出盤沿、手臂路過碰倒摩卡壺（不可逆、直接翻車）；真實側，插塊差之毫釐、拉鏈因動態摩擦打滑脫手、海綿根本沒碰到花瓶表面、瓶蓋轉一半提前收工——<strong>清一色是細粒度接觸物理</strong>，也就是「潛在推理」最該罩住的地方。</p>
+
+  <figure>
+    <img src="figs/fig9.png" alt="真實世界失敗案例四則" loading="lazy">
+    <figcaption><b>原圖 9</b>真實世界失敗案例（紅框為失敗瞬間）：插塊位置偏差、拉鏈打滑、海綿未接觸、瓶蓋未旋完。全數屬於接觸動力學層面的執行誤差。</figcaption>
+  </figure>
+
+  <p><strong>論文沒列、讀者該自己補的</strong>：</p>
+  <ul>
+    <li><strong>「1 條示範」的資料效率是用互動量換的。</strong>LIBERO 上每輪 RL 迭代要收 512 條模擬 rollout；真實世界要人守在旁邊確認成功、隨時介入。示範省了，環境互動與人力沒省——對無法大量重置的場景，這筆帳不成立。</li>
+    <li><strong>真實實驗沒有 RL 對 RL 的比較。</strong>22.5 個百分點的標題數字是「30 條示範＋線上 RL」對「100 條示範純 SFT」——混合了「RL 後訓練有用」與「LAPO 比別的 RL 好」兩件事；後者在真實世界並未被單獨驗證。且每格僅 20 次 rollout，粒度 5%。</li>
+    <li><strong>LIBERO 已被打穿。</strong>99.9% 之後這個基準對後續方法幾乎沒有鑑別度；前四名擠在 97.6–99.9 之間，主戰場的訊號本身在飽和。</li>
+    <li><strong>認知錨綁死在凍結的 DINOv3 上。</strong>latent 目標離線預計算意味著推理空間的先驗完全由 DINOv3 的訓練分佈決定——遇到遠離其分佈的視覺域（熱像、煙霧、強反光液面），錨本身會偏，而框架沒有校正機制。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 本站觀點 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§7</span>對煎蛋機器人感知任務的啟示</h2>
+  <p class="sec-sub">讀後解析——這部分是本站觀點，不是原文內容</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼（一段話定位）</div>
+    <p>LaST-R1 是「潛在推理 VLA」的 RL 補完計畫：架構上把 CoT 從離散文字換成 DINOv3 錨定的連續 latent（高頻物理動態不必先翻譯成語言），演算法上用一個高斯替身讓連續思考也能算 PPO ratio、獎勵同時塑形「想」與「做」，再讓模型自己學會「想多久」。對我們這種<strong>固定相機 RGBT、數十段影片、沒有模擬器</strong>的煮食感知任務，可直接搬的是表徵構造與「自適應推理深度」的思想；不可搬的是 LAPO 本體——它吃的互動量（每輪 512 條 rollout／人在迴路確認）在鍋邊不存在。</p>
+  </div>
+
+  <ul>
+    <li><strong>latent 推理 vs 文字 CoT，煎蛋站在 latent 這邊。</strong>蛋的熟度是連續、難以語言化的物理狀態——蛋白混濁度的漸變、氣泡節奏、邊緣捲曲程度，硬轉成「蛋白已半凝固」這類離散文字必然丟資訊、加延遲（正是論文對顯式 CoT 的兩條指控）。熟度估計器若要「推理」，該學 LaST-R1 在緊湊潛空間做：輸出決策前先過幾個以視覺基礎模型特徵為錨的 latent step。</li>
+    <li><strong>DINOv3 &lt;CLS&gt; top-k 離線預計算，是 35 段影片體制下零成本可抄的一手。</strong>消融說得很白：免訓練的基礎模型先驗（99.8）打贏所有從頭學的壓縮器（卷積 98.4、Q-Former 97.2、池化 96.8）——資料越少，越不該自己學表徵。落地版：全部影格離線抽 DINOv3 embedding 當熟度模型的輔助監督目標（auxiliary latent target），推理零開銷。但注意 §6 最後一條：RGBT 的<strong>熱像通道不在 DINOv3 分佈內</strong>——RGB 路錨 DINOv3，T 路得走自己的支路或自監督。</li>
+    <li><strong>「自適應推理深度」正是煮食 FSM gating 該有的形狀。</strong>LaST-R1 學到的分佈（原圖 7）說：多數決策 2–4 token 的反射就夠，只有難的操作值得想滿 8。翻譯到熟度 FSM：平原期（蛋已下鍋、狀態緩變——自家已知的難例段）每幀走廉價反射路徑即可；<strong>相變窗口</strong>（邊緣開始泛白、翻面後十餘秒、起鍋倒數）才升級到深審議——多幀聚合、跨模態互驗、或叫大模型看一眼。LaST-R1 的觸發機制可以整套對映：信心 p≥0.99 → 走反射；後驗變平 → escalate。而 M=4 的負結果給了一條反直覺的工程紀律：<strong>escalation 檢查點不要每幀都設</strong>——固定在少數幾個決策點（如 FSM 狀態邊界前後）反而比「隨時可升級」穩。</li>
+    <li><strong>LIBERO 99.9% 的飽和，恰恰是對濕滑形變場景的警告。</strong>LIBERO 是剛體、可重置、模擬器內的世界；而論文自己的真實失敗案例（原圖 9）全發生在動態摩擦、形變、接觸——拉鏈打滑、海綿沒碰到面，正是食物操作的日常。蛋更狠：<strong>不可逆、不可重置</strong>，煎壞了沒有 reset 鍵，online RL 的 512 rollouts／迭代在鍋邊是天方夜譚。所以 tens-of-videos 體制的正解是借它的<em>架構</em>（latent reasoning head＋基礎模型錨定＋早退 gating），把它的<em>訓練迴圈</em>換成離線監督或事後人工標註的 doneness 對錯。</li>
+    <li><strong>一個可以直接抄的評估設計：</strong>論文用「執行步數 vs 專家」（原圖 8）證明 RL 後的策略比示範更果斷。感知側的對應指標是<strong>熟度判定延遲</strong>——從真實相變發生到 FSM 實際轉移隔了幾幀。這比整段準確率更能暴露兩種真實風險：平原期猶豫（該轉不轉）與誤觸發（沒相變亂轉），也正是 wok masking + FSM gating 架構最該量化的兩個失效模式。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">一句話帶走</span>
+    LaST-R1 真正的可遷移資產不是 99.9% 這個數字，而是兩個機制：<strong>把難以語言化的物理狀態留在連續潛空間推理</strong>（錨在凍結基礎模型上、離線預計算、零推理開銷），以及<strong>把「想多久」變成由信心觸發、在少數固定檢查點早退的決策</strong>。前者決定煮食感知模型的表徵該怎麼搭，後者決定 FSM 的深慢路徑該在哪裡開門。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://arxiv.org/abs/2604.28192">LaST-R1: Reinforcing Robotic Manipulation via Adaptive Physical Latent Reasoning</a> — Chen, Liu, Yan, Han, Zhang, Gu, Gao, Guo, Qian, Wang, Jia, Zhang, Heng（北京大學 × 香港中文大學），arXiv 2604.28192, 2026<br>
+    本頁：繁中解析，含論文 9 張原圖（版權歸原作者所有）· <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ActiveSAM：先點名、再切圖——SAM 3 開放詞彙分割的免訓練加速 — arXiv 2606.16996 論文中文速覽</title>
+<meta name="description" content="MBZUAI VILA Lab 論文 ActiveSAM 中文速覽：training-free、零權重更新，用凍結 SAM 3 的 presence head 先做低解析度「點名」，只對圖中在場的類別做全解析度解碼。8 個 OVSS 基準平均 mIoU 65.3（+1.4 vs SegEarth-OV3），大詞彙資料集最高快 5.5 倍；影像劣化（噪聲/模糊/霧）下依然全面領先。含 6 張原圖與方法、消融、負結果全解析。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#d2a8ff; --accent-deep:#8957e5; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(210,168,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:700px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.narrow{max-width:560px;margin-left:auto;margin-right:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+
+  /* 三步驟流程 */
+  .steps{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:stretch;margin:28px 0;font-size:14px}
+  .steps .step{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative}
+  .steps .step .t{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .steps .step .d{color:var(--muted);font-size:13px;line-height:1.55}
+  .steps .step strong{display:block;font-size:15px;margin-bottom:4px}
+  .steps .arr{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;padding:0 8px;font-family:var(--mono)}
+  @media(max-width:720px){
+    .steps{grid-template-columns:1fr}
+    .steps .arr{transform:rotate(90deg);padding:4px 0}
+  }
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">arXiv 2606.16996 · Paper Digest · 繁中速覽</div>
+    <h1>ActiveSAM：先點名、再切圖</h1>
+    <p class="subtitle">MBZUAI VILA Lab 的 training-free 框架：凍結的 SAM 3 先用低解析度 presence 預覽「點名」圖中在場的類別，只讓入選者進全解析度解碼——8 個 OVSS 基準平均 mIoU 65.3（+1.4 vs SegEarth-OV3），大詞彙資料集最高快 5.5 倍，全程零權重更新。</p>
+    <div class="meta">
+      論文：<a href="https://arxiv.org/abs/2606.16996">ActiveSAM: Image-Conditional Class Pruning for Fast and Accurate Open-Vocabulary Segmentation</a>（arXiv 2606.16996, 2026-06-15, CC BY 4.0）<br>
+      作者：Tran Dinh Tien、Zhiqiang Shen（VILA Lab, Mohamed bin Zayed University of Artificial Intelligence）<br>
+      程式碼：<a href="https://github.com/VILA-Lab/ActiveSAM">github.com/VILA-Lab/ActiveSAM</a>　|　本頁為繁中解析，所有數字皆出自論文原文
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個關鍵數字，抓住全文骨架</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">+1.4<small> mIoU</small></div>
+      <div class="lbl">8 個 OVSS 基準平均 65.3 vs 最強基線 SegEarth-OV3 的 63.9；對原生 SAM 3 pipeline 更是 +7.8（§4）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">5.5×<small> 最高加速</small></div>
+      <div class="lbl">五個大詞彙資料集平均快 5.0×（FPS 2.98 vs 0.60）；比原生 SAM 3 全詞彙解碼最高快 15.1×（§4）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">0<small> 次參數更新</small></div>
+      <div class="lbl">SAM 3 全程凍結、無目標資料集訓練、無 oracle 類別標籤，8 個資料集共用同一組超參數（§2–3）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">29/171<small> 類</small></div>
+      <div class="lbl">COCO-Stuff 的 171 類詞彙，經 presence 點名後每張圖中位數只剩 29 類要進全解析度解碼（§5）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    標準 SAM 3 OVSS 對<em>每張圖</em>解碼<em>整本資料集詞彙</em>，但單張圖裡在場的類別只有一小撮——ActiveSAM 把 SAM 3 自帶的 presence head 從「解碼後的過濾器」升級成「<strong>解碼前的路由器</strong>」：先跑一次低解析度、只讀 presence 的預覽點名，再只對入選類別做全解析度解碼。速度來自剪枝，精度來自 CPE＋MABC 兩個品質模組——消融把帳拆得很清楚：<strong>剪枝本身對 mIoU 的影響是 0.0</strong>（§5）。
+  </div>
+</section>
+
+<!-- ─────────── 問題背景 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題：詞彙表是資料集的，圖片是單張的</h2>
+  <p class="sec-sub">open-vocabulary semantic segmentation（OVSS）的系統瓶頸</p>
+
+  <p>OVSS 的設定是：測試時才給你一份詞彙表，模型要對表上每個類別輸出 dense mask，不重訓、不收新標註。SAM 3 讓這件事變得直接——它吃 concept prompt（名詞片語）、回傳對應 mask，還用 presence head 把「認不認得」跟「在哪裡」解耦。但把 SAM 3 直上 OVSS 有個結構性浪費：<strong>全解析度的 prompt-conditioned 解碼成本隨詞彙大小 V 線性增長，而任何一張圖實際在場的類別遠小於 V</strong>。ADE20K 有 150 類、COCO-Stuff 有 171 類，原生 SAM 3 在這兩個資料集上 FPS 只有 0.13 和 0.11。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>路線</th><th>代表方法</th><th>侷限（論文數據）</th></tr>
+      <tr><td>CLIP 系 training-free</td><td>SCLIP、ProxyCLIP、CorrCLIP、ReME</td><td>image-level 對齊硬轉 pixel-level，邊界粗；對影像劣化極脆——Gaussian noise 下 CorrCLIP 六資料集平均 54.8 → 16.0（§4 Table 2）</td></tr>
+      <tr><td>SAM 3 直上 OVSS</td><td>SAM 3（ICLR'26）</td><td>mask 品質強（平均 57.5），但每類都要走一次全解析度解碼，大詞彙 FPS 0.11–0.32</td></tr>
+      <tr><td>SAM 3 + 事後 presence 過濾</td><td>SegEarth-OV3</td><td>dual-head 融合＋presence 事後濾除缺席類，精度此前最強（63.9），但<strong>仍對全詞彙解碼</strong>——presence 算完了才丟，算力已經花掉</td></tr>
+      <tr><td>訓練式 OVSS</td><td>Talk2DINO、CLIP-DINOiser 等</td><td>需要額外訓練或對齊層，詞彙一變就得重來；平均 mIoU 也只到 46.3</td></tr>
+    </table>
+  </div>
+
+  <p>ActiveSAM 的切入點：SAM 3 明明<strong>已經有</strong>一個便宜的「這個概念在不在圖裡」訊號（presence head），為什麼要等全解析度解碼完才用它？把它搬到解碼<em>之前</em>當路由訊號，計算結構就從「解碼 V 類」變成「解碼 |𝒜(I)| 類」。</p>
+</section>
+
+<!-- ─────────── 核心方法 ─────────── -->
+<section id="method">
+  <h2><span class="num">§2</span>方法：presence 從過濾器變路由器</h2>
+  <p class="sec-sub">四個模組，全部作用在推論期，SAM 3 權重一動不動</p>
+
+  <figure>
+    <img src="figs/fig1.png" alt="ActiveSAM 四階段流程總覽" loading="lazy">
+    <figcaption><b>原圖 1</b>ActiveSAM 總覽。<strong>(1) Contextual Prompt Expansion</strong>：類名先做詞形修復，再拼接語意鄰居與 WordNet 上位詞 token；<strong>(2) Preview 點名</strong>：672² 低解析度跑凍結 SAM 3、只讀 presence logit（跳過分割頭），依分數選出 active set 𝒜(I)；<strong>(3) 全解析度解碼</strong>：1008² 影像編碼一次，只解碼 𝒜(I) 內的 prompt，以 bucket 為單位批次多工，instance／semantic 雙頭逐像素取 max 融合；<strong>(4) MABC</strong>：信心值 c(p)=s₁√(s₁−s₂) 低於 τ⁺ 的像素判為背景。</figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step">
+      <div class="t">Stage 1 · 詞彙側（離線）</div>
+      <strong>CPE：把類名餵飽</strong>
+      <div class="d">canonicalize（47 條固定規則，如 windowpane→window pane）＋ 詞彙內最近鄰 M<sub>s</sub>=2 ＋ WordNet 上位詞 M<sub>t</sub>=2，拼成 contextual prompt，整份詞彙算一次、永久快取</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Stage 2 · 影像側點名</div>
+      <strong>presence 預覽</strong>
+      <div class="d">672² 跑凍結 SAM 3、只讀每類 presence 分數 q<sub>c</sub>、跳過分割頭；以 β=0.80 分位數為門檻選 𝒜(I)，V<sub>gate</sub>=40 同時當旁路開關與安全上限</div>
+    </div>
+    <div class="arr">→</div>
+    <div class="step">
+      <div class="t">Stage 3 · 全解析度解碼</div>
+      <strong>bucket 多工＋MABC</strong>
+      <div class="d">1008² 編碼一次；𝒜(I) 依 K=32 分桶，解碼呼叫數從 |𝒜(I)| 降到 ⌈|𝒜(I)|/K⌉；雙頭 max 融合後用 margin 信心 s₁√(s₁−s₂) 校準背景（τ⁺=t^1.25）</div>
+    </div>
+  </div>
+
+  <h3>兩個容易被略過的細節</h3>
+  <p><strong>V<sub>gate</sub>=40 的雙重角色。</strong>小詞彙資料集（VOC 20/21、Cityscapes，V≤40）直接旁路預覽、全詞彙解碼——避免在沒得剪的地方硬剪掉分；大詞彙資料集則以 40 為 active set 的硬上限。一個參數同時管「要不要剪」和「最多剪剩多少」，且 8 個資料集共用。</p>
+  <p><strong>MABC 用的是 margin，不只是絕對分數。</strong>傳統做法是 top-1 分數低於閾值就判背景，一維規則看不出「第一名有沒有明顯甩開第二名」。MABC 的信心值 <code>c(p) = s₁·√(s₁−s₂)</code> 要同時滿足「分數高」和「margin 大」才算數；閾值 τ⁺=t^γ 沿用各資料集既有的背景閾值 t，只加一個全域指數 γ=1.25，<strong>不引入任何 per-dataset 新參數</strong>。</p>
+
+  <div class="callout green">
+    <span class="tag">設計亮點：把 presence 移到解碼之前，且預覽只算 presence</span>
+    同樣一顆 presence head，SegEarth-OV3 拿來在解碼後濾掉缺席類（算力已花），ActiveSAM 拿來在解碼前決定「誰值得被解碼」（算力不花）。更關鍵的是預覽階段<strong>只讀 presence logit、整個分割頭直接跳過</strong>——問「在不在」遠比問「在哪裡」便宜，這才是低解析度預覽能便宜到可以對全詞彙跑的原因。剪枝有風險（真物件被提前丟掉），所以配套 CPE 把 prompt 餵飽以拉高 presence 召回，MABC 在輸出端補品質——三個模組是一套風險對沖的組合拳。
+  </div>
+</section>
+
+<!-- ─────────── 實驗設定 ─────────── -->
+<section id="setup">
+  <h2><span class="num">§3</span>實驗設定：8 基準、一組超參數、一張 5090</h2>
+  <p class="sec-sub">zero-shot 協定：無目標資料集訓練、無 oracle 類別標籤、無 TTA</p>
+
+  <p><strong>基準</strong>：Pascal VOC 20/21（21 含背景類）、Pascal Context 59/60、COCO-Stuff（171 類）、COCO-Object（80 類，stuff 視為背景）、Cityscapes、ADE20K（150 類）。<strong>對手</strong>：CLIP 系 training-free（SCLIP、ProxyCLIP、CorrCLIP、ReME、RF-CLIP、Trident 等）、SAM 3 原生 pipeline、SegEarth-OV3，另附訓練式方法（GroupViT、TCL、Talk2DINO 等）做參照。指標為 mIoU；速度比較把各方法官方實作重跑在<strong>同一張 NVIDIA RTX 5090</strong> 上。</p>
+
+  <p><strong>超參數全域一組、不做 per-benchmark 調參</strong>：預覽解析度 r<sub>p</sub>=672、全解析度 r<sub>f</sub>=1008、V<sub>gate</sub>=40、bucket K=32、分位數 β=0.80、鄰居 token M<sub>s</sub>=2、上位詞 token M<sub>t</sub>=2、MABC 指數 γ=1.25、instance mask 信心閾值 0.3。backbone 為官方 SAM 3（Perception Encoder-L+）。詞形修復規則（47 條：28 條複合詞拆分、12 條詞序修復、7 條歧義替換）在評估前就固定，不看圖、不看標註、不看驗證分數。</p>
+</section>
+
+<!-- ─────────── 主結果 ─────────── -->
+<section id="results">
+  <h2><span class="num">§4</span>主結果：精度全面持平或領先，速度快 5 倍</h2>
+  <p class="sec-sub">綠字 = 該欄最佳（論文 Table 1/2/3；訓練式與 CLIP 系完整列表見原文）</p>
+
+  <figure class="narrow">
+    <img src="figs/fig2.png" alt="速度—精度散佈圖：ActiveSAM 位於左上角" loading="lazy">
+    <figcaption><b>原圖 2</b>速度—精度 Pareto（六基準平均：Context59/60、COCO-Object、COCO-Stuff、ADE20K、VOC21）。ActiveSAM（紅星）同時佔住「最高 mIoU」與「接近最快」兩個角；SegEarth-OV3 精度接近但每張圖慢數倍；原生 SAM 3 要近 5 秒一張。</figcaption>
+  </figure>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>V21</th><th>P60</th><th>C-O</th><th>V20</th><th>P59</th><th>C-S</th><th>City</th><th>ADE</th><th>平均</th></tr>
+      <tr><td>Talk2DINO（訓練式最佳）</td><td class="num">65.8</td><td class="num">37.7</td><td class="num">45.1</td><td class="num">88.5</td><td class="num">42.4</td><td class="num">30.2</td><td class="num">38.1</td><td class="num">22.5</td><td class="num">46.3</td></tr>
+      <tr><td>CorrCLIP（ICCV'25）</td><td class="num">76.7</td><td class="num">44.9</td><td class="num">49.4</td><td class="num">91.5</td><td class="num">50.8</td><td class="num">34.0</td><td class="num">51.1</td><td class="num">30.7</td><td class="num">53.6</td></tr>
+      <tr><td>ReME（ICCV'25）</td><td class="num">82.2</td><td class="num">44.6</td><td class="num">48.2</td><td class="num">93.2</td><td class="num">53.1</td><td class="num">33.3</td><td class="num">59.0</td><td class="num">28.2</td><td class="num">55.2</td></tr>
+      <tr><td>SAM 3（ICLR'26）</td><td class="num">81.9</td><td class="num">46.1</td><td class="num">65.4</td><td class="num">88.9</td><td class="num">50.0</td><td class="num">33.3</td><td class="num">62.3</td><td class="num">31.8</td><td class="num">57.5</td></tr>
+      <tr><td>SegEarth-OV3</td><td class="num">79.8</td><td class="num">53.4</td><td class="num best">72.0</td><td class="num">96.8</td><td class="num">59.2</td><td class="num">42.8</td><td class="num best">69.7</td><td class="num">37.6</td><td class="num">63.9</td></tr>
+      <tr><td><strong>ActiveSAM</strong></td><td class="num best">83.8</td><td class="num best">55.4</td><td class="num best">72.0</td><td class="num best">97.0</td><td class="num best">60.1</td><td class="num best">44.4</td><td class="num best">69.7</td><td class="num best">40.0</td><td class="num best">65.3</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">mIoU（%）。V=VOC、P=Pascal Context、C-O/C-S=COCO-Object/Stuff。ActiveSAM 八欄全數最佳或並列最佳（C-O、City 兩欄與 SegEarth-OV3 同分）。</p>
+
+  <h3>速度：大詞彙才是主戰場</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>指標</th><th>ADE20K</th><th>C59</th><th>C60</th><th>CO-O</th><th>CO-S</th><th>平均</th></tr>
+      <tr><td rowspan="2">SAM 3</td><td>mIoU</td><td class="num">31.8</td><td class="num">50.0</td><td class="num">46.1</td><td class="num">65.4</td><td class="num">33.3</td><td class="num">45.3</td></tr>
+      <tr><td>FPS</td><td class="num">0.13（14.8×）</td><td class="num">0.32（12.8×）</td><td class="num">0.32（12.6×）</td><td class="num">0.24（13.3×）</td><td class="num">0.11（15.1×）</td><td class="num">0.22（13.5×）</td></tr>
+      <tr><td rowspan="2">CASS</td><td>mIoU</td><td class="num">20.4</td><td class="num">40.2</td><td class="num">36.7</td><td class="num">37.8</td><td class="num">26.7</td><td class="num">32.4</td></tr>
+      <tr><td>FPS</td><td class="num">0.70（2.7×）</td><td class="num">0.81（5.1×）</td><td class="num">0.81（5.0×）</td><td class="num">0.68（4.7×）</td><td class="num">0.63（2.6×）</td><td class="num">0.73（4.1×）</td></tr>
+      <tr><td rowspan="2">SegEarth-OV3</td><td>mIoU</td><td class="num">37.6</td><td class="num">59.2</td><td class="num">53.4</td><td class="num best">72.0</td><td class="num">42.8</td><td class="num">53.0</td></tr>
+      <tr><td>FPS</td><td class="num">0.35（5.5×）</td><td class="num">0.86（4.8×）</td><td class="num">0.84（4.8×）</td><td class="num">0.63（5.1×）</td><td class="num">0.31（5.4×）</td><td class="num">0.60（5.0×）</td></tr>
+      <tr><td rowspan="2"><strong>ActiveSAM</strong></td><td>mIoU</td><td class="num best">40.0</td><td class="num best">60.1</td><td class="num best">55.4</td><td class="num best">72.0</td><td class="num best">44.4</td><td class="num best">54.4</td></tr>
+      <tr><td>FPS</td><td class="num best">1.92</td><td class="num best">4.10</td><td class="num best">4.04</td><td class="num best">3.19</td><td class="num best">1.66</td><td class="num best">2.98</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--dim);margin-top:-14px">五個大詞彙基準（論文 Table 3）。括號 = ActiveSAM 對該方法的加速倍率。對 SegEarth-OV3 為 4.8–5.5×，對原生 SAM 3 最高 15.1×。</p>
+
+  <h3>劣化影像：SAM 3 系穩、CLIP 系崩</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>六資料集平均 mIoU</th><th>Clean</th><th>Gaussian noise</th><th>Motion blur</th><th>JPEG 壓縮</th><th>Fog</th></tr>
+      <tr><td><strong>ActiveSAM</strong></td><td class="num best">65.03</td><td class="num best">46.48</td><td class="num best">53.96</td><td class="num best">57.90</td><td class="num best">62.07</td></tr>
+      <tr><td>SegEarth-OV3</td><td class="num">63.34</td><td class="num">44.92</td><td class="num">52.88</td><td class="num">56.29</td><td class="num">60.69</td></tr>
+      <tr><td>CorrCLIP</td><td class="num">54.8</td><td class="num">16.02</td><td class="num">35.21</td><td class="num">43.57</td><td class="num">42.63</td></tr>
+      <tr><td>RF-CLIP</td><td class="num">47.3</td><td class="num">18.33</td><td class="num">34.51</td><td class="num">35.24</td><td class="num">37.36</td></tr>
+    </table>
+  </div>
+  <p>ImageNet-C 四種代表性劣化（感測噪聲、運動模糊、傳輸壓縮、天候）下，ActiveSAM <strong>每一項都是第一</strong>，對 SegEarth-OV3 的 +1～2 領先跟乾淨影像時一致；CLIP 系直接崩盤——CorrCLIP 在 Gaussian noise 下從 54.8 掉到 16.0。論文的解讀：SAM 3 的 text-grounded 解碼器對劣化輸入穩，而 CLIP 特徵一有噪聲就失準（CorrCLIP 雖也用 DINO/SAM 2，但類別判斷仍走 CLIP）。<strong>剪枝沒有放大劣化風險</strong>——presence 預覽在劣化下依然選對類別。</p>
+
+  <figure>
+    <img src="figs/fig3.png" alt="VOC21 質性比較：ActiveSAM vs SegEarth-OV3" loading="lazy">
+    <figcaption><b>原圖 3</b>VOC21 質性比較（左起：輸入、GT、ActiveSAM、SegEarth-OV3）。第 2、4 列可見 SegEarth-OV3 的假陽性（螢幕旁多切出一塊桌面、沙發下多切出雜物），ActiveSAM 憑 MABC 的 margin 校準把低信心區域正確歸為背景。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig4.png" alt="ADE20K 質性比較" loading="lazy">
+    <figcaption><b>原圖 4</b>ADE20K（150 類）質性比較——大詞彙、複雜室內外場景下兩者 mask 品質接近，但 ActiveSAM 只解碼中位數 30 類，SegEarth-OV3 解碼全部 150 類。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig5.png" alt="Cityscapes 質性比較" loading="lazy">
+    <figcaption><b>原圖 5</b>Cityscapes 質性比較。注意：Cityscapes 詞彙小（V≤V<sub>gate</sub>=40），預覽階段被自動旁路、全詞彙直接解碼——此處沒有剪枝加速可言，mIoU 也與 SegEarth-OV3 同為 69.7，是「機制在小詞彙自動讓路」的實例。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 消融與負結果 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§5</span>消融與負結果：剪枝的精度貢獻是零</h2>
+  <p class="sec-sub">速度歸剪枝、精度歸 CPE/MABC——論文自己把帳拆開了</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>組態</th><th>V21</th><th>P60</th><th>C-O</th><th>V20</th><th>P59</th><th>C-S</th><th>City</th><th>ADE</th><th>平均</th><th>Δ vs Full</th></tr>
+      <tr><td><strong>Full ActiveSAM</strong></td><td class="num best">83.8</td><td class="num best">55.4</td><td class="num best">72.0</td><td class="num">97.0</td><td class="num">60.1</td><td class="num best">44.4</td><td class="num">69.7</td><td class="num best">40.0</td><td class="num best">65.3</td><td class="num">—</td></tr>
+      <tr><td>− MABC（僅 CPE）</td><td class="num">82.9</td><td class="num">54.9</td><td class="num">71.9</td><td class="num">97.0</td><td class="num">60.1</td><td class="num best">44.4</td><td class="num">69.7</td><td class="num best">40.0</td><td class="num">65.1</td><td class="num">−0.2</td></tr>
+      <tr><td>− CPE（僅 MABC）</td><td class="num">81.0</td><td class="num">54.6</td><td class="num best">72.0</td><td class="num">96.7</td><td class="num">59.0</td><td class="num">43.2</td><td class="num">69.4</td><td class="num">38.5</td><td class="num">64.3</td><td class="num">−1.0</td></tr>
+      <tr><td>− 剪枝（全詞彙解碼）</td><td class="num best">83.8</td><td class="num">55.3</td><td class="num best">72.0</td><td class="num">97.0</td><td class="num best">60.4</td><td class="num">44.3</td><td class="num">69.7</td><td class="num">39.8</td><td class="num best">65.3</td><td class="num">0.0</td></tr>
+      <tr><td>SegEarth-OV3（參照）</td><td class="num">79.8</td><td class="num">53.4</td><td class="num best">72.0</td><td class="num">96.8</td><td class="num">59.2</td><td class="num">42.8</td><td class="num">69.7</td><td class="num">37.6</td><td class="num">63.9</td><td class="num">−1.4</td></tr>
+    </table>
+  </div>
+
+  <div class="callout red">
+    <span class="tag">最有意思的負結果：標題的兩個賣點來自不同零件</span>
+    把剪枝拿掉、改回全詞彙解碼，8 資料集平均 mIoU <strong>一動不動（Δ=0.0）</strong>——換句話說，「+1.4 mIoU」和「5.5× 加速」是<strong>兩個獨立貢獻的拼裝</strong>：精度全部來自 CPE（−1.0 被移除時）與 MABC（−0.2），速度全部來自剪枝。這是誠實的寫法（論文自己在 Table 4 的標題就明說「剪枝的加速沒有精度代價」），但讀者要看清楚：<strong>剪枝不會讓 mask 變好，它只是不讓 mask 變壞</strong>。同時 MABC 的貢獻其實很薄——整體只 −0.2，且只作用於三個帶背景類的資料集（V21 +0.9、C60 +0.5、C-O +0.1）；主要的精度引擎是 CPE，其中 V21 上 +2.8 最大。細看逐欄還有一處微妙：P59 上全詞彙解碼（60.4）其實<strong>略高於剪枝版（60.1）</strong>——剪枝在個別資料集帶有一點點精度成本，靠 P60、C-S、ADE 上的持平或反超補回，平均剛好打平。
+  </div>
+
+  <figure class="narrow">
+    <img src="figs/fig6.png" alt="剪枝後每張圖 active set 大小分佈（violin plot）" loading="lazy">
+    <figcaption><b>原圖 6</b>剪枝後每張圖的 active set 大小 |𝒜(I)|（五個大詞彙基準）。紅線 = V<sub>gate</sub>=40 上限，綠字 = 全詞彙大小 V。中位數：C59/C60 各 12、COCO-Object 6、ADE20K 30、COCO-Stuff 29——多數資料集 5–6× 縮減，COCO-Object 約 13×。分佈形狀隨資料集明顯不同，說明 active set 主要由影像內容決定，不是被上限硬砍出來的。</figcaption>
+  </figure>
+
+  <p>值得補一句：論文<strong>沒有</strong>回報 β（分位數）、V<sub>gate</sub>、K（bucket 大小）、γ 的敏感度掃描，也沒有 CPE 內部（鄰居 token vs 上位詞 token）的細部拆解——超參數是「一組全域值」的宣稱雖然乾淨，但這些值怎麼選出來的、對它們多敏感，原文未載明。預覽階段本身的耗時佔比也沒有單獨列出。</p>
+</section>
+
+<!-- ─────────── 限制 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§6</span>限制：論文自己承認的，和沒說的</h2>
+  <p class="sec-sub">Limitations 一節 + Societal Impacts 附錄，加上兩條本站補充</p>
+
+  <ul>
+    <li><strong>低解析度預覽會漏小物件（論文自列）。</strong>特別小或被遮擋的物件在 672² 預覽下 presence 分數可能過低，類別被提前剪掉，全解析度解碼器<strong>連嘗試的機會都沒有</strong>。附錄 A 更直白：這是一個安全性 trade-off——若預覽漏掉被遮擋的關鍵物件，最終輸出將完全跳過它，部署在自駕、醫療等安全關鍵場景前必須嚴格評估此失效模式。</li>
+    <li><strong>CPE 綁死英文 WordNet（論文自列）。</strong>詞形修復 47 條規則 + WordNet 上位詞都是英文中心的設計，遇到專科術語（醫療、工業）或非英語詞彙可能失效。</li>
+    <li><strong>加速只存在於大詞彙（本站補充）。</strong>V≤40 的資料集（VOC、Cityscapes）整個剪枝機制被 V<sub>gate</sub> 旁路，收益為零；而大詞彙下 active set 中位數約為 V 的 17–20%（COCO-Object 例外），加速上限實務上就在 5–6× 附近——場景再簡單，也剪不到更低。且預覽仍需對<strong>全詞彙</strong>算一次 presence，詞彙持續膨脹時這筆前置成本會回來，論文未討論其縮放行為。</li>
+    <li><strong>單卡單張的速度數字（本站補充）。</strong>FPS 全部在一張 RTX 5090、逐張推論下量測；batch 推論、串流部署、或消費級/嵌入式 GPU 上 bucket 多工的效益是否維持，原文未載明。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 廚房感知啟示 ─────────── -->
+<section id="kitchen">
+  <h2><span class="num">§7</span>對煎蛋機器人感知任務的啟示</h2>
+  <p class="sec-sub">讀後解析——這部分是本站觀點，不是原文內容</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼（一段話定位）</div>
+    <p>ActiveSAM 是一篇「系統論文披著方法論文的皮」：不動 SAM 3 一個權重，靠推論期的排程重組（presence 先行、按需解碼、bucket 多工）把大詞彙 OVSS 的成本從 O(V) 壓到 O(|𝒜(I)|)，再用兩個輕量品質模組（CPE、MABC）把精度墊過前任 SOTA。消融誠實地拆帳：速度歸剪枝、精度歸 CPE/MABC。對固定菜單的廚房感知，<strong>它的主打功能（剪枝）恰好用不上——wok／蛋／鏟／容器是個位數的封閉詞彙，連 V<sub>gate</sub>=40 的門檻都過不了，機制會被自己的 gate 旁路</strong>；但它示範的三個 pattern（presence 當前置 watchdog、凍結模型推論期組裝、margin 式背景校準）分別對應煎蛋機的算力預算、資料體制、異常警戒三個真實痛點。</p>
+  </div>
+
+  <ul>
+    <li><strong>剪枝退化不是缺點，是分工指引。</strong>固定菜單的日常感知（wok masking、蛋偵測）就該用小封閉詞彙全量解碼——ActiveSAM 自己在 V≤40 時也是這麼做的。開放詞彙的價值在<strong>異常側</strong>：新食材上菜單、鏟具/手/抹布入鏡、異物掉進鍋——這些才構成一份「夠大、值得剪」的詞彙表。</li>
+    <li><strong>「presence-only 預覽」可以逐字翻譯成 FSM 的異常 watchdog。</strong>維護一份大的入侵物詞彙，平常每幀只跑低解析度、跳過分割頭的 presence 檢查（這正是 ActiveSAM 預覽便宜的原因——問「在不在」不問「在哪裡」）；presence 突破閾值才觸發全解析度分割、FSM 才切進異常分支。固定機位讓這件事更便宜：背景 presence 基線穩定，異常訊號更乾淨。</li>
+    <li><strong>詞彙側預計算＋快取的精神直接可抄。</strong>CPE 的 contextual prompt 是「整份詞彙算一次、每張圖重用」；固定菜單下 prompt token、甚至 wok mask 本身都幾乎靜態——mask 低頻重算、prompt 永久快取，逐幀算力全部留給真正的動態量（蛋的 doneness），而那是狀態估計不是分割，分割只負責供 ROI。</li>
+    <li><strong>MABC 在單類場景會退化，要有心理準備。</strong>|𝒜(I)|=1 時論文明定 s₂=0，margin 信心退化成 s₁^1.5 的單調變換——鍋內常常只有「蛋」一個前景類，margin 所依賴的「第二名」根本不存在。單類背景判定還是得靠自己校閾值，別指望 margin 白給資訊。</li>
+    <li><strong>劣化實驗是廚房選型的直接證據。</strong>蒸氣≈fog、油煙飛濺≈noise、鏡頭起霧≈blur。Table 2 說得很清楚：要在這種輸入上跑 open-vocab 分割，SAM 3 系（fog 下 65.0→62.1）比 CLIP 系（noise 下 54.8→16.0）耐打一個數量級。RGBT 配置下 RGB 支路若要上開放詞彙偵測，SAM 3 系是目前唯一在劣化下站得住的選擇；熱像支路本就不受這類視覺劣化影響，兩路互補。</li>
+    <li><strong>CPE 的英文 WordNet 侷限會直接命中中文菜單。</strong>蔥／嫩薑／老薑、三色蛋這類領域詞彙，WordNet 幫不上忙——若要移植，47 條 canonicalization 規則得自己寫食材版，或干脆用固定的中英對照 prompt 表（反正詞彙是封閉的）。</li>
+    <li><strong>資料體制對齊是最實際的一條：</strong>training-free + 全程凍結 = 換菜單、加類別都<strong>零像素標註成本</strong>。tens-of-videos 的標註預算一張都不必花在分割上，全部留給 doneness 估計器——這是這篇論文對小資料廚房專案最值錢的一句話。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">與本站狀態偵測主線的關係</span>
+    分割層（這篇）解的是「畫面裡什麼在哪」，doneness 屬於狀態估計，兩層應該解耦：ActiveSAM 型的 presence watchdog 放在 FSM 之前做便宜的逐幀警戒，狀態估計器只在分割供出的 ROI 內工作。這樣算力分配和失效模式都乾淨——分割錯是 ROI 錯（可用固定機位先驗兜底），狀態錯才是估計器的責任。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://arxiv.org/abs/2606.16996">ActiveSAM: Image-Conditional Class Pruning for Fast and Accurate Open-Vocabulary Segmentation</a> — Tran Dinh Tien, Zhiqiang Shen（VILA Lab, MBZUAI）, arXiv 2606.16996, CC BY 4.0<br>
+    本頁：繁中解析，含論文 6 張原圖（版權歸原作者所有）· <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
