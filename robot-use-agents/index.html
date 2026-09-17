@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot-Use Agents：LLM 把機器人當工具用，新的是擴散速度 — 繁中圖解</title>
+<meta name="description" content="MIT Phillip Isola〈Robot-Use Agents〉繁中圖解：LLM 可以像用計算機、網頁搜尋、整台電腦一樣「使用」機器人——Claude 當木偶師，機器人只需一次軟體更新暴露 sensor／actuator API。他自己承認 LLM 控制的機器人仍遠不如專用方案，真正的新意是智慧透過雲端在整個機器人生態擴散的速度。本頁用 Embody、KinetIQ、Paxton 三篇既有摘要把命題拆到工程層。8 張自繪圖解＋12 條腳註逐條查證。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#d2a8ff; --accent-deep:#8957e5; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(210,168,255,.12),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:720px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+  blockquote{border-left:3px solid var(--line);padding:4px 18px;margin:18px 0;color:var(--muted);font-size:15px}
+  blockquote .src{display:block;margin-top:6px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .ref{font-family:var(--mono);font-size:.78em;color:var(--accent);vertical-align:super;margin-left:1px}
+  .site{font-family:var(--mono);font-size:11.5px;color:var(--orange);border:1px solid rgba(255,166,87,.4);border-radius:4px;padding:0 5px;margin-right:4px;vertical-align:middle;white-space:nowrap}
+  .conv{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;line-height:1.8;margin-top:18px}
+  .conv b{color:var(--fg);font-weight:600}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin:0 4px 2px 0}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg2)}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  svg text{font-family:var(--sans)}
+  svg .mono{font-family:var(--mono)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--purple);line-height:1.15}
+  .kcard .big small{font-size:13px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.orange{border-left-color:var(--orange)}
+  .callout.blue{border-left-color:var(--blue)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.orange .tag{color:var(--orange)}
+  .callout.blue .tag{color:var(--blue)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.ok{background:rgba(126,231,135,.07)} td.cost{background:rgba(255,166,87,.07)} td.bad{background:rgba(255,123,114,.08)}
+  .v-ok{color:var(--green);font-family:var(--mono);font-size:12px} .v-part{color:var(--orange);font-family:var(--mono);font-size:12px} .v-no{color:var(--red);font-family:var(--mono);font-size:12px} .v-na{color:var(--dim);font-family:var(--mono);font-size:12px}
+  .refs{font-size:13.5px;color:var(--muted)}
+  .refs li{margin-bottom:6px}
+  .refs .n{font-family:var(--mono);color:var(--accent);margin-right:6px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Robotics · MIT Essay · Phillip Isola · 2026-09-07 · 繁中圖解</div>
+    <h1>Robot-Use Agents：<br>LLM 把機器人當工具用，新的是擴散速度</h1>
+    <p class="subtitle">MIT 的 Phillip Isola 用一篇 560 詞的短文主張：LLM 可以像用計算機、網頁搜尋、整台電腦一樣「使用」機器人——<strong>Claude 當木偶師（puppeteer），機器人只需一次軟體更新暴露 sensor／actuator API</strong>。他自己承認 LLM 控制的機器人仍遠不如專用方案；真正的新意是「智慧透過雲端在整個機器人生態擴散的速度」。本頁把這個命題拆到工程層：木偶師能站在哪一層、延遲差幾個數量級、權限與安全迴路該放在 LLM 之上還是之下。</p>
+    <div class="meta">
+      原文：<a href="https://web.mit.edu/phillipi/www/writing/robot-use-agents.html">Robot-Use Agents</a>（Phillip Isola 個人 MIT 網頁，2026-09-07）<br>
+      作者：Phillip Isola｜MIT EECS 副教授、CSAIL 成員；pix2pix／CycleGAN／LPIPS 共同作者，《Foundations of Computer Vision》合著者<br>
+      性質：繁中重述＋8 張自繪圖解——原文 0 張圖、無授權聲明，本頁採引述＋連結、不整段轉載；標 <span class="site">本站補充</span> 者非原文內容，多取自本站既有的 <a href="../claude-robotics/index.html">Embody</a>、<a href="../kinetiq/index.html">KinetIQ</a>、<a href="../robot-deployment-data/index.html">Paxton</a> 三篇摘要；12 條腳註逐條查證見 §9
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── §0 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四張卡、一句話、一組閱讀慣例</p>
+
+  <div class="cards">
+    <div class="kcard">
+      <div class="big">12<small> 條腳註</small></div>
+      <div class="lbl">4 篇論文＋2 則社群評論＋3 份業界發布＋3 條自註。核心主張、「限制正在融化」、Fable／Astra 的能力，全都<strong>沒有</strong>腳註；三個反對理由裡兩條是 LinkedIn 剪輯與 X 回覆（§9）</div>
+    </div>
+    <div class="kcard c1">
+      <div class="big">0<small> 新硬體</small></div>
+      <div class="lbl">不換感測器、執行器、機上 GPU，也不改模型；fn12：一次軟體更新只需「暴露 sensor／actuator API」。工程上就是一層 adapter——同一條線也是授權閘門與被駭入口（§1、§7）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">83 <small>vs</small> 0.3 Hz</div>
+      <div class="lbl">Isola 承認延遲是限制；他自己引為證據的 Anthropic 報告 <span class="ref">[8]</span> 量出：即時控制需求與 API 推論（0.2–0.4 Hz）差兩個數量級，直接控制關節「mostly fail」（§3、§4）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">5→40→95%</div>
+      <div class="lbl">同一 agent policy 換三個前沿模型（Fable 5 → Fable 5.1 → GPT-6 Astra，跨兩家；Robocurve <span class="ref">[10]</span>，每格 n=20、非盲）：積木入碗 1/20 → 19/20；毫米級拼圖三個模型都 ≤ 2/20——擴散抬的是<strong>面積</strong>，不是<strong>高度</strong>（§6）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    Isola 說的不是「機器人會變多聰明」，而是<strong>「聰明會多快到達每一台機器人」</strong>。合約是 tool use，接線是 API，代價是 latency 與 reliability。本站三篇既有摘要合起來的校準：<em>可以，但目前只在 10 Hz 以上那一層，而且工具本身得先夠好</em>。
+  </div>
+
+  <div class="conv">
+    <b>閱讀慣例（全頁圖例依此）</b><br>
+    配色語意：<span class="sw" style="background:#7ee787"></span>綠＝支持／有利／防線　<span class="sw" style="background:#ff7b72"></span>紅＝限制／失敗／攻擊　<span class="sw" style="background:#ffa657"></span>橘＝代價／混合／過渡　<span class="sw" style="background:#79c0ff"></span>藍＝LLM 端與雲端範式　<span class="sw" style="background:#d2a8ff"></span>紫＝Isola 原文主張　<span class="sw" style="background:#6e7681"></span>灰＝中性／來源未提供<br>
+    線型：實線框＝有腳註來源；虛線框＝作者意見或預測。<span class="ref">[n]</span> 與 fnN 皆對應原文腳註編號——[n] 為有外部來源的腳註（[2]–[10]），fnN 為作者自註（fn1、fn11、fn12）。<br>
+    標記三級：<span class="site">本站補充</span>＝取自本站其他摘要或外部資料；<span class="site">本站推論</span>＝由來源推導；<span class="site">本站推測</span>＝無來源的猜測。對腳註來源本身的查證（§2 表、§3 首段、§4 表、§9）以 [n] 標出處、不另前綴。Embody 低階數字凡屬「暫停模擬器上限」者標 ＊；KinetIQ 的 H100 推論數字標 †。
+  </div>
+</section>
+
+<!-- ─────────── §1 迴路 ─────────── -->
+<section id="loop">
+  <h2><span class="num">§1</span>一次軟體更新：把機器人變成 LLM 工具列上的第四個工具</h2>
+  <p class="sec-sub">合約不變、副作用落到物理世界；fn12 的接線圖與第 7 段的內部張力</p>
+
+  <p>Tool use 的合約很短：LLM 輸出一個結構化呼叫，harness 執行、把結果塞回 context，LLM 再想下一步。Isola 的整篇論證只做一件事——把這個合約的「工具」欄位從計算機、網頁搜尋、整台電腦（computer-use agent），<strong>換成一台機器人</strong>：</p>
+
+  <blockquote>In the same way as an LLM can use tools like calculators, web search, and even complete computers (“computer-use agents”), an LLM can also use a robot as a tool. Think of it as Claude acting as the puppeteer of a robot body.
+  <span class="src">— Isola，第 2 段。fn1 補充：他的「LLM」指的是 Claude 這類已跨模態的 agent，不是純文字模型</span></blockquote>
+
+  <figure>
+    <svg viewBox="0 0 900 436" role="img" aria-label="兩條閉迴路上下並排：computer-use agent 觀測螢幕、輸出點擊，世界會等它；robot-use agent 觀測相機與關節、輸出執行器命令並經過網路，世界不等它且不可復原；底部為 Isola 的工具類比階梯">
+      <defs>
+        <marker id="m-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker>
+        <marker id="m-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffa657"/></marker>
+      </defs>
+      <!-- row 1: computer-use -->
+      <text x="50" y="32" font-size="13" font-weight="700" fill="#79c0ff">computer-use agent（今天已成立）</text>
+      <path d="M760 62 V46 H130 V62" fill="none" stroke="#8b949e" stroke-width="1.2" marker-end="url(#m-gray)"/>
+      <text x="445" y="42" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">結果回到 context，再想下一步</text>
+      <g font-size="13" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <rect x="50" y="62" width="160" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="130" y="84">觀測</text><text x="130" y="103" font-size="11" font-weight="400" fill="#8b949e">螢幕截圖・DOM</text>
+        <rect x="260" y="62" width="160" height="52" rx="8" fill="#161b22" stroke="#79c0ff" stroke-width="2"/>
+        <text x="340" y="84">LLM</text><text x="340" y="103" font-size="11" font-weight="400" fill="#8b949e">看・想・決定</text>
+        <rect x="470" y="62" width="160" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="550" y="84">動作</text><text x="550" y="103" font-size="11" font-weight="400" fill="#8b949e">點擊・鍵入・呼叫 API</text>
+        <rect x="680" y="62" width="160" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="760" y="84">應用程式</text><text x="760" y="103" font-size="11" font-weight="400" fill="#8b949e">數位世界</text>
+      </g>
+      <g stroke="#8b949e" stroke-width="1.4" fill="none" marker-end="url(#m-gray)">
+        <path d="M212 88 H256"/><path d="M422 88 H466"/><path d="M632 88 H676"/>
+      </g>
+      <text x="445" y="138" text-anchor="middle" font-size="12.5" fill="#7ee787">世界會等你：畫面不動直到你動作；錯了可以 undo</text>
+
+      <!-- middle band -->
+      <line x1="340" y1="114" x2="340" y2="160" stroke="#30363d" stroke-dasharray="3 4"/>
+      <line x1="340" y1="212" x2="340" y2="262" stroke="#30363d" stroke-dasharray="3 4"/>
+      <rect x="50" y="160" width="790" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+      <text x="66" y="181" font-size="13" font-weight="700" fill="#e6edf3">同一個模型，不同的手</text>
+      <g font-size="11" fill="#8b949e" class="mono">
+        <text x="66" y="202">觀測：螢幕像素 → 世界像素＋本體感覺</text>
+        <text x="350" y="202">動作：離散事件 → 連續量</text>
+        <text x="600" y="202">時間：回合制 → 即時、不可復原</text>
+      </g>
+
+      <!-- row 2: robot-use -->
+      <text x="50" y="250" font-size="13" font-weight="700" fill="#d2a8ff">robot-use agent（本文：木偶師）</text>
+      <g font-size="13" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <rect x="50" y="262" width="160" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="130" y="284">觀測</text><text x="130" y="303" font-size="11" font-weight="400" fill="#8b949e">相機・關節・力感測</text>
+        <rect x="260" y="262" width="160" height="52" rx="8" fill="#161b22" stroke="#79c0ff" stroke-width="2"/>
+        <text x="340" y="284">LLM</text><text x="340" y="303" font-size="11" font-weight="400" fill="#8b949e">看・想・決定（雲端）</text>
+        <rect x="470" y="262" width="160" height="52" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="550" y="284">動作</text><text x="550" y="303" font-size="11" font-weight="400" fill="#8b949e">執行器命令</text>
+        <rect x="680" y="262" width="160" height="52" rx="8" fill="#161b22" stroke="#d2a8ff" stroke-width="2"/>
+        <text x="760" y="284">機器人</text><text x="760" y="303" font-size="11" font-weight="400" fill="#8b949e">物理世界</text>
+      </g>
+      <g stroke="#8b949e" stroke-width="1.4" fill="none" marker-end="url(#m-gray)">
+        <path d="M212 288 H256"/><path d="M632 288 H676"/>
+      </g>
+      <path d="M422 288 l7 -6 l7 12 l7 -12 l7 12 l7 -6 h9" fill="none" stroke="#ffa657" stroke-width="1.6" marker-end="url(#m-orange)"/>
+      <text x="445" y="276" text-anchor="middle" font-size="10.5" fill="#ffa657" class="mono">網路</text>
+      <path d="M760 314 V332 H130 V314" fill="none" stroke="#8b949e" stroke-width="1.2" marker-end="url(#m-gray)"/>
+      <text x="445" y="356" text-anchor="middle" font-size="12.5" fill="#ff7b72">世界不等你：物體會掉、機器人會倒；錯了不可復原。每一圈都過 Internet：延遲＋抖動</text>
+
+      <!-- ladder -->
+      <text x="50" y="404" font-size="11" fill="#8b949e" class="mono">Isola 的類比：</text>
+      <g font-size="11.5" fill="#e6edf3" text-anchor="middle">
+        <rect x="150" y="384" width="70" height="28" rx="14" fill="#161b22" stroke="#30363d"/><text x="185" y="403">計算機</text>
+        <text x="233" y="403" fill="#8b949e">→</text>
+        <rect x="246" y="384" width="84" height="28" rx="14" fill="#161b22" stroke="#30363d"/><text x="288" y="403">網頁搜尋</text>
+        <text x="343" y="403" fill="#8b949e">→</text>
+        <rect x="356" y="384" width="160" height="28" rx="14" fill="#161b22" stroke="#79c0ff"/><text x="436" y="403">電腦（computer-use）</text>
+        <text x="529" y="403" fill="#8b949e">→</text>
+        <rect x="542" y="384" width="150" height="28" rx="14" fill="#161b22" stroke="#d2a8ff" stroke-width="2"/><text x="617" y="403">機器人（robot-use）</text>
+        <text x="617" y="378" font-size="10" fill="#d2a8ff" class="mono">本文</text>
+        <text x="705" y="403" fill="#8b949e">→</text>
+        <rect x="718" y="384" width="122" height="28" rx="14" fill="#161b22" stroke="#d2a8ff" stroke-dasharray="4 3"/><text x="779" y="403">任何連網裝置</text>
+        <text x="779" y="378" font-size="10" fill="#d2a8ff" class="mono">結語</text>
+      </g>
+      <text x="450" y="430" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">藍＝LLM 端　橘＝網路代價　紫＝本文的機器人／Isola 主張｜「可復原／不可復原」與中段三項差異為本站推論，非原文</text>
+    </svg>
+    <figcaption><b>圖 1｜自繪</b>藍＝LLM 端、橘＝網路代價、紫＝本文的機器人與 Isola 的主張；「可復原／不可復原」與中段三項差異是本站推論。同一個雲端模型，上面操縱電腦、下面操縱身體，「呼叫 → 結果」的合約一字不改，觀測與動作只是換了介面——但下面那圈的世界不會等它想完、也不給 undo，而且每一圈都要過 Internet。§3 的延遲與 §7 的可靠性限制全部從這裡長出來。</figcaption>
+  </figure>
+
+  <p>接著是全文最像工程規格的一句，藏在 fn12：</p>
+  <blockquote>They would become empowered even with no modification to their software, no new sensors or actuators, no new onboard GPUs.[11] […] A device that is not intelligent today could tomorrow become AI-enabled, with just a software update.[12]
+  <span class="src">— 第 7 段。fn12：「The software update would only need to expose the robot's sensor and actuator APIs to the AI agent. Sensor data gets sent to the AI, and actuator commands get sent back to the robot. This loop would presumably involve users giving permissions, but it should not escape our attention that it could also be vulnerable to hacks.」</span></blockquote>
+
+  <figure>
+    <svg viewBox="0 0 900 446" role="img" aria-label="機器人透過一層軟體更新暴露 sensor 與 actuator API，經 Internet 連到雲端 LLM agent；命令回程上有使用者授權閘門，同一條線也是被駭入口；機器人不需要新 GPU、感測器、執行器">
+      <defs>
+        <marker id="m2-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker>
+        <marker id="m2-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff7b72"/></marker>
+      </defs>
+      <!-- left: robot -->
+      <rect x="40" y="56" width="270" height="290" rx="12" fill="#161b22" stroke="#30363d"/>
+      <text x="175" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#e6edf3">現有機器人（硬體、控制邏輯不改）</text>
+      <g font-size="12.5" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <rect x="56" y="96" width="238" height="46" rx="7" fill="#1c2330" stroke="#30363d"/>
+        <text x="175" y="115">感測器</text><text x="175" y="133" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">相機・IMU・關節編碼器・F/T</text>
+        <rect x="56" y="156" width="238" height="46" rx="7" fill="#1c2330" stroke="#30363d"/>
+        <text x="175" y="175">執行器</text><text x="175" y="193" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">馬達・夾爪・cmd_vel</text>
+        <rect x="56" y="216" width="238" height="46" rx="7" fill="#1c2330" stroke="#30363d"/>
+        <text x="175" y="235">既有控制器／MCU</text><text x="175" y="253" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">IK・安全反射・馬達迴路</text>
+      </g>
+      <text x="175" y="300" text-anchor="middle" font-size="11" fill="#8b949e" class="mono">不需要：新 GPU <tspan fill="#ff7b72">✗</tspan>　新感測器 <tspan fill="#ff7b72">✗</tspan>　新執行器 <tspan fill="#ff7b72">✗</tspan></text>
+      <text x="175" y="322" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">fn11：硬體改良仍會繼續、仍有用</text>
+      <!-- adapter bar -->
+      <rect x="318" y="56" width="26" height="290" rx="6" fill="rgba(126,231,135,.15)" stroke="#7ee787"/>
+      <text transform="rotate(-90 331 201)" x="331" y="205" text-anchor="middle" font-size="11" font-weight="700" fill="#7ee787">軟體更新：暴露 sensor／actuator API（fn12）</text>
+      <!-- internet -->
+      <rect x="360" y="96" width="196" height="250" rx="36" fill="none" stroke="#30363d" stroke-dasharray="6 5"/>
+      <text x="458" y="126" text-anchor="middle" font-size="15" font-weight="700" fill="#e6edf3">Internet</text>
+      <text x="458" y="146" text-anchor="middle" font-size="11.5" fill="#ffa657" class="mono">延遲＋抖動</text>
+      <path d="M344 180 H574" stroke="#8b949e" stroke-width="1.6" fill="none" marker-end="url(#m2-gray)"/>
+      <text x="458" y="170" text-anchor="middle" font-size="11.5" fill="#e6edf3">感測資料 → 雲端</text>
+      <path d="M576 262 H348" stroke="#8b949e" stroke-width="1.6" fill="none" marker-end="url(#m2-gray)"/>
+      <text x="395" y="252" text-anchor="middle" font-size="11.5" fill="#e6edf3">← 執行器命令</text>
+      <polygon points="458,244 478,262 458,280 438,262" fill="#161b22" stroke="#7ee787" stroke-width="2"/>
+      <text x="486" y="250" font-size="10.5" fill="#7ee787" class="mono">授權閘門</text>
+      <text x="432" y="282" text-anchor="end" font-size="10" fill="#7ee787" class="mono">permission</text>
+      <!-- hack -->
+      <path d="M458 400 V286" stroke="#ff7b72" stroke-width="2" fill="none" marker-end="url(#m2-red)"/>
+      <text x="458" y="418" text-anchor="middle" font-size="11" fill="#ff7b72" class="mono">hack：同一條線，別人也能接（fn12：vulnerable to hacks）</text>
+      <!-- right: cloud LLM -->
+      <rect x="580" y="56" width="280" height="290" rx="12" fill="#161b22" stroke="#79c0ff" stroke-width="2"/>
+      <text x="720" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#79c0ff">雲端 LLM agent</text>
+      <text x="720" y="98" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">Fable・Astra・Claude…</text>
+      <g font-size="11" fill="#e6edf3" text-anchor="middle">
+        <rect x="586" y="116" width="60" height="26" rx="13" fill="#1c2330" stroke="#30363d"/><text x="616" y="133">計算機</text>
+        <rect x="654" y="116" width="72" height="26" rx="13" fill="#1c2330" stroke="#30363d"/><text x="690" y="133">網頁搜尋</text>
+        <rect x="734" y="116" width="50" height="26" rx="13" fill="#1c2330" stroke="#79c0ff"/><text x="759" y="133">電腦</text>
+        <rect x="792" y="116" width="62" height="26" rx="13" fill="#1c2330" stroke="#d2a8ff" stroke-width="2"/><text x="823" y="133">機器人</text>
+      </g>
+      <text x="823" y="108" text-anchor="middle" font-size="10.5" fill="#d2a8ff" class="mono">新工具（本文）</text>
+      <g font-size="11" fill="#8b949e" class="mono">
+        <text x="596" y="178">・不針對任何一種機器人調校</text>
+        <text x="596" y="200">・更新 over-the-air，或全在雲端</text>
+        <text x="596" y="222">・車跟工廠手臂一樣好控（意譯，第 7 段）</text>
+        <text x="596" y="244">・基礎設施已就位（LLM buildout）</text>
+      </g>
+      <text x="720" y="300" text-anchor="middle" font-size="11.5" font-weight="700" fill="#79c0ff" class="mono">智慧・更新・思考全在這裡</text>
+      <text x="720" y="322" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">沒有機器人專用微調</text>
+      <text x="450" y="440" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">綠＝新增的 API 層與授權閘門（防線）　藍＝雲端 LLM　紫＝本文新增的工具　紅＝被駭入口　橘＝延遲代價</text>
+    </svg>
+    <figcaption><b>圖 2｜自繪</b>綠＝新增的 API 層與授權閘門、藍＝雲端 LLM 端、紫＝本文新增的工具、紅＝被駭入口、橘＝延遲代價。fn12 的最小接線：不改硬體、不改控制邏輯，只加一層對外 API；智慧、更新、思考全在雲端。注意原文張力——第 7 段先說機器人「no modification to their software」，隔兩句又說只需「a software update」；fn12 進一步說明這次更新只是暴露 API。一致的讀法是<strong>「不改硬體與控制邏輯，但加一層對外 API」</strong>。右欄「車跟工廠手臂一樣好控」是意譯，原句為「A car might be as easily controlled as a factory arm」（第 7 段）。授權閘門和被駭風險掛在同一條線上，這是 Isola「obvious potential as well as risk」的具體位置（§7）。</figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>這層 adapter 實際長什麼樣？Isola 自己引用的三份來源都有答案。Robocurve <span class="ref">[10]</span> 的 harness 給模型的是<strong>絕對末端姿態</strong> <code>move_to(x, y, z, yaw, pitch, roll)</code>＋夾爪開合，IK 由機器人端做；輸入三路相機（頂視、左右手腕）＋本體感覺；每回合 20 次 LLM 呼叫預算、25% 速度上限、預設護欄開啟（見其 Technical specifications 表）。Waddle <span class="ref">[9]</span> 給的是 platform primitives（<code>bounding_box</code>、<code>detect_in_base</code>、<code>approach_until</code>、<code>reset_home</code>）加上 agent 自己寫出來的 skills——但使用前得先接上 Waddle API，跟「零修改」有落差、跟 fn12 相容。Anthropic Embody <span class="ref">[8]</span> 更直接把「握把」拆成四種介面，原話是能力「depends heavily on how they are connected to the robot」——本站摘要稱介面為「全文最重要的自變數」（→ <a href="../claude-robotics/index.html#setup">claude-robotics §02</a>）。</p>
+  <p>收束：fn12 的 adapter 很薄，但<em>「暴露哪些 API」就是能力上限與風險下限的總開關</em>。MIT 的 Vincent Sitzmann 在 X 上附和 Isola：「controlling a robot is not so different from computer use」——同時補了一個方法論保留：OpenAI 可能已把大量機器人與電腦資料加進訓練集，「it's not clear how much of this is 'emergent' behavior」（§8）。</p>
+</section>
+
+<!-- ─────────── §2 層級 ─────────── -->
+<section id="layers">
+  <h2><span class="num">§2</span>木偶師站在哪一層：三篇前作、Embody 四介面、KinetIQ System 0–3</h2>
+  <p class="sec-sub">2022–2024 的工作全部站在離散決策層；LLM 越往下走成功率越低</p>
+
+  <blockquote>This ability has been researched for years[2][3][4], but a common view remained that while LLMs might be useful for high-level planning, they were not yet suitable for full control.
+  <span class="src">— 第 3 段</span></blockquote>
+
+  <p>Isola 引的三篇前作，本頁全部讀過原文（§9）。它們的共同點比差異重要：<strong>沒有一篇讓 LLM 直接碰執行器</strong>。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>論文</th><th>LLM 做什麼</th><th>LLM 碰執行器？</th><th>保留</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>SayCan</strong> <span class="ref">[2]</span><br><span class="v-na">Google · arXiv 2022-04 · CoRL 2022</span></td>
+          <td>PaLM 540B 在一組預訓練技能（BC／RL 視覺運動 policy）中「選」下一步，乘上 value function 的 affordance 分數；真實廚房 101 條指令，規劃成功率 84%、執行 74%（PaLM 版）</td>
+          <td><span class="v-no">否</span>——機器人是 LLM 的「hands and eyes」，低階控制全在技能裡</td>
+          <td>作者自述瓶頸在底層技能的範圍與穩健性；全文零提 latency（唯一「real-time」指決策可解讀性）</td>
+        </tr>
+        <tr>
+          <td><strong>Code as Policies</strong> <span class="ref">[3]</span><br><span class="v-na">Google · arXiv 2022-09 · ICRA 2023</span></td>
+          <td>Codex 一次生成 Python policy code（可含 while 迴圈、PD／impedance 控制器），感知—動作迴圈由程式在機上跑；UR5e、Everyday Robots 實體示範</td>
+          <td><span class="v-part">程式碰，LLM 不碰</span>——LLM 離線寫完就退出迴路</td>
+          <td>量化結果只有模擬桌面任務與程式碼基準；專案頁自註影片中的長停頓「主要來自 OpenAI API 查詢時間與速率限制」</td>
+        </tr>
+        <tr>
+          <td><strong>LangNav</strong> <span class="ref">[4]</span><br><span class="v-na">MIT · arXiv 2023-10 · NAACL 2024 Findings</span></td>
+          <td>把全景畫面轉成文字描述，finetune LLaMA2-7B 選下一個 viewpoint；主打 10–100 條軌跡的低資料情境</td>
+          <td><span class="v-no">否</span>——R2R／Matterport3D 離散導航圖，純模擬</td>
+          <td><strong>Isola 為共同作者（自我引用）</strong>；直接 prompt GPT-4 只有 SR 10–13；完整資料下輸 ScaleVLN（43.2 vs 78.1），作者反對放棄視覺特徵</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Isola 引它們證明「this ability has been researched for years」，[2][3] 成立、[4] 部分成立（§9）。<span class="site">本站判讀</span>三篇同時也是他下一句「common view」（LLM 只做高階規劃、不碰執行器）的例證；「puppeteer」若讀成全層控制，它們不是先例；若讀成 Isola 在 X 上收窄後的「寫程式、叫工具」（§8），Code as Policies 反而正是先例。那麼今天 LLM 到底能站到哪一層？<span class="site">本站補充</span>把兩篇既有摘要疊上同一條抽象層級軸：</p>
+
+  <figure>
+    <svg viewBox="0 0 900 470" role="img" aria-label="四層架構堆疊：System 3 車隊、System 2 agentic tool-use（LLM 站這裡）、System 1 VLA 10 Hz、System 0 全身控制 50 Hz；旁欄對齊 Embody 的 policy control、programmatic、direct torque 三種介面與 SayCan、Code as Policies、LangNav 三篇前作；左側紫括號為 Isola 木偶師全層讀法，綠括號為爭論後收斂到上兩層">
+      <text x="130" y="26" font-size="10.5" fill="#8b949e" class="mono">縱軸＝抽象層級（上：高階・慢；下：低階・快）；Hz 只在 KinetIQ 欄有來源</text>
+      <g font-size="12" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <text x="255" y="52">Humanoid KinetIQ System 0–3</text>
+        <text x="520" y="52">Anthropic Embody 四介面</text>
+        <text x="775" y="52">2022–24 三篇前作</text>
+      </g>
+      <!-- R1 -->
+      <rect x="130" y="68" width="250" height="64" rx="8" fill="#161b22" stroke="#30363d"/>
+      <text x="255" y="93" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e6edf3">System 3｜車隊調度</text>
+      <text x="255" y="114" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">秒～分鐘｜Petri-net 離散事件</text>
+      <text x="520" y="104" text-anchor="middle" font-size="12" fill="#6e7681">—</text>
+      <text x="775" y="104" text-anchor="middle" font-size="12" fill="#6e7681">—</text>
+      <!-- R2 -->
+      <rect x="130" y="152" width="250" height="76" rx="8" fill="rgba(121,192,255,.12)" stroke="#79c0ff" stroke-width="2"/>
+      <text x="255" y="182" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e6edf3">System 2｜agentic 執行・tool-use</text>
+      <text x="255" y="205" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">純離散符號｜frontier model 住這裡</text>
+      <rect x="400" y="152" width="240" height="76" rx="8" fill="#161b22" stroke="#7ee787" stroke-width="1.5"/>
+      <text x="520" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">Policy control｜指揮現成 policy</text>
+      <text x="520" y="194" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">Mythos 54.1・Opus 4.x 34–40（hl-loco）</text>
+      <text x="520" y="214" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">監督 VLA：熟悉任務較差／新任務淨增益</text>
+      <text x="775" y="147" text-anchor="middle" font-size="10" fill="#8b949e" class="mono">全部：離散決策層</text>
+      <g font-size="10.5" fill="#e6edf3" text-anchor="middle">
+        <rect x="660" y="154" width="230" height="22" rx="11" fill="#161b22" stroke="#30363d"/><text x="775" y="169">SayCan 2022｜選技能 × affordance</text>
+        <rect x="660" y="179" width="230" height="22" rx="11" fill="#161b22" stroke="#30363d"/><text x="775" y="194">Code as Policies 2023｜寫 policy code</text>
+        <rect x="660" y="204" width="230" height="22" rx="11" fill="#161b22" stroke="#30363d"/><text x="775" y="219">LangNav 2024｜選 viewpoint・模擬・自引</text>
+      </g>
+      <!-- divider -->
+      <line x1="130" y1="243" x2="890" y2="243" stroke="#ff7b72" stroke-dasharray="6 5" stroke-width="1.2"/>
+      <text x="130" y="240" font-size="10.5" fill="#ff7b72" class="mono">Malik／Kuang 畫的界線：上＝規劃・下＝控制</text>
+      <!-- R3 -->
+      <rect x="130" y="258" width="250" height="64" rx="8" fill="#161b22" stroke="#ffa657" stroke-width="1.5"/>
+      <text x="255" y="283" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e6edf3">System 1｜VLA・action chunk</text>
+      <text x="255" y="304" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">10 Hz｜推論 34 ms†→ chunk 1–2 s</text>
+      <rect x="400" y="258" width="240" height="64" rx="8" fill="#161b22" stroke="#ffa657" stroke-width="1.5"/>
+      <text x="520" y="283" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">Programmatic／RL supervision</text>
+      <text x="520" y="304" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">寫 controller／訂 reward｜Go2 ~2 s＊</text>
+      <text x="775" y="294" text-anchor="middle" font-size="12" fill="#6e7681">—</text>
+      <!-- R4 -->
+      <rect x="130" y="342" width="250" height="64" rx="8" fill="#161b22" stroke="#ff7b72" stroke-width="1.5"/>
+      <text x="255" y="367" text-anchor="middle" font-size="12.5" font-weight="700" fill="#e6edf3">System 0｜全身控制</text>
+      <text x="255" y="388" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">50 Hz（＋1 kHz 柔順層）｜雲端不可及</text>
+      <rect x="400" y="342" width="240" height="64" rx="8" fill="#161b22" stroke="#ff7b72" stroke-width="1.5"/>
+      <text x="520" y="367" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">Direct torque control</text>
+      <text x="520" y="388" text-anchor="middle" font-size="10" fill="#8b949e" class="mono">mostly fail｜G1 起立 0＊｜LIBERO 0–5.5%</text>
+      <text x="775" y="378" text-anchor="middle" font-size="12" fill="#6e7681">—</text>
+      <!-- brackets -->
+      <path d="M45 68 H32 V406 H45" fill="none" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text transform="rotate(-90 22 237)" x="22" y="241" text-anchor="middle" font-size="11" fill="#d2a8ff">Isola 原文「木偶師」（若讀成全層）</text>
+      <path d="M90 68 H77 V228 H90" fill="none" stroke="#7ee787" stroke-width="1.8"/>
+      <text transform="rotate(-90 67 148)" x="67" y="152" text-anchor="middle" font-size="10.5" fill="#7ee787">爭論後：寫程式、叫工具</text>
+      <!-- legend -->
+      <g font-size="10.5" fill="#6e7681" class="mono">
+        <text x="130" y="436">＊＝暫停模擬器的上限（G1／Go2 在 LLM 思考時暫停）；LIBERO 手臂未暫停，最接近現實｜†＝H100 實測，Jetson Thor 未公開</text>
+        <text x="130" y="456">藍＝LLM 今天站的位置　綠＝接上工具後可用　橘＝過渡帶　紅＝目前失敗　紫＝Isola 全層讀法</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 3｜自繪</b>藍＝LLM 今天站的位置、綠＝接上工具後可用、橘＝過渡帶、紅＝目前失敗、紫＝Isola 原文的全層讀法；＊＝暫停模擬器上限、†＝H100 數字。縱軸是抽象層級，不是頻率——Embody 的 direct／code 實驗與三篇前作都沒有報控制頻率，Hz 只在 KinetIQ 欄有來源。三篇前作全部站在離散決策層（Code as Policies 生成的程式雖在機上跑迴圈，LLM 本身不在迴圈裡）；Embody 顯示 LLM 越往下走成功率越低；KinetIQ 直接把 frontier model 鎖在 System 2。Isola 的「puppeteer」若讀成紫括號，目前沒有證據；讀成綠括號，則與產業做法一致——這也是他在 X 上對 Malik 的實際回應（§8）。</figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>Embody（→ <a href="../claude-robotics/index.html#loco">§04</a>、<a href="../claude-robotics/index.html#manip">§05</a>、<a href="../claude-robotics/index.html#hl-loco">§06</a>、<a href="../claude-robotics/index.html#hl-manip">§07</a>）的介面梯度很清楚。直接輸出扭矩幾乎全滅：29 自由度的 G1 沒有任何模型任何一次成功起立＊；Go2 所有模型都掙扎，改寫 Python 控制器才能平衡近 2 秒＊。LIBERO 廚房任務直接控制完整成功率 0–5.5%，這組是唯一不暫停模擬器、最接近現實的數字。接上預訓練的 joystick 步態 policy，LLM 才真的會導航（11 任務綜合分 Mythos Preview 54.1、Opus 4.5–4.7 約 34–40）。讓 LLM 監督 VLA 則出現反直覺結果：在 LIBERO-40 熟悉任務上「所有模型都比 MolmoAct 自己跑更差」，且更強的 Mythos 因「太常否決」反而輸給 Opus 4.5／4.6；但在 VLA 基線為 0 的三個新任務上 Opus 4.5／4.6、Gemini 3.1 有淨增益，而只有 Mythos 能解掉像樣比例的新任務——平時太愛否決的毛病，在 VLA 真的壞掉時變成優勢。<em>監督有代價，也有位置</em>。</p>
+  <p><span class="site">本站補充</span>KinetIQ（→ <a href="../kinetiq/index.html#arch">kinetiq §03</a>、<a href="../kinetiq/index.html#sys23">§06</a>）是產業界的量產答案：System 0 全身控制 50 Hz（底下還有 1 kHz 柔順層）、System 1 VLA 10 Hz、System 2 純離散符號＋tool-use、System 3 車隊調度。原文明說「leverage state-of-the-art frontier models for System 2 which excel at tool-use」——因為 System 2 只碰離散符號、對網路延遲與抖動穩健，才敢用又大又慢的雲端模型。<strong>產業界已在做 Isola 說的事，但 LLM 只被允許站在 10 Hz 以上那一層。</strong>「puppeteer」若讀成全層控制，目前的證據不支持——這正是 §8 爭論的全部內容。</p>
+</section>
+
+<!-- ─────────── §3 延遲 ─────────── -->
+<section id="latency">
+  <h2><span class="num">§3</span>延遲預算：雲端迴路慢兩個數量級，而且「多想」沒幫助</h2>
+  <p class="sec-sub">思考慢＋網速有限，Isola 只給定性；本站把查得到的數字放上同一條對數軸</p>
+
+  <blockquote>LLM agents incur high latency between commands, due to the slowness of their thinking as well as limited internet speeds. […] I suspect these limitations will be surmountable, but they currently do exist.
+  <span class="src">— 第 8 段。第 3 段另引 [5]：「Researchers argued that LLM latency is too high to keep up with real-world dynamics」</span></blockquote>
+
+  <p>先交代 <span class="ref">[5]</span>：Pollini 等人（INDIN 2025）在 Gazebo 模擬裡實測雲端 API 單次往返，GPT-3.5 約 1.18 s、GPT-4 約 1.76 s（n=20，不含語音轉錄與執行時間）。這篇論文的立場其實是<strong>「延遲可以用工程手段緩解、達成 real-time」</strong>，並不是「LLM 太慢不能控」——後者是 Isola 的詮釋；而且論文內部數字互相矛盾（§9）。它能證明的只有：每步延遲在秒級。</p>
+
+  <figure>
+    <svg viewBox="0 0 900 500" role="img" aria-label="對數時間軸：機上控制在 1 到 100 毫秒，雲端 LLM 一個回合在 1 秒到 3 分鐘，中間約兩個數量級；Isola 的兩個原因分別指向 LLM 思考帶與 API 往返">
+      <!-- gap bracket -->
+      <text x="358" y="54" text-anchor="middle" font-size="12" font-weight="700" fill="#ffa657">≈ 2 個數量級：即時控制需 83 Hz，API 推論只有 0.2–0.4 Hz（[8]）</text>
+      <path d="M204 74 V64 H513 V74" fill="none" stroke="#ffa657" stroke-width="1.5"/>
+      <!-- on-device band -->
+      <line x1="56" y1="250" x2="331" y2="250" stroke="#7ee787" stroke-width="9" opacity=".28"/>
+      <line x1="461" y1="250" x2="764" y2="250" stroke="#ff7b72" stroke-width="9" opacity=".28"/>
+      <text x="60" y="84" font-size="12.5" font-weight="700" fill="#7ee787">機上控制迴路（KinetIQ 實測、Embody 需求）</text>
+      <g stroke="#7ee787" stroke-width="1" opacity=".8">
+        <line x1="60" y1="250" x2="60" y2="136"/>
+        <line x1="204" y1="250" x2="204" y2="166"/>
+        <line x1="233" y1="250" x2="233" y2="196"/>
+        <line x1="264" y1="250" x2="264" y2="226"/>
+      </g>
+      <line x1="264" y1="250" x2="327" y2="250" stroke="#7ee787" stroke-width="5" opacity=".7"/>
+      <g fill="#7ee787"><circle cx="60" cy="250" r="5"/><circle cx="204" cy="250" r="5"/><circle cx="233" cy="250" r="5"/><circle cx="264" cy="250" r="5"/><circle cx="327" cy="250" r="5"/></g>
+      <g font-size="11" fill="#e6edf3">
+        <text x="66" y="132">1 kHz 柔順層（1 ms）</text>
+        <text x="209" y="162">83 Hz 即時需求（12 ms）［8］</text>
+        <text x="238" y="192">50 Hz 全身控制（20 ms）</text>
+        <text x="269" y="222">VLA 推論 34 ms† → 10 Hz 輸出（100 ms）</text>
+      </g>
+      <!-- axis -->
+      <line x1="40" y1="250" x2="880" y2="250" stroke="#30363d" stroke-width="1.5"/>
+      <g font-size="10.5" fill="#8b949e" text-anchor="middle" class="mono">
+        <text x="60" y="268">1 ms</text><text x="193" y="268">10 ms</text><text x="327" y="268">100 ms</text><text x="460" y="268">1 s</text><text x="593" y="268">10 s</text><text x="727" y="268">100 s</text><text x="860" y="268">1000 s</text>
+      </g>
+      <g stroke="#30363d"><line x1="193" y1="246" x2="193" y2="254"/><line x1="460" y1="246" x2="460" y2="254"/><line x1="593" y1="246" x2="593" y2="254"/><line x1="727" y1="246" x2="727" y2="254"/><line x1="860" y1="246" x2="860" y2="254"/></g>
+      <!-- cloud band -->
+      <rect x="455" y="276" width="425" height="130" rx="8" fill="rgba(255,123,114,.07)"/>
+      <text x="462" y="294" font-size="12.5" font-weight="700" fill="#ff7b72">雲端 LLM 一個 turn（實測；[8] 附錄自標 launch logs）</text>
+      <text x="462" y="310" font-size="10.5" fill="#d2a8ff" class="mono">Isola：「the slowness of their thinking」</text>
+      <!-- bars -->
+      <rect x="465" y="322" width="29" height="10" rx="3" fill="#ffa657"/>
+      <text x="455" y="331" text-anchor="end" font-size="11" fill="#ffa657">API 往返 1.1–1.8 s（[5]）</text>
+      <text x="455" y="345" text-anchor="end" font-size="10" fill="#d2a8ff" class="mono">Isola：「limited internet speeds」</text>
+      <rect x="617" y="322" width="80" height="10" rx="3" fill="#ff7b72"/>
+      <text x="703" y="331" font-size="11" fill="#e6edf3">高推理 15–60 s</text>
+      <rect x="500" y="346" width="80" height="10" rx="3" fill="#ff7b72"/>
+      <text x="586" y="355" font-size="11" fill="#e6edf3">純文字・不推理 2–8 s</text>
+      <rect x="553" y="368" width="64" height="10" rx="3" fill="#ff7b72"/>
+      <text x="623" y="377" font-size="11" fill="#e6edf3">帶 1–2 張圖 5–15 s</text>
+      <rect x="697" y="390" width="63" height="10" rx="3" fill="#ff7b72"/>
+      <text x="766" y="399" font-size="11" fill="#e6edf3">長尾 60–180 s</text>
+      <text x="878" y="424" text-anchor="end" font-size="10.5" fill="#6e7681" class="mono">episode 長度（非每步延遲）：Robocurve 積木入碗一次 2.5–8.2 分（Astra→Fable 5.1→Fable 5；[10]）</text>
+      <!-- cards -->
+      <rect x="52" y="434" width="400" height="60" rx="8" fill="#161b22" stroke="#ffa657"/>
+      <text x="64" y="452" font-size="12" font-weight="700" fill="#e6edf3">KinetIQ：用架構吃掉延遲（→ kinetiq §05）</text>
+      <text x="64" y="469" font-size="10.5" fill="#8b949e" class="mono">34 ms†推論 → 1–2 s chunk・執行端 30–50 Hz・非同步推論</text>
+      <text x="64" y="485" font-size="10.5" fill="#6e7681" class="mono">†H100 數字，Jetson Thor 未公開・prefix conditioning 容忍延遲抖動</text>
+      <rect x="466" y="434" width="414" height="60" rx="8" fill="#161b22" stroke="#30363d"/>
+      <text x="478" y="452" font-size="12" font-weight="700" fill="#e6edf3">Embody：暫停模擬器量上限（→ claude-robotics §13）</text>
+      <text x="478" y="469" font-size="10.5" fill="#8b949e" class="mono">direct／code 實驗在 LLM 思考時暫停 → 量的是「假如夠快」的上限</text>
+      <text x="478" y="485" font-size="10.5" fill="#8b949e" class="mono">reasoning 對多數結果無助、方向常為負（只有 Mythos 例外）</text>
+    </svg>
+    <figcaption><b>圖 4｜自繪</b>綠＝機上控制迴路、紅＝雲端 LLM 思考、橘＝網路往返與鴻溝、紫＝Isola 原句。Isola 只說「延遲高」並給了兩個原因；本圖把所有查得到的數字放上同一條對數軸：機上迴路住在 1–100 ms，雲端一個 turn 住在 1 s–3 min，中間是 Anthropic 自述「需約兩個數量級改進」的洞。Embody 的秒數為附錄自標「非正式 launch logs」；[5] 的 1.1–1.8 s 是 2023–24 年代模型、模擬、n=20，且該文立場是「延遲可緩解」；Robocurve 的 2.5–8.2 分鐘（Astra 最快、Fable 5 最慢）是一個 episode 的長度而非每次命令的延遲，故不放上軸。†＝H100 推論數字，機上 Jetson Thor 延遲未公開。所有數字皆本站自三篇既有摘要與 [5][8][10] 補入，非 Isola 原文。</figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>兩個工程含意。第一，Embody 的 direct／code 實驗因此「暫停模擬器」量上限（→ <a href="../claude-robotics/index.html#appendix">claude-robotics §13</a>），Isola 引為證據的低階數字是「假如推論夠快」的成績，不是即時表現。第二，KinetIQ 不靠更快的推論、而靠架構吃掉延遲（→ <a href="../kinetiq/index.html#sys1">kinetiq §05</a>）：action chunking（34 ms 推論 → 1–2 s 動作視野）、執行端 30–50 Hz 自行播放、非同步推論＋prefix conditioning，「把推論速度和控制頻率解耦」。</p>
+  <p><span class="site">本站補充</span>再補一刀（→ <a href="../claude-robotics/index.html#reasoning">claude-robotics §09</a>）：多想不但更慢，對現世代模型幾乎沒幫助。Embody 的 reasoning 消融顯示「對多數結果影響很小，很多差異落在標準誤差內」，方向常為負——運動任務上「規劃收益似乎被『敏捷反應變慢』抵消」；Opus 4.6 各推理配置全落在 2.6 分帶內，只有 Mythos Preview 例外。<em>Isola 說「思考慢」，現世代的解不是想得快，是別在這一層想。</em>他自己的立場也留了餘地：「I suspect these limitations will be surmountable, but they currently do exist.」</p>
+</section>
+
+<!-- ─────────── §4 三個反對 ─────────── -->
+<section id="objections">
+  <h2><span class="num">§4</span>三個舊反對理由「正在融化」？逐條對帳</h2>
+  <p class="sec-sub">反對方原話與性質、Isola 的轉述、他引的三份證據各自碰到哪個維度</p>
+
+  <blockquote>Researchers argued that LLM latency is too high to keep up with real-world dynamics[5], that the models had poor spatial intelligence[6], and that LLMs lacked sufficiently strong causal and physical understanding[7]. These limitations are starting to melt away with newer models like Fable and Astra. The debate continues, but it's time to take seriously that these AIs could soon be quite competent at general-purpose robot use. Indeed, recent demos provide tantalizing evidence that something is starting to change.[8][9][10]
+  <span class="src">— 第 3–4 段</span></blockquote>
+
+  <h3>(a) 三個反對理由，來源長什麼樣</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Isola 的轉述</th><th>來源原話</th><th>來源性質</th><th>支持度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>延遲「too high to keep up with real-world dynamics」<span class="ref">[5]</span></td>
+          <td>「facilitate smoother, <strong>real-time</strong> robot operations」——論文是在提降低延遲的做法，並宣稱能達成即時</td>
+          <td>INDIN 2025 工程論文；Gazebo 模擬、Agilex Limo、n=20、無統計檢定</td>
+          <td class="cost"><span class="v-part">部分</span>：證明秒級延遲存在，不證明「跟不上動態」</td>
+        </tr>
+        <tr>
+          <td>「poor spatial intelligence」<span class="ref">[6]</span></td>
+          <td>Fei-Fei Li：language 是「purely generated signal」，3D 物理世界「fundamentally quite a different problem」；並說會借用 LLM 的有用想法</td>
+          <td>a16z 官方 LinkedIn 2025-09-08 的 47 秒訪談剪輯（原訪談推定為 2025-06 的 a16z Podcast）；「LLMs will struggle」是 a16z 下的標題、不是 Li 原話；哲學論證、非實測；Li 是 World Labs CEO、a16z 是投資方</td>
+          <td class="cost"><span class="v-part">部分</span>：立場成立，但針對的是純語言訊號，與 fn1「LLM＝多模態 agent」的定義不對齊</td>
+        </tr>
+        <tr>
+          <td>「lacked sufficiently strong causal and physical understanding」<span class="ref">[7]</span></td>
+          <td>Yann LeCun：「A robot-rich future can't be built with AIs that don't understand the physical world and don't anticipate the consequences of their actions. <strong>And LLMs really don't.</strong>」</td>
+          <td>2026-04-24 對 Benjamin Todd「Yann LeCun in 2032」漫畫的六點即興回覆，其中三點是玩笑；無「causal」一詞；第 1 點特別澄清「I never said LLMs were not useful… I use them.」</td>
+          <td class="ok"><span class="v-ok">支持</span>（偏橘）：立場明確，但原話比 Isola 轉述的「lacked sufficiently strong」更絕對</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout orange">
+    <span class="tag">對帳結果</span>
+    三條反對都確有人說過，但<strong>沒有一條是「LLM 不能即時控制」的實測論證</strong>：一篇是提解法的工程論文，一則是投資方剪輯的哲學論證，一則是對漫畫的回覆。Isola 把它們當「先前反方觀點」的代表引用，性質定位為 commentary，是合理的；但讀者要知道反方的重量級證據其實是在別處——例如 Isola 自己引的 [8]。
+  </div>
+
+  <h3>(b) 三份「證據」各自碰到哪個維度</h3>
+  <figure>
+    <svg viewBox="0 0 900 412" role="img" aria-label="三份來源乘四個維度的色塊矩陣：Embody 在控制頻率為紅、空間定位與操作為橘；Waddle 多為灰色未提供；Robocurve 粗抓放綠、精細對準紅、未量測延遲">
+      <g font-size="12" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <text x="282" y="46">控制頻率</text><text x="457" y="46">空間定位・導航</text><text x="632" y="46">操作：粗抓放 → 精細對準</text><text x="807" y="46">LLM 直接控制？</text>
+      </g>
+      <!-- row [8] -->
+      <text x="24" y="92" font-size="12.5" font-weight="700" fill="#e6edf3">[8] Embody</text>
+      <text x="24" y="110" font-size="10" fill="#8b949e" class="mono">Anthropic・benchmark</text>
+      <text x="24" y="126" font-size="10" fill="#8b949e" class="mono">＊暫停模擬器上限</text>
+      <text x="24" y="142" font-size="10" fill="#ff7b72" class="mono">未測 Fable／Astra</text>
+      <g font-size="11.5" fill="#e6edf3" text-anchor="middle">
+        <rect x="200" y="62" width="165" height="90" rx="6" fill="rgba(255,123,114,.15)" stroke="#ff7b72"/>
+        <text x="282" y="102">0.2–0.4 Hz vs 83 Hz</text><text x="282" y="122">需 ~100× 延遲改進</text>
+        <rect x="375" y="62" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="457" y="102">cursor 工具 6% → 32%</text><text x="457" y="122">實體走廊繞圈全敗</text>
+        <rect x="550" y="62" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="632" y="102">LIBERO 直接控制 0–5.5%</text><text x="632" y="122">監督 VLA：新任務＋、熟悉−</text>
+        <rect x="725" y="62" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="807" y="102">直接扭矩 mostly fail＊</text><text x="807" y="122">接 pretrained policy 才成</text>
+      </g>
+      <!-- row [9] -->
+      <text x="24" y="192" font-size="12.5" font-weight="700" fill="#e6edf3">[9] Waddle Labs</text>
+      <text x="24" y="210" font-size="10" fill="#8b949e" class="mono">YC 新創發表文・自引 [8]</text>
+      <text x="24" y="226" font-size="10" fill="#8b949e" class="mono">無精確數字・無 n</text>
+      <text x="24" y="242" font-size="10" fill="#ff7b72" class="mono">測 Fable 5，未測 Astra</text>
+      <g font-size="11.5" fill="#e6edf3" text-anchor="middle">
+        <rect x="200" y="162" width="165" height="90" rx="6" fill="#161b22" stroke="#30363d"/>
+        <text x="282" y="212" fill="#6e7681">未提供</text>
+        <rect x="375" y="162" width="165" height="90" rx="6" fill="#161b22" stroke="#30363d"/>
+        <text x="457" y="212" fill="#6e7681">未提供</text>
+        <rect x="550" y="162" width="165" height="90" rx="6" fill="rgba(126,231,135,.10)" stroke="#7ee787" stroke-opacity=".45"/>
+        <text x="632" y="196">折 T-shirt、翻包裹</text><text x="632" y="214" font-size="10.5">Opus 4.8 ✗・Fable 5 ✓（xhigh）</text><text x="632" y="232" font-size="10.5" fill="#8b949e">成功率僅曲線圖約略值，無 n</text>
+        <rect x="725" y="162" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="807" y="202">寫程式＋呼叫 VLA</text><text x="807" y="222">LLM 不逐步下扭矩</text>
+      </g>
+      <!-- row [10] -->
+      <text x="24" y="292" font-size="12.5" font-weight="700" fill="#e6edf3">[10] Robocurve</text>
+      <text x="24" y="310" font-size="10" fill="#8b949e" class="mono">獨立評測・n=20・非盲</text>
+      <text x="24" y="326" font-size="10" fill="#8b949e" class="mono">bowl 任務兩方不同 rig</text>
+      <text x="24" y="342" font-size="10" fill="#7ee787" class="mono">唯一涵蓋 Astra 的來源</text>
+      <g font-size="11.5" fill="#e6edf3" text-anchor="middle">
+        <rect x="200" y="262" width="165" height="90" rx="6" fill="#161b22" stroke="#30363d"/>
+        <text x="282" y="312" fill="#6e7681">未量測延遲</text>
+        <rect x="375" y="262" width="165" height="90" rx="6" fill="#161b22" stroke="#30363d"/>
+        <text x="457" y="312" fill="#6e7681">桌面任務，不涉導航</text>
+        <rect x="550" y="262" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="632" y="302" fill="#7ee787">入碗 5% → 40% → 95%</text><text x="632" y="322" fill="#ff7b72">拼圖 0% → 10% → 10%</text>
+        <rect x="725" y="262" width="165" height="90" rx="6" fill="rgba(255,166,87,.15)" stroke="#ffa657"/>
+        <text x="807" y="302">輸出末端姿態 move_to</text><text x="807" y="322">IK 由機器人做</text>
+      </g>
+      <g font-size="10.5" fill="#6e7681" class="mono">
+        <text x="450" y="382" text-anchor="middle">綠＝改善／支持　橘＝混合　紅＝未改善　灰＝來源未提供　淡綠＝有示範、無精確數字</text>
+        <text x="450" y="400" text-anchor="middle">欄＝證據自身量到的維度；對應 Isola 三個反對（延遲／空間智慧／物理理解）為本站判讀，見 caption</text>
+      </g>
+    </svg>
+    <figcaption><b>圖 5｜自繪</b>綠＝改善／支持、橘＝混合、紅＝未改善、灰＝來源未提供；＊＝暫停模擬器上限。欄名是三份證據自己量到的東西，不借用 Isola 的三個詞；把「控制頻率」對到延遲、「空間定位」對到空間智慧、「精細對準與直接控制」對到物理理解，是本站的判讀——積木入碗的進步也可能來自指令跟隨與數值一致性，拼圖失敗是毫米級對準而非「因果理解」。結果並不均勻：延遲沒有任何來源顯示融化；空間定位有可量測的世代進步但實體導航仍全敗；粗抓放隨模型世代抬升、精細對準卡住。三份來源裡只有 [8] 測了 LLM 直接輸出扭矩，結果 mostly fail（LIBERO 完整任務 0–5.5%、G1 起立零成功），接 pretrained policy 才成；[9][10] 的 LLM 都不逐步下扭矩，而是寫程式呼叫 VLA／輸出末端姿態交由 IK。[8] 未測 Fable／Astra；[9] 自引 [8]，成功率只有曲線圖約略值（本站讀圖：Fable 5 ≈87%、GPT 5.6 Sol ≈83%、Opus 4.8 ≈66%，皆 xhigh）、無 n，對「隨模型世代抬升」提供的是定性排序；[10] 是唯一涵蓋 Astra 的來源、只有兩個桌面任務。</figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>Embody 給「空間智慧」一個更精細的版本（→ <a href="../claude-robotics/index.html#vision">claude-robotics §08</a>、<a href="../claude-robotics/index.html#realworld">§11</a>）：模型缺的是<strong>方位感</strong>，不是更多像素。可查詢距離的 cursor 工具讓 Mythos Preview 在 10 任務子集上 6% → 32%；純文字回報朝向的 compass 是導航「一枝獨秀」的外掛；ask_vlm 對照實驗顯示舊模型換成文字描述反而變好、新模型換成文字反而變差——「視覺感知瓶頸對舊模型是硬傷，對新模型正在消失」。但實體 Go2 靠視覺繞辦公室走廊一圈，「不論用哪個模型、哪種 harness、給多少優勢，全部失敗」，缺的是自我定位與空間記帳。</p>
+  <p>所以對帳結論：<strong>延遲未融化；空間智慧融化中（有可量測的世代進步，但閉環定位仍全敗）；物理理解在「直接控制」層幾乎沒動</strong>，改善全部來自「接上一個懂物理的控制器」——Anthropic 的原話是「模型不需要自己會開關節，只需要拿到一個能幹的控制器」（→ <a href="../claude-robotics/index.html#hl-manip">§07</a>）。Isola 用的字是「tantalizing」，與證據強度相稱；「starting to melt away」則是前瞻判斷，不是已證明的事。</p>
+</section>
+
+<!-- ─────────── §5 兩種範式 ─────────── -->
+<section id="paradigms">
+  <h2><span class="num">§5</span>兩種部署範式，加上產業界實際選的第三條路</h2>
+  <p class="sec-sub">機上專用模型 vs 雲端木偶師 vs 雲端訓練、機上推論</p>
+
+  <blockquote>Currently, robot intelligence is mostly run on device, with a model that is customized to each different type of robot. This makes deploying intelligence in robotics a slow and incremental process. […] Claude-as-puppeteer could lead to a rather different future. This kind of intelligence runs in the cloud, is not specially tuned to any one kind of robot, and has a mature infrastructure ready to support it.
+  <span class="src">— 第 6–7 段</span></blockquote>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>A｜機上專用模型（Isola：現況）</th><th>B｜雲端木偶師（Isola 預想）</th><th>C｜KinetIQ 實際選擇 <span class="site">本站補充</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong>智慧跑在哪</strong></td><td>機上 GPU</td><td class="ok">雲端</td><td>推論在機上（Jetson Thor）、訓練在雲端 trainer（→ <a href="../kinetiq/index.html#algo">kinetiq §08</a>）</td></tr>
+        <tr><td><strong>客製</strong></td><td class="cost">每種機器人一套模型</td><td class="ok">「not specially tuned to any one kind of robot」</td><td>System 1 VLA 設計上可跨機身遷移——上身 IK 介面對機身不變、輪式與雙足共用（→ <a href="../kinetiq/index.html#sys0">kinetiq §04</a>），行為隨任務用示範＋真機 RL 養成；System 2 用通用 frontier model（是否一組權重通吃各機身、或仍需每機身微調，原文只講設計目的、未給部署事實）</td></tr>
+        <tr><td><strong>賦能方式</strong></td><td class="cost">「deliberate」——每台都是一個工程專案</td><td class="ok">一次軟體更新，暴露 API（fn12）</td><td>全端自建＋真機 RL loop</td></tr>
+        <tr><td><strong>更新</strong></td><td class="cost">刷機、重訓</td><td class="ok">over-the-air，或「entirely in the cloud」</td><td>trainer 把新權重推到邊緣；每台部署機器人都是 rollout worker</td></tr>
+        <tr><td><strong>基礎設施</strong></td><td class="cost">「not yet mature」——world models、behavior foundation models、continual learning 押注分歧</td><td class="ok">LLM 的 buildout 已就位</td><td>自建；weights／code／dataset／論文 0 項公開（→ <a href="../kinetiq/index.html#open">§02</a>）</td></tr>
+        <tr><td><strong>單台能力</strong></td><td class="ok">專用方案較強</td><td class="bad"><strong>「LLM-controlled robots are still far less performant than dedicated solutions」</strong>——Isola 原話</td><td>目標 99.9%；三個生產任務中兩個達 98–98.9%（交付 80→98%、搬箱 77.6→98.9%）；上料以吞吐為主指標（+42%），揀取成功率僅 0.60→0.67（→ <a href="../kinetiq/index.html#results">§10</a>）</td></tr>
+        <tr><td><strong>擴散</strong></td><td class="cost">慢，一台一台</td><td class="ok">快，整個生態同時</td><td class="cost">一家公司、一個廠區；代價：幾百台機器人的即時相機流推不上雲；edge／trainer 數值差會毒化 PPO ratio</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>這張表不是「B 贏 A」，而是「B 擴散快、A 單台強」——Isola 自己在「單台能力」那一列已經承認。<span class="site">本站補充</span>KinetIQ 的第三條路值得注意：<strong>擴散的是訓練，不是推論</strong>。幾百台機器人的相機流推不上資料中心，所以 10 Hz 以下全部在機上；但每台機器人都是雲端 trainer 的 rollout worker，新權重從雲端推下來。這比 Isola 的 A／B 二分更接近現實，也提醒讀者：他的「零修改」在 adapter 層成立、在能力層不成立。fn11 一句帶過：硬體進步仍會持續、仍然有用。</p>
+</section>
+
+<!-- ─────────── §6 擴散 ─────────── -->
+<section id="diffusion">
+  <h2><span class="num">§6</span>新東西是「面積」不是「高度」：擴散 vs 單台能力</h2>
+  <p class="sec-sub">雲端模型換代一次，所有連網機器人同時抬升；但天花板與 99.9% 門檻沒動</p>
+
+  <blockquote>In this future, the new thing is not so much that any one robot gets more capable -- indeed LLM-controlled robots are still far less performant than dedicated solutions -- rather it's that intelligence diffuses through the whole robotic ecosystem much more quickly than in the traditional regime.
+  <span class="src">— 第 7 段。第 5 段：「Every robot with an internet connection becomes a potential tool for Fable, Astra, and other AIs.」</span></blockquote>
+
+  <p>這是全文最有份量的一句，也是最容易被讀者跳過的一句：Isola 不是在說機器人會變多強，而是在說<strong>能力的分布會變</strong>。他自己引的 Robocurve <span class="ref">[10]</span> 剛好是實例：</p>
+
+  <figure>
+    <svg viewBox="0 0 900 436" role="img" aria-label="左：示意的擴散曲線，雲端範式一次更新抬升所有機器人，傳統範式為三條各自上跳的階梯；右：Robocurve 三個模型實測，積木入碗 5%、40%、95%，拼圖入槽 0%、10%、10%">
+      <line x1="455" y1="24" x2="455" y2="410" stroke="#30363d"/>
+      <!-- left panel -->
+      <text x="245" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="#e6edf3">擴散（示意圖，非量測資料）</text>
+      <text x="80" y="66" font-size="11.5" fill="#79c0ff">雲端木偶師：一次模型更新 → 所有連網機器人同時抬升</text>
+      <line x1="70" y1="330" x2="430" y2="330" stroke="#30363d"/>
+      <line x1="70" y1="330" x2="70" y2="76" stroke="#30363d"/>
+      <text x="250" y="370" text-anchor="middle" font-size="11" fill="#8b949e">時間／模型世代 →</text>
+      <text transform="rotate(-90 52 200)" x="52" y="200" text-anchor="middle" font-size="11" fill="#8b949e">已賦能的機器人種類（示意，無刻度）</text>
+      <g fill="none" stroke="#8b949e" stroke-width="1.6" opacity=".85">
+        <path d="M80 306 H160 V264 H428"/>
+        <path d="M80 292 H250 V236 H428"/>
+        <path d="M80 278 H340 V210 H428"/>
+      </g>
+      <text x="426" y="322" text-anchor="end" font-size="10.5" fill="#8b949e">灰＝傳統範式：一台一台工程化、各自刷機（deliberate）</text>
+      <g stroke="#d2a8ff" stroke-dasharray="3 4" opacity=".7"><line x1="190" y1="330" x2="190" y2="272"/><line x1="280" y1="330" x2="280" y2="200"/><line x1="370" y1="330" x2="370" y2="118"/></g>
+      <path d="M80 322 C120 318 160 300 190 282 L190 262 C220 250 250 225 280 205 L280 182 C310 165 340 135 370 112 L370 96 C385 90 400 84 420 80" fill="none" stroke="#79c0ff" stroke-width="2.5"/>
+      <g font-size="10.5" fill="#d2a8ff" text-anchor="middle" class="mono">
+        <text x="190" y="346">Fable 5</text><text x="280" y="346">Fable 5.1</text><text x="370" y="346">Astra</text>
+      </g>
+      <text x="245" y="392" text-anchor="middle" font-size="10.5" fill="#d2a8ff" class="mono">Isola：「intelligence diffuses… much more quickly」</text>
+      <!-- right panel -->
+      <text x="675" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="#e6edf3">同一 agent policy・同一 harness・三個模型、兩家（[10]）</text>
+      <line x1="520" y1="330" x2="860" y2="330" stroke="#30363d"/>
+      <line x1="520" y1="330" x2="520" y2="70" stroke="#30363d"/>
+      <g font-size="10.5" fill="#8b949e" text-anchor="end" class="mono">
+        <text x="512" y="334">0%</text><text x="512" y="209">50%</text><text x="512" y="84">100%</text>
+      </g>
+      <line x1="520" y1="205" x2="860" y2="205" stroke="#30363d" stroke-dasharray="3 5" opacity=".6"/>
+      <line x1="520" y1="80" x2="860" y2="80" stroke="#30363d" stroke-dasharray="3 5" opacity=".6"/>
+      <g font-size="10.5" fill="#8b949e" text-anchor="middle" class="mono">
+        <text x="580" y="363">Fable 5</text><text x="690" y="363">Fable 5.1</text><text x="800" y="363">GPT-6 Astra</text>
+      </g>
+      <path d="M580 317.5 L690 230 L800 92.5" fill="none" stroke="#79c0ff" stroke-width="2.5"/>
+      <g fill="#79c0ff"><circle cx="580" cy="317.5" r="5"/><circle cx="690" cy="230" r="5"/><circle cx="800" cy="92.5" r="5"/></g>
+      <g font-size="11" fill="#79c0ff" font-weight="700" text-anchor="middle" class="mono">
+        <text x="580" y="304">5%（1/20）</text><text x="690" y="217">40%（8/20）</text><text x="800" y="80">95%（19/20）</text>
+      </g>
+      <text x="812" y="112" font-size="11.5" fill="#79c0ff">積木入碗</text>
+      <path d="M580 330 L690 305 L800 305" fill="none" stroke="#ff7b72" stroke-width="2.5"/>
+      <g fill="#ff7b72"><circle cx="580" cy="330" r="5"/><circle cx="690" cy="305" r="5"/><circle cx="800" cy="305" r="5"/></g>
+      <g font-size="10.5" fill="#ff7b72" text-anchor="middle" class="mono">
+        <text x="580" y="343">0%（0/20）</text><text x="690" y="292">10%（2/20）</text><text x="800" y="292">10%（2/20）</text>
+      </g>
+      <text x="812" y="309" font-size="11.5" fill="#ff7b72">拼圖入槽</text>
+      <text x="836" y="324" text-anchor="middle" font-size="10.5" fill="#ff7b72">毫米級對準</text>
+      <g font-size="10" fill="#6e7681" class="mono" text-anchor="middle">
+        <text x="690" y="385">每格 n=20・操作員非盲評分・只測 medium reasoning</text>
+        <text x="690" y="401">積木入碗：Fable 在 rig-3、Astra 在 rig-1（不同 rig）；拼圖三方同 rig-4</text>
+      </g>
+      <text x="450" y="426" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">藍＝雲端 LLM 範式　紅＝未改善　灰＝傳統範式　紫＝模型世代／Isola 原句｜左＝示意、右＝實測，兩者不共用 y 軸</text>
+    </svg>
+    <figcaption><b>圖 6｜自繪</b>藍＝雲端 LLM 範式、紅＝未改善的維度、灰＝傳統範式、紫＝模型世代與 Isola 原句；左面板是示意、右面板是實測，兩者不共用 y 軸。Isola 論證的核心是「擴散比能力重要」，Robocurve 恰好是它的實例：同一 agent policy 換三個模型（Fable 5 → Fable 5.1 → GPT-6 Astra，跨兩家），積木入碗從 5% 到 95%——這就是「更新完全在雲端」；但毫米級的拼圖任務三個模型都不超過 10%，天花板沒動。右面板刻意不畫 Paxton 的部署門檻線（97–99.9%+，→ <a href="../robot-deployment-data/index.html#claim">robot-deployment-data §1</a>），因為 n=20 的單一桌面任務與產線長期成功率不在同一量綱；達到 98.9% 的是 KinetIQ 機上 VLA＋真機 RL（→ <a href="../kinetiq/index.html#results">kinetiq §10</a>），不是雲端 LLM。<strong>擴散抬高的是面積，離高度還遠。</strong></figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>Chris Paxton 的部署飛輪懷疑論（→ <a href="../robot-deployment-data/index.html#claim">robot-deployment-data §1</a>、<a href="../robot-deployment-data/index.html#novelty">§4</a>、<a href="../robot-deployment-data/index.html#final">§6</a>）是這一節的必要對照：部署要求 97–99.9%+ 成功率 → 靠限縮問題達標 → 「越成功的部署，產出的資料越缺乏新穎性」。小米 EV 工廠的自攻螺帽插入從 90.2% 到 98% 花了約 4 個月；Paxton 的樂觀前提「只要資料能被使用與共享」在商業上恰恰最難成立。</p>
+  <p><span class="site">本站推論</span>雲端木偶師把「被共享的東西」從<em>資料</em>換成<em>大腦本身</em>，等於繞開了資料共享的商業障礙——這是 Isola 論點最強的一面。但 99.9% 的部署門檻沒有消失：KinetIQ 的交付與搬箱兩任務達到 98–98.9%（雙臂搬箱 77.6% → 98.9%）靠的是機上 VLA＋真機 RL、每任務 3–5 天機器時間，不是 LLM。Paxton 原文未談 LLM 或雲端推論，此對照為本站推論。</p>
+</section>
+
+<!-- ─────────── §7 安全 ─────────── -->
+<section id="security">
+  <h2><span class="num">§7</span>任何連網裝置都可被控制——也都可被駭：權限迴路放哪一層</h2>
+  <p class="sec-sub">Isola 只給三處各一句；本站把既有摘要裡已存在的防線畫成四層</p>
+
+  <blockquote>Puppeteering may be less reliable than tried-and-true robotic systems; this matters especially for high-stakes and safety-critical use cases. […] Right now, the world is becoming aware that any digital tool can be made accessible to agentic AIs. The same may soon be true for any physical robot, and indeed for any device connected to the internet. This has obvious potential as well as risk.
+  <span class="src">— 第 8–9 段。fn12：「This loop would presumably involve users giving permissions, but it should not escape our attention that it could also be vulnerable to hacks.」</span></blockquote>
+
+  <p>Isola 對安全的全部投入是三處、各一句：第 8 段承認可靠性在 safety-critical 場景尤其要緊（但猜想限制可克服）、第 9 段一句「obvious potential as well as risk」、fn12 一句「迴路要有使用者授權，也可能被駭」。<span class="site">本站補充</span>以下把本站既有摘要裡已經存在的防線疊成四層——關鍵在於：<strong>真正擋住手臂撞人的那一層，必須住在 LLM 之下</strong>。</p>
+
+  <figure>
+    <svg viewBox="0 0 900 412" role="img" aria-label="四層嵌套防線：最外為 Internet 與 API token，其內為使用者授權、帶邊界的實體存取授權、最內為機上安全反射；一支紅箭頭代表 token 外洩穿透到內層，一支橘箭頭代表模型誤判由內層擋下">
+      <defs>
+        <marker id="m7-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff7b72"/></marker>
+        <marker id="m7-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffa657"/></marker>
+      </defs>
+      <rect x="40" y="44" width="820" height="326" rx="14" fill="none" stroke="#8b949e" stroke-dasharray="6 5"/>
+      <text x="56" y="66" font-size="12" fill="#8b949e">第 4 層｜Internet・API adapter・token　— fn12：只暴露 sensor／actuator API；<tspan class="mono" font-size="10.5">威脅模型從「闖進廠區」變成「拿到 token」</tspan></text>
+      <rect x="70" y="92" width="760" height="250" rx="12" fill="none" stroke="#d2a8ff" stroke-width="1.5"/>
+      <text x="86" y="114" font-size="12" fill="#d2a8ff">第 3 層｜使用者 permission loop　— Isola fn12：「presumably involve users giving permissions」</text>
+      <rect x="100" y="140" width="700" height="174" rx="10" fill="none" stroke="#7ee787" stroke-dasharray="6 5"/>
+      <text x="116" y="162" font-size="12" fill="#7ee787">第 2 層｜帶清楚邊界的實體存取授權　— Anthropic 列為後續工作（→ claude-robotics §12）</text>
+      <rect x="130" y="188" width="640" height="98" rx="8" fill="rgba(126,231,135,.10)" stroke="#7ee787" stroke-width="2"/>
+      <text x="146" y="210" font-size="12" font-weight="700" fill="#7ee787">第 1 層｜機上安全反射——住在 LLM 之下，直接護住執行器</text>
+      <g font-size="10.5" fill="#e6edf3" class="mono">
+        <text x="146" y="232">KinetIQ：手腕 wrench 超閾值 → 立刻停止、倒放最近指令縮手；安全終止率 ~0.4 → ~0.02（→ kinetiq §09）</text>
+        <text x="146" y="252">Robocurve harness：25% 速度上限、預設護欄開啟（[10]）</text>
+        <text x="146" y="272">Embody：direct 介面幾乎做不成任務——access level 本身就是能力的一部分（→ claude-robotics §12）</text>
+      </g>
+      <path d="M845 16 L754 190" stroke="#ff7b72" stroke-width="2" fill="none" marker-end="url(#m7-red)"/>
+      <text x="835" y="16" text-anchor="end" font-size="10.5" fill="#ff7b72" class="mono">hack：token／憑證外洩 → 誰拿到 API 誰擁有身體（fn12：vulnerable to hacks）</text>
+      <path d="M40 384 L148 290" stroke="#ffa657" stroke-width="2" fill="none" marker-end="url(#m7-orange)"/>
+      <text x="44" y="404" font-size="10.5" fill="#ffa657" class="mono">模型誤判（非攻擊，同一防線要擋）：Grok 4.1 Fast 衝玻璃門、Opus 4.6 拖行垃圾桶（Embody 實體，→ claude-robotics §11）</text>
+      <text x="846" y="360" text-anchor="end" font-size="10" fill="#6e7681" class="mono">相機看到的文字進入 context（prompt injection）＝本站推測、無來源，只在正文提</text>
+    </svg>
+    <figcaption><b>圖 7｜自繪</b>綠＝防線、紫＝Isola fn12 提的使用者授權層、紅＝fn12 的被駭路徑、橘＝非攻擊的模型誤判、灰虛線＝對外暴露面。Isola 對安全只給了三處各一句；本圖把既有摘要裡的防線畫成四層：真正擋住手臂撞人的是 LLM 之下的機上反射（KinetIQ 的 wrench 急停、Robocurve 的速度上限），其上才是 Anthropic 列為後續工作的「帶清楚邊界的實體存取授權」與 Isola 的使用者授權。兩支箭頭裡只有紅色那支是 Isola 提到的「hack」；橘色的模型誤判是 Embody 實體測試發生過的事——兩者都要靠最內層擋下。相機文字的 prompt injection 是本站推測、無來源，只在正文提。Anthropic 的一句話是這張圖的理由：<em>「一個 VLM 的實體世界影響力，會因為它能拿到的資訊與工具，相差好幾個數量級。」</em></figcaption>
+  </figure>
+
+  <p><span class="site">本站補充</span>Embody 的實體 Go2 測試提供了「非攻擊、但同樣要擋」的案例（→ <a href="../claude-robotics/index.html#realworld">claude-robotics §11</a>）：Grok 4.1 Fast 在玻璃反射裡看到目標桌，「朝玻璃門全速衝鋒——在撞上之前被人攔停」；Opus 4.6 誤判垃圾桶「在準星左邊 → 不擋路」，撞上去、一條腿卡進去、拖著垃圾桶走了兩公尺才被人攔下。這些不是 hack，是模型判斷錯誤——說明最內層的機上反射<strong>必須獨立於 LLM 的判斷而存在</strong>。Anthropic 的安全結論（→ <a href="../claude-robotics/index.html#safety">§12</a>）與 Isola 的 fn12 互為表裡：「能力評估和部署管控必須把『接了什麼』當成系統核心變數」、「裸模型評估會系統性低估部署風險」。</p>
+  <p><span class="site">本站推測</span>還有一條 Isola 與三篇摘要都沒提的路徑：相機看到的文字（標語、螢幕、紙條）會進入 LLM 的 context，等於把 prompt injection 的攻擊面搬進物理世界。無來源、純推測，但任何把相機直接餵給雲端 agent 的 adapter 都該把它當不可信輸入處理。工程結論：fn12 的 adapter 就是安全邊界所在；安全關鍵的可靠性必須住在 LLM 之下；Isola 的「限制可克服」對 latency 可能成立，對 safety-critical 則取決於這幾層有沒有蓋好。</p>
+</section>
+
+<!-- ─────────── §8 爭論 ─────────── -->
+<section id="debate">
+  <h2><span class="num">§8</span>發表後十天：爭的只有一件事——LLM 在「控制」還是在「規劃」</h2>
+  <p class="sec-sub">本站整理公開反應，非原文內容；界線畫在圖 3 的 System 1／System 2 之間</p>
+
+  <p><span class="site">本站補充</span>反應幾乎全在 X 上：Isola 的推文至 2026-09-17 約 195K 瀏覽、742 讚；Hacker News 1 分 0 留言；沒有主流媒體報導，唯一的新聞式報導是 AI Weekly 09-08 一則，附編輯提醒「It is a forecast, not a solved engineering problem」。真正的爭點只有一條：</p>
+
+  <blockquote>I disagree. You need high control frequency controllers/policies that deal with forces and contacts. […] Doing a quasi-static manipulation task with parallel jaw grippers does not equate to dexterity (You may want to talk to your colleague Pulkit!). High level planning can certainly be done by LLMs but <strong>that is not where the hard part is.</strong>
+  <span class="src">— Jitendra Malik（UC Berkeley），2026-09-08，整串互動最高的回覆（293 讚）；並下戰帖：把四足行走 policy 用 LLM 實作、換地形測試。第二輪：「To do low level control with LLMs sounds perversely inefficient in time and energy.」</span></blockquote>
+
+  <blockquote>LLM agents aren't really "controlling" robots — they're planning. […] Control is the closed loop that turns that into actuator torques at 100Hz, correcting for contact, slip, and disturbance. Agents will make great planners. For control, we need a robot-native model.
+  <span class="src">— Yuxuan Kuang（CMU／NVIDIA）。Georgia Gkioxari（Caltech）：若有閉環、任務驗證與安全護欄，LLM 可以 hillclimb，「But I do think that the stack needed to get to this setup is far from where we are today.」</span></blockquote>
+
+  <p>Isola 對 Malik 的兩次回應構成一次<strong>立場位移</strong>：先承認「I agree that real dynamic and dextrous control hasn't been shown yet」、最佳方案會把高頻控制器當作額外工具；最後說「<em>I don't see Fable/Astra/etc being used in isolation, rather they will write code and call tools for lower-level execution.</em>」對 Kuang 則回「The line is always blurry.」。這三則回覆合起來，把部落格裡的「Claude 當木偶師」收窄成圖 3 的綠色括號（System 2–3、寫程式叫工具），與 KinetIQ System 2、Code as Policies、Waddle 的架構一致；分歧只剩<em>那條紅線會不會隨模型世代往下移</em>。Waddle <span class="ref">[9]</span> 恰好是這個位置的現成實作：LLM 不在控制迴路裡，內迴路由它寫的程式、或它整夜自主跑約 1000 次 LEGO 抓放後從零訓出的 ACT policy 執行，LLM 留在規劃／驗證／重規劃的外迴路。</p>
+  <p>另兩件事值得記：(1) 命名效應——四天內出現兩個 Awesome-Robot-Use-Agent GitHub 清單（101／27 星），MIT 的 Nishanth Kumar 直接沿用該詞；Robocurve 共同創辦人 Jay Chooi 稱這是「the essay that gave 'robot-use agents' its name」——Chooi 是 <span class="ref">[10]</span> 的作者，利益相關。(2) 更大的背景：這篇落在 GPT-6 Astra／Fable 5.1 機器人示範引發的學界震盪之中（NYU Lerrel Pinto 09-12：「I'm sensing deep despair in academics over the past week」）；Isola 是為現象命名，不是提出新證據。</p>
+</section>
+
+<!-- ─────────── §9 查證 ─────────── -->
+<section id="verify">
+  <h2><span class="num">§9</span>查證：哪些是意見、哪些有來源、來源撐不撐得住</h2>
+  <p class="sec-sub">先看論證樹，再逐條核對 12 條腳註，最後列打不開與未能查證的部分</p>
+
+  <figure>
+    <svg viewBox="0 0 900 384" role="img" aria-label="四層論證樹：頂端虛線的核心主張；第二層前史與三個有來源的反對；第三層有來源的反證與無來源的 Fable、Astra 主張；底層虛線的推論與限制；箭頭標籤標示反證對各反對的融化程度">
+      <defs>
+        <marker id="m8-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff7b72"/></marker>
+        <marker id="m8-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffa657"/></marker>
+      </defs>
+      <!-- row 1 -->
+      <rect x="200" y="26" width="500" height="50" rx="6" fill="#161b22" stroke="#d2a8ff" stroke-dasharray="6 4"/>
+      <text x="450" y="47" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">主張：LLM 可以把機器人當工具用（計算機 → 搜尋 → 電腦 → 機器人）</text>
+      <text x="450" y="66" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">第 1–2 段，無腳註｜fn1：LLM＝多模態 agent</text>
+      <g stroke="#30363d" stroke-width="1.2"><line x1="450" y1="76" x2="137" y2="108"/><line x1="450" y1="76" x2="352" y2="108"/><line x1="450" y1="76" x2="567" y2="108"/><line x1="450" y1="76" x2="782" y2="108"/></g>
+      <!-- row 2 -->
+      <g font-size="12" font-weight="700" fill="#e6edf3" text-anchor="middle">
+        <rect x="40" y="108" width="195" height="52" rx="6" fill="#161b22" stroke="#8b949e"/>
+        <text x="137" y="129">前史 [2][3][4]</text><text x="137" y="149" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">研究多年，皆高階規劃（[4] 自引）</text>
+        <rect x="255" y="108" width="195" height="52" rx="6" fill="#161b22" stroke="#ff7b72"/>
+        <text x="352" y="129">反對① 延遲 [5]</text><text x="352" y="149" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">工程論文・模擬・n=20</text>
+        <rect x="470" y="108" width="195" height="52" rx="6" fill="#161b22" stroke="#ff7b72"/>
+        <text x="567" y="129">反對② 空間智慧 [6]</text><text x="567" y="149" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">投資方剪輯・哲學論證</text>
+        <rect x="685" y="108" width="195" height="52" rx="6" fill="#161b22" stroke="#ff7b72"/>
+        <text x="782" y="129">反對③ 物理理解 [7]</text><text x="782" y="149" font-size="10.5" font-weight="400" fill="#8b949e" class="mono">X 回覆漫畫・斷言</text>
+      </g>
+      <!-- arrows from evidence up to objections -->
+      <path d="M150 196 L345 164" stroke="#ff7b72" stroke-width="1.4" fill="none" marker-end="url(#m8-red)"/>
+      <path d="M250 196 L560 164" stroke="#ffa657" stroke-width="1.4" fill="none" marker-end="url(#m8-orange)"/>
+      <path d="M350 196 L775 164" stroke="#ffa657" stroke-width="1.4" fill="none" marker-end="url(#m8-orange)"/>
+      <g font-size="10.5" class="mono" text-anchor="middle">
+        <rect x="224" y="172" width="46" height="15" rx="3" fill="#0d1117"/><text x="247" y="184" fill="#ff7b72">未融化</text>
+        <rect x="382" y="172" width="46" height="15" rx="3" fill="#0d1117"/><text x="405" y="184" fill="#ffa657">改善中</text>
+        <rect x="544" y="172" width="36" height="15" rx="3" fill="#0d1117"/><text x="562" y="184" fill="#ffa657">部分</text>
+      </g>
+      <!-- row 3 -->
+      <rect x="40" y="196" width="420" height="52" rx="6" fill="#161b22" stroke="#7ee787"/>
+      <text x="250" y="217" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">反證 [8][9][10]：「tantalizing evidence」</text>
+      <text x="250" y="237" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">[8] benchmark・[9] 新創產品文・[10] 獨立評測</text>
+      <rect x="480" y="196" width="420" height="52" rx="6" fill="#161b22" stroke="#d2a8ff" stroke-dasharray="6 4"/>
+      <text x="690" y="217" text-anchor="middle" font-size="10.5" font-weight="700" fill="#e6edf3">「starting to melt away with newer models like Fable and Astra」</text>
+      <text x="690" y="237" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">無腳註；[8] 未測兩者、[9] 無 Astra、[10] 唯一涵蓋 Astra</text>
+      <g stroke="#30363d" stroke-width="1.2"><line x1="250" y1="248" x2="250" y2="284"/><line x1="690" y1="248" x2="690" y2="284"/></g>
+      <!-- row 4 -->
+      <rect x="40" y="284" width="420" height="52" rx="6" fill="#161b22" stroke="#d2a8ff" stroke-dasharray="6 4"/>
+      <text x="250" y="305" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">推論：連網即工具 → 起飛更快；新意＝擴散速度</text>
+      <text x="250" y="325" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">第 5–7 段，僅 fn11／fn12 自註；自承 still far less performant</text>
+      <rect x="480" y="284" width="420" height="52" rx="6" fill="#161b22" stroke="#d2a8ff" stroke-dasharray="6 4"/>
+      <text x="690" y="305" text-anchor="middle" font-size="12" font-weight="700" fill="#e6edf3">限制與風險：延遲、可靠性；被駭（fn12）</text>
+      <text x="690" y="325" text-anchor="middle" font-size="10.5" fill="#8b949e" class="mono">第 8–9 段，作者意見（被駭出自 fn12，錨在第 7 段）</text>
+      <text x="450" y="370" text-anchor="middle" font-size="10.5" fill="#6e7681" class="mono">實線框＝有腳註來源　虛線框＝作者意見／預測｜紫＝Isola 主張　紅＝反對　綠＝反證　灰＝前史｜箭頭標籤為本站判讀，與圖 5 一致</text>
+    </svg>
+    <figcaption><b>圖 8｜自繪</b>實線框＝有腳註來源、虛線框＝作者意見或預測；紫＝Isola 主張、紅＝反對、綠＝反證、灰＝前史。根節點與兩個推論節點都是虛線；三個反對雖有來源，性質參差（一篇工程論文、一則投資方剪輯、一則對漫畫的回覆）；「Fable 與 Astra 讓限制融化」這句沒有腳註，而他引的三份證據裡只有 [10] 涵蓋 Astra、只有兩個桌面任務。箭頭上的「未融化／改善中／部分」是本站依圖 5 的判讀，不是原文。</figcaption>
+  </figure>
+
+  <h3>(1) 意見 vs 來源</h3>
+  <p>原文 10 段裡，有外部來源腳註支撐的只有第 3 段（研究多年 <span class="ref">[2][3][4]</span>、三個反對 <span class="ref">[5][6][7]</span>）與第 4 段末句（近期證據 <span class="ref">[8][9][10]</span>）。其餘全是作者的預測與論證：「This year we are going to see…」、「starting to melt away with newer models like Fable and Astra」、「could soon be quite competent」、「may take off more quickly」、「A car might be as easily controlled as a factory arm」、「I suspect these limitations will be surmountable」，以及第 5–7 段整段的兩種範式論證、第 8 段的限制與 fn12 的機制描述。這不是缺點——它是一篇 essay，不是論文；但讀者該知道 Fable／Astra「讓限制融化」這個關鍵句<strong>沒有任何腳註</strong>。腳註結構：4 篇論文＋2 則社群評論＋3 份業界發布＋3 條自註。</p>
+
+  <h3>(2) 12 條腳註逐條核對</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>來源</th><th>可達</th><th>性質</th><th>支持 Isola 引它的那句？</th><th>主要保留</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>作者自註：LLM＝多模態 agent</td><td class="v-na">—</td><td>定義</td><td class="v-na">—</td><td>與 [6] Li 針對純語言訊號的論證定義不對齊</td></tr>
+        <tr><td>2</td><td>SayCan（Ahn et al. 2022；CoRL 2022，PMLR 正式紀錄以 Ichter 為首）</td><td class="v-ok">是</td><td>論文</td><td class="v-ok">支持</td><td>LLM 只選技能、不碰執行器；84%／74% 為 PaLM 版；零提 latency</td></tr>
+        <tr><td>3</td><td>Code as Policies（Liang et al.；arXiv 2022-09、ICRA 2023）</td><td class="v-ok">是</td><td>論文</td><td class="v-ok">支持</td><td>LLM 離線寫程式、不在即時迴路；量化僅模擬；影片停頓來自 API 速率限制</td></tr>
+        <tr><td>4</td><td>LangNav（Pan et al.；arXiv 2023-10、NAACL 2024 Findings）</td><td class="v-ok">是</td><td>論文（<strong>自我引用</strong>）</td><td class="v-part">部分</td><td>純模擬、選 viewpoint；直接 prompt GPT-4 SR 10–13；完整資料輸 ScaleVLN</td></tr>
+        <tr><td>5</td><td>Pollini et al. 2025（arXiv 2506.00075；INDIN 2025）</td><td class="v-part">arXiv 是／IEEE Xplore 被擋</td><td>工程論文</td><td class="v-part">部分</td><td>立場是「延遲可緩解」；內文 1.2865／1.1804 s 與 Table I 方向相反，7.01% 無法重現；n=20、模擬</td></tr>
+        <tr><td>6</td><td>Fei-Fei Li（a16z LinkedIn，2025-09-08）</td><td class="v-ok">是</td><td>投資方剪輯</td><td class="v-part">部分</td><td>「LLMs will struggle」是 a16z 標題非原話；哲學論證；原始 podcast 逐字稿未取得；利益相關</td></tr>
+        <tr><td>7</td><td>Yann LeCun（X，2026-04-24）</td><td class="v-part">x.com 回 402；全文經第三方鏡像取得</td><td>對漫畫的六點回覆</td><td class="v-ok">支持</td><td>原話「LLMs really don't」更絕對；無「causal」一詞；第 1 點澄清「I use them」</td></tr>
+        <tr><td>8</td><td>Anthropic〈Claude plays robotics〉（2026-07-09；HTML title 為「How Claude performs on robotics tasks」）</td><td class="v-ok">是</td><td>benchmark 報告（非 demo）</td><td class="v-part">部分</td><td>「getting better quickly」支持有變化；但 mostly fail、0.2–0.4 Hz、G1 零起立、走廊全敗不支持「融化」；<strong>未測 Fable／Astra</strong>；自家評測含競品</td></tr>
+        <tr><td>9</td><td>Waddle Labs〈Introducing Waddle〉（2026-07）</td><td class="v-ok">是</td><td>YC 新創發表文</td><td class="v-part">支持但弱</td><td>成功率僅曲線圖約略值（本站讀圖：Fable 5 ≈87%、GPT 5.6 Sol ≈83%、Opus 4.8 ≈66%，xhigh）、無精確數字、無延遲、無 n；自引 [8]；測 Fable 5 與 GPT 5.6，未測 Astra；需接 Waddle API；結尾招募</td></tr>
+        <tr><td>10</td><td>Robocurve〈GPT-6 Astra on robotic manipulation〉（2026-09-04）</td><td class="v-ok">是</td><td>獨立評測（YC 支持的 PBC，與 OpenAI／Anthropic 無隸屬）</td><td class="v-ok">支持（有保留）</td><td>n=20、非盲、Astra 晚兩天未交錯、bowl 不同 rig；meta description 寫「blinded」與正文 Limitations 矛盾，以正文為準</td></tr>
+        <tr><td>11</td><td>作者自註：硬體改良仍會繼續</td><td class="v-na">—</td><td>保留語</td><td class="v-na">—</td><td>—</td></tr>
+        <tr><td>12</td><td>作者自註：軟體更新只需暴露 API；授權；可被駭</td><td class="v-na">—</td><td>機制假設</td><td class="v-na">—</td><td>補充正文第 7 段「with just a software update」的內容；與同段「no modification to their software」的張力見 §1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>(3) 其他查證與打不開的部分</h3>
+  <ul>
+    <li><strong>Fable／Astra 來源缺口。</strong>Isola 稱兩者讓限制「融化」，但 [8] 未測任一者；[9] 測 Opus 4.8、Fable 5、GPT 5.6 Sol，只有後兩者（GPT 需 xhigh）能折 T-shirt；[10] 測 Fable 5／5.1 與 GPT-6 Astra。三份證據合起來對 Astra 只有一份、兩個桌面任務。</li>
+    <li><strong>「demos」一詞不準。</strong>Isola 稱 [8][9][10] 為 demos，其中 [8] 與 [10] 實為 benchmark 報告（[8] 每格約 35 次試驗；[10] 每格 20 次並附全部 120 筆 transcript／影片），證據力比 demo 強。</li>
+    <li><strong>時序合理。</strong>三個反對理由（2025-05、2025-09、2026-04）、[8]（07-09）、[10]（09-04）皆早於本文（09-07）。Fei-Fei Li 與 LeCun 截至 2026-09-17 均未公開回應本文。</li>
+    <li><strong>在地摘要的二手性。</strong>claude-robotics 頁所有數字二手自 Anthropic 部落格，Embody 程式碼（safety-research/embody）截至查證日尚未上線；附錄延遲自標「非正式 launch logs」；Opus 4.5–4.7 的「約 34–40」為讀圖值。kinetiq 頁確認 KinetIQ 零公開，34 ms 是 H100 數字、Jetson Thor 延遲未公開。Paxton 原文未談 LLM 或雲端推論，其對照為本站推論。</li>
+    <li><strong>打不開／未能查證：</strong>x.com 對抓取回 402（LeCun 全文靠第三方鏡像，前段與 X 官方端點逐字一致）；Pollini 的 IEEE Xplore 正式紀錄被 bot-challenge 擋下；Fei-Fei Li 原始 podcast 逐字稿未取得；Reddit、LinkedIn、Threads、Bluesky 皆無法確認有無討論；X 44 則回覆只讀到約 25 則；Robocurve 09-11 推文提到的 StationeryBench 有公開報告頁（openai.robocurve.org/stationerybench/，2026-09-10；5 項雙臂任務、200 trials，Astra 7/100 完成 vs MolmoAct2 0/100，mean progress 46 vs 12），Isola 未引用，本頁僅核對標題、日期與摘要數字；web.mit.edu/phillipi/www/writing/ 目錄回 403（索引實際在 writing.html）。</li>
+    <li><strong>作者與授權。</strong>Phillip Isola 為 MIT EECS 副教授、CSAIL 成員（MIT News 2025-11 稱 newly tenured；bio 頁仍寫 Class of 1948 Career Development 講座，兩者是否衝突無法確認，故 byline 不寫講座頭銜）。文章頁無機構標示、無授權聲明、無 meta 日期；這是他 writing 索引上 2023 年後的第二篇部落格文。本頁以引述＋連結處理，不整段轉載。</li>
+    <li><strong>公開反應層：</strong>截至 2026-09-17，沒有任何公開回應指出原文有事實錯誤；所有批評都在概念層（規劃 vs 控制、控制頻率、能耗）。Isola 自己的回覆實質收窄了正文的「木偶師」說法（§8）。</li>
+  </ul>
+
+  <h3>原文腳註連結</h3>
+  <ol class="refs">
+    <li><span class="n">[2]</span><a href="https://say-can.github.io/">Do As I Can, Not As I Say: Grounding Language in Robotic Affordances</a>（SayCan）</li>
+    <li><span class="n">[3]</span><a href="https://code-as-policies.github.io/">Code as Policies: Language Model Programs for Embodied Control</a></li>
+    <li><span class="n">[4]</span><a href="https://arxiv.org/abs/2310.07889">LangNav: Language as a Perceptual Representation for Navigation</a></li>
+    <li><span class="n">[5]</span><a href="https://arxiv.org/abs/2506.00075">Reducing Latency in LLM-Based Natural Language Commands Processing for Robot Navigation</a></li>
+    <li><span class="n">[6]</span><a href="https://www.linkedin.com/posts/a16z_dr-fei-fei-li-on-why-llms-will-struggle-activity-7370936594012430336-Bv5t">a16z：Dr. Fei-Fei Li on why LLMs will struggle to solve spatial intelligence</a>（LinkedIn，常有登入牆）</li>
+    <li><span class="n">[7]</span><a href="https://x.com/ylecun/status/2047636569767419951">Yann LeCun 的 X 貼文</a>（2026-04-24）</li>
+    <li><span class="n">[8]</span><a href="https://www.anthropic.com/research/claude-plays-robotics">Anthropic：Claude plays robotics</a> · 本站摘要 <a href="../claude-robotics/index.html">Claude 玩機器人</a></li>
+    <li><span class="n">[9]</span><a href="https://www.waddlelabs.ai/research/introducing-waddle">Waddle Labs：Introducing Waddle: agents that control robots</a></li>
+    <li><span class="n">[10]</span><a href="https://openai.robocurve.org/gpt-6-astra/">Robocurve：GPT-6 Astra on robotic manipulation</a></li>
+  </ol>
+</section>
+
+<!-- ─────────── §10 重點筆記 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§10</span>重點筆記：這篇對機器人與 AI 系統工程師的意義</h2>
+  <p class="sec-sub">以下為本站觀點、非原文內容</p>
+
+  <ul>
+    <li><strong>adapter 先做，但要有 scope。</strong>fn12 的「暴露 sensor／actuator API」值得現在就做；但本站 Embody 摘要把介面列為最重要的自變數、Anthropic 說 access level 就是能力（→ <a href="../claude-robotics/index.html#setup">§02</a>、<a href="../claude-robotics/index.html#safety">§12</a>）。暴露的不該是 REST 一把全開，而是帶前置條件與結果的 tool（KinetIQ System 2 的做法，→ <a href="../kinetiq/index.html#sys23">kinetiq §06</a>），每個 tool 有速度上限、工作空間邊界、可否覆寫的旗標。<em>你暴露什麼，同時決定能力上限與被駭後的損害下限</em>（§1、§7）。</li>
+    <li><strong>LLM 只放在離散符號層；10 Hz 以下交給機上專用控制器。</strong>Embody 的介面梯度（direct mostly fail → policy control 可用）、KinetIQ 的 System 0–3、Malik 的反對、Isola 自己的讓步，四方指向同一個位置（§2、§8）。不是因為 LLM 做不到，是因為它慢兩個數量級、而且「多想」對現世代幾乎沒幫助（→ <a href="../claude-robotics/index.html#reasoning">§09</a>）；爭論剩下的只是這條線會不會隨模型世代往下移。</li>
+    <li><strong>以「LLM 沉默三分鐘」為安全設計前提，watchdog 住機上。</strong>雲端 turn 的實測分布是不推理 2–8 s（純文字）／5–15 s（帶圖）、高推理 15–60 s、長尾到 180 s，再加網路抖動（→ <a href="../claude-robotics/index.html#appendix">§13</a>）。每個暴露出去的 tool 都要在「上游三分鐘沒回應」時有明確行為：hold、safe-stop、回 home、或播完當前 chunk；KinetIQ 的 chunking＋非同步推論是把這件事做進架構的範例（→ <a href="../kinetiq/index.html#sys1">kinetiq §05</a>；§3）。</li>
+    <li><strong>監督有代價，要設計「何時閉嘴」。</strong>Embody 顯示 LLM 監督一個好的 VLA 在熟悉任務上比 VLA 單跑更差，更強的 Mythos 因太常否決反而更差；淨增益出現在 policy 成功率為 0 的新任務（→ <a href="../claude-robotics/index.html#hl-manip">§07</a>）。若讓 LLM 監督現成 policy，accept／modify／veto 要有閾值與信心門檻，在 policy 已勝任的任務上預設「不介入」（§2、§4）。</li>
+    <li><strong>擴散 ≠ 能力：把 Isola 的樂觀當預測追蹤，護城河從模型移到身體＋工具＋護欄，但 99.9% 門檻沒消失。</strong>雲端模型換代一次、所有連網機器人同時抬升，繞開了 Paxton 樂觀前提裡「資料能被使用與共享」這一環——本站 Paxton 摘要 §7 指出這在商業上恰恰最難成立，Paxton 本人未談（共享的是大腦不是資料，→ <a href="../robot-deployment-data/index.html#final">§6</a>、<a href="../robot-deployment-data/index.html#notes">§7</a>）；但 97–99.9% 部署門檻與 KinetIQ「靠機上 VLA＋真機 RL、交付／搬箱各花 3–5 天才到 98–98.9%」的現實提醒：抬高的是面積不是高度（§6）。「融化中 ≠ 已融化」可追蹤三個指標：推論頻率（0.2–0.4 Hz vs 需 10–125 Hz）、毫米級對準成功率（10%）、純視覺閉環導航（走廊繞圈全敗）。</li>
+    <li><strong>把機器人 API 當支付 API 對待；評估要問「什麼介面、什麼工具、n 多少、盲不盲」。</strong>執行器 API 一上網，威脅模型從「有人闖進廠區」變成「有人拿到 token」：憑證輪替、per-tool 授權範圍、rate limit、實體邊界在機上硬性執行（不靠 prompt），相機看見的文字視為不可信輸入（本站推測）。Grok 衝玻璃門、Opus 拖垃圾桶不是攻擊，但證明最內層的機上反射必須獨立於 LLM 判斷而存在（→ <a href="../claude-robotics/index.html#realworld">§11</a>、<a href="../kinetiq/index.html#ops">kinetiq §09</a>）。加上 Sitzmann 的提醒（OpenAI 可能已把大量機器人與電腦資料加進訓練集，「emergent」成分不明），對任何 robot-use agent 的宣稱都應要求介面、工具、樣本數與盲測條件（§7、§9）。</li>
+  </ul>
+
+  <div class="callout green">
+    <span class="tag">跟本站另外三篇連起來讀</span>
+    <a href="../claude-robotics/index.html">Claude 玩機器人</a>給了「怎麼接比誰來接重要」的量化；<a href="../kinetiq/index.html">KinetIQ</a> 給了「frontier model 只放 System 2」的量產架構；<a href="../robot-deployment-data/index.html">Paxton</a> 給了「99.9% 門檻與資料新穎性」的商業現實。Isola 這篇是把三者放進同一個敘事的命名文章：<strong>LLM 可以把機器人當工具——但只在 10 Hz 以上那一層，而且工具本身得先夠好。</strong>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    原文：<a href="https://web.mit.edu/phillipi/www/writing/robot-use-agents.html">Robot-Use Agents</a> — Phillip Isola，2026-09-07<br>
+    本頁：繁中重述＋8 張自繪圖解（原文無圖）· 12 條腳註逐條查證見 §9 · 標「本站補充」者非原文 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>

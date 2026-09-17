@@ -8,6 +8,7 @@
 
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
+| Robotics · MIT Essay | [Robot-Use Agents：LLM 把機器人當工具用，新的是擴散速度](https://tzchia.github.io/research/robot-use-agents/) | Isola：Claude 當木偶師、機器人只需暴露 API；本站校準：只在 10 Hz 以上那層（83 Hz vs 0.3 Hz）、入碗 5→40→95% 但拼圖卡 10%、12 腳註逐條查證 |
 | Engineering · Blog | [AI 時代怎麼面試工程師？Coinbase 重建一年實錄](https://tzchia.github.io/research/coinbase-ai-interviews/) | AI 產碼 5.7%→50%+、兩輪面試 84% 相關的冗餘；重建成三訊號＋不加輪鐵律＋題目半衰期季度汰換，附查證：數字全自報 |
 | Robotics · CVPR 2026 | [RC-NF：給 VLA 請一個 100 ms 反應的「監工」](https://tzchia.github.io/research/rc-nf/) | 復旦：只用成功示範訓練的即時異常偵測，平均 AUC 0.931 vs GPT-5 0.850；空間錯位 VLM 近乎亂猜、RC-NF 0.968；86.7 ms 接管 π0 rollback/replan |
 | AI Infra · 術語圖解 | [Cache Miss 才是帳單：50 倍價差世界的成本工程](https://tzchia.github.io/research/cache-economics/) | KV cache、hit/miss rate、MLA/DSA/CSA/HCA 逐一圖解：hit rate 90%→99% 帳單差 4 倍，prefix 穩定性是工程師自己的功課 |
