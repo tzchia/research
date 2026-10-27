@@ -4,6 +4,12 @@
 
 **線上閱讀：<https://tzchia.github.io/research/>**
 
+## 奇想實驗室 · Curiosity Lab
+
+- [奇想實驗室首頁](https://tzchia.github.io/research/curiosity/)：把奇想變成可操作、可檢驗的互動模型。
+- [地球自轉與月球潮汐](https://tzchia.github.io/research/curiosity/physics/earth-moon-tides/)：切換地球停轉、正常自轉與同步情境，觀察月球軌道的變化方向。
+- [實驗方法、科學假設及目錄](curiosity/README.md)
+
 ## 目錄
 
 | 分類 | 頁面 | 一句話 |
