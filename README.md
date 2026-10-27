@@ -37,6 +37,9 @@
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
 | Robotics · MIT Essay | [Robot-Use Agents：LLM 把機器人當工具用，新的是擴散速度](https://tzchia.github.io/research/robot-use-agents/) | Isola：Claude 當木偶師、機器人只需暴露 API；本站校準：只在 10 Hz 以上那層（83 Hz vs 0.3 Hz）、入碗 5→40→95% 但拼圖卡 10%、12 腳註逐條查證 |
+| Robotics · Paper | [生成一百個世界，別讓 VLA 在單一場景過擬合](https://tzchia.github.io/research/sim2real-gen3d/) | Horizon Robotics：EmbodiedGen 文字生成 100 個互動 3D 世界＋PPOFlow 平行微調 π0，模擬 9.7→79.8%、真機 21.7→75.0%；場景 1→50 換 OOD +24.7pp；負結果：手工 3 景 96.7%、換生成場景剩 36.0% |
+| Robotics · Paper | [LaST-R1：先在潛空間想一想，再出手](https://tzchia.github.io/research/last-r1/) | 北大 × 港中文：DINOv3 錨定的連續 latent 推理＋LAPO 高斯替身算 PPO ratio，「想多久」也交給 RL；LIBERO 每任務 1 條示範 warm-up 99.9%、真機 52.5→93.75%；RL 後推理多塌到 2–4 token；負結果：早退點全開反而掉分 |
+| Computer Vision · Paper | [ActiveSAM：先點名、再切圖——SAM 3 的免訓練加速](https://tzchia.github.io/research/activesam/) | MBZUAI VILA Lab：凍結 SAM 3 的 presence head 從解碼後過濾器改當解碼前路由器，只解碼入選類別；8 基準平均 mIoU 65.3 vs SegEarth-OV3 63.9、大詞彙最高快 5.5×；負結果：剪枝精度貢獻 0.0、V≤40 自動旁路、加速為零 |
 | Engineering · Blog | [AI 時代怎麼面試工程師？Coinbase 重建一年實錄](https://tzchia.github.io/research/coinbase-ai-interviews/) | AI 產碼 5.7%→50%+、兩輪面試 84% 相關的冗餘；重建成三訊號＋不加輪鐵律＋題目半衰期季度汰換，附查證：數字全自報 |
 | Robotics · CVPR 2026 | [RC-NF：給 VLA 請一個 100 ms 反應的「監工」](https://tzchia.github.io/research/rc-nf/) | 復旦：只用成功示範訓練的即時異常偵測，平均 AUC 0.931 vs GPT-5 0.850；空間錯位 VLM 近乎亂猜、RC-NF 0.968；86.7 ms 接管 π0 rollback/replan |
 | Multi-Agent RL · ICML 2026 | [CooT：把「隊友」當成 in-context 的題目來解](https://tzchia.github.io/research/coot/) | NTU 孫紹華實驗室：適應陌生隊友 = in-context learning，測試時零參數更新；Overall BR-prox 0.57 vs 0.44，真人實驗 50% 選它當最愛 |
