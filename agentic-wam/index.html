@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AW-0：讓世界動作模型邊想像未來、邊寫程式 — arXiv 2026 論文中文速覽</title>
+<meta name="description" content="UC Berkeley × NVIDIA × UPenn 的 AW-0（Agentic World Action Models）中文速覽：把 code 當成第三種生成模態，與未來影片、機器人動作在同一個 Mixture-of-Transformers 裡聯合去噪；自動標註管線用 Gemini 3.1 Pro＋Claude Code 從 2,913 小時影片標出程式並提煉 50 個技能。真機 8 任務平均 71.1 vs 最強基線 46.0、拿掉 code 只剩 32.9；RoboTwin 2.0 乾淨場景 80.8% 但隨機化掉到 20.6%。含 19 張原圖、7 張自繪圖與完整查證。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#ffa657; --accent-deep:#bd561d; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(126,231,135,.10),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:720px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px;scroll-margin-top:16px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+  .note{font-size:13px;color:var(--dim);margin-top:-14px}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto;padding:10px 6px 4px}
+  .svgwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:640px){.svgwrap svg{min-width:640px}}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  figure.dark figcaption b{color:var(--green)}
+
+  svg .tk{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .tk2{fill:#6e7681;font-family:var(--mono);font-size:11px}
+  svg .lab{fill:#c9d1d9;font-family:var(--sans);font-size:13px}
+  svg .val{fill:#c9d1d9;font-family:var(--mono);font-size:12px}
+  svg .ret{fill:#e6edf3;font-family:var(--mono);font-size:13px;font-weight:700}
+  svg .ann{fill:#79c0ff;font-family:var(--sans);font-size:13px}
+  svg .ann2{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .hd{fill:#e6edf3;font-family:var(--sans);font-size:14px;font-weight:700}
+  svg .row{fill:#e6edf3;font-family:var(--sans);font-size:15px;font-weight:700}
+  svg .sm{fill:#c9d1d9;font-family:var(--sans);font-size:12.5px}
+  svg .big{fill:#e6edf3;font-family:var(--mono);font-size:22px;font-weight:700}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout.blue{border-left-color:var(--blue)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+  .callout.blue .tag{color:var(--blue)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  td.up{color:var(--green)}
+  td.down{color:var(--red)}
+  tr.hl td{background:rgba(126,231,135,.06)}
+  table.tight th,table.tight td{padding:6px 8px;font-size:12px}
+
+  details{border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin:22px 0}
+  details summary{cursor:pointer;padding:12px 16px;font-size:14.5px;color:var(--fg);font-weight:600;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸";color:var(--accent);margin-right:8px;display:inline-block;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  details .inner{padding:0 14px 14px}
+  details .tablewrap{margin:6px 0 0}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--fg)}
+  th.sortable[aria-sort]::after{content:" ↕";color:var(--dim)}
+  th.sortable[aria-sort="descending"]::after{content:" ↓";color:var(--accent)}
+  th.sortable[aria-sort="ascending"]::after{content:" ↑";color:var(--accent)}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Robotics · arXiv 2610.30136 · Paper Digest · 繁中速覽</div>
+    <h1>AW-0：讓世界動作模型邊想像未來、邊寫程式</h1>
+    <p class="subtitle">UC Berkeley × NVIDIA × UPenn：把 code 當成第三種生成模態，跟「未來影片」「機器人動作」在同一個 Mixture-of-Transformers 裡一起去噪。程式預設<strong>不執行</strong>，只當計畫去引導影片與動作。真機 8 任務平均 71.1 分；同一個模型拿掉 code，只剩 32.9。</p>
+    <div class="meta">
+      論文：<a href="https://arxiv.org/abs/2610.30136">Agentic World Action Models</a>（arXiv 2610.30136，v1 2026-10-21，CC BY 4.0；ICLR 2027 模板排版，論文未聲明接收狀態）<br>
+      作者：Zhuoyang Liu*、Dantong Niu*†、Botong Zhang*、Boning Shao*、Jing Wang、Ruijie Zheng、Yuvan Sharma、Runyu Lu、Jiaming Liu、Renrui Zhang、Roei Herzig、Yutong Bai、Ken Goldberg、Danfei Xu、Yuke Zhu†、Guanzhi Wang†、Linxi “Jim” Fan†、Trevor Darrell†（*共同一作、†共同指導；UC Berkeley、NVIDIA、University of Pennsylvania）<br>
+      專案頁：<a href="https://agentic-wam.github.io/">agentic-wam.github.io</a>　|　程式碼：<a href="https://github.com/ZhuoyangLiu2005/agentic-wam">ZhuoyangLiu2005/agentic-wam</a>　|　權重：<a href="https://huggingface.co/miniFranka/agentic-wam-pretrain-yamego3k-soup-e1">Hugging Face</a><br>
+      本頁為繁中解析：數字對回論文 LaTeX 原始檔；標「本站計算」者為我們從論文表格重算
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── 30 秒速覽 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">四個數字抓骨架：真機大勝、code 專家是關鍵、模擬有破口、代價很小</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">71.1<small> vs 46.0</small></div>
+      <div class="lbl">真機 8 任務（平行夾爪＋靈巧手各 4）平均 rubric 分數（按子步驟給部分分，不等於成功率），最強基線是 DreamZero。靈巧手那 4 個任務 63.4 vs 基線最高 32.7（本站計算，§7）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">32.9<small> → 71.1</small></div>
+      <div class="lbl">同一套預訓練與訓練預算，拿掉整個 code 專家（V→A），平均掉到 32.9，比四個基線都低。其中「寫成程式而非文字子目標」約佔 7.5 分，其餘來自這條看圖、讀指令的規劃流本身（本站計算；論文沒說明子目標變體是否也重新預訓練）（§8）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">80.8<small>% / 20.6%</small></div>
+      <div class="lbl">RoboTwin 2.0 的 50 個任務：乾淨場景 80.8% 居冠（次高 WLA 64.8%），換成領域隨機化掉到 20.6%，輸給 π<sub>0.5</sub> 的 27.7%；混合執行拉回 29.2%（§6）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">+0.04<small> s</small></div>
+      <div class="lbl">RTX 5090 端到端：聯合去噪 0.23 s，不帶 code 是 0.19 s；把 code 改成自迴歸先寫完，要 0.55 s，分數還掉到 54.5（§8）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    世界動作模型（WAM）會想像未來畫面，但不會把長任務拆成「呼叫哪個技能、帶什麼參數」。agentic 機器人（Code-as-Policies 一派）會寫程式拆步驟，但對物理動態沒有預測。AW-0 把兩者放進同一個模型：<em>code、未來影片、動作</em>三條流在 MoT 骨幹裡一起去噪，注意力順序是 code→影片→動作，讓「計畫」從第一步就影響影片想像與動作生成。程式標籤來自一條自動標註管線：Gemini 3.1 Pro 負責寫、Claude Code 負責審並提煉技能，從 2,913 小時的機器人與人類影片中標出程式，並整理成 50 個可重用技能。<strong>預設模式下 code 不會被執行</strong>：它是條件，不是控制器。另有一個「混合模式」，程式通過檢查時才會真的執行。
+  </div>
+</section>
+
+<!-- ─────────── 問題 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§1</span>問題：會想像未來的模型，不會「分步驟」</h2>
+  <p class="sec-sub">WAM 有物理預見、沒有技能結構；agentic 系統剛好相反</p>
+
+  <p><strong>世界動作模型（World Action Model, WAM）</strong>把影片預測和動作生成綁在一起，代表作有 DreamZero、Cosmos Policy。好處是動作有「物理預見」：物體會怎麼動、會在哪裡接觸、這個動作的後果是什麼，模型都先想像過。對接觸密集的操作特別有用。論文指出它的缺口：預測出來的影片和動作塊（action chunk：一次生成、接著連續執行的一段動作），<strong>本身不說明長任務該怎麼拆</strong>，不會說要呼叫哪個技能、參數多少、子任務之間怎麼串。另外，「要把世界模型化到多細」沒有明確邊界，算起來也貴。</p>
+
+  <p><strong>agentic 機器人</strong>是另一條路線，從 Code-as-Policies（CaP）一路到 CaP-X，以及本站讀過的 <a href="../aspire/">ASPIRE</a>。這類系統讓語言模型寫程式：選技能、把技能綁到眼前的場景、追蹤進度、看情況重新規劃。多步任務的結構因此一目了然。但它沒有學到「世界接下來會怎麼變」，而且 agent 是<em>在 policy 外面</em>呼叫 API，能力上限就是那組 primitive 能做到的事。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 420" role="img" aria-labelledby="pos-t pos-d">
+      <title id="pos-t">五條路線在「物理預見」與「顯式結構」兩軸上的位置（示意）</title>
+      <desc id="pos-d">橫軸是預測物理動態的能力，縱軸是顯式技能結構。VLA 在左下，WAM 在右下，agentic 程式系統在左上，AW-0 在右上。</desc>
+      <line x1="120" y1="360" x2="870" y2="360" stroke="#6e7681"/><line x1="120" y1="360" x2="120" y2="30" stroke="#6e7681"/>
+      <path d="M864,355 L874,360 L864,365" fill="#6e7681"/><path d="M115,36 L120,26 L125,36" fill="#6e7681"/>
+      <line x1="495" y1="40" x2="495" y2="355" stroke="#30363d" stroke-dasharray="5 5"/><line x1="125" y1="200" x2="865" y2="200" stroke="#30363d" stroke-dasharray="5 5"/>
+      <text x="495" y="392" text-anchor="middle" class="sm">預測物理動態 →（會不會先想像未來畫面）</text>
+      <text x="70" y="200" text-anchor="middle" transform="rotate(-90 70 200)" class="sm">顯式結構 →（技能、參數、控制邏輯）</text>
+      <text x="135" y="350" class="tk">VLA：看圖直接出動作</text>
+      <text x="855" y="350" text-anchor="end" class="tk">WAM：先想像、再出動作</text>
+      <text x="135" y="54" class="tk">Agentic：寫程式呼叫技能</text>
+      <text x="855" y="54" text-anchor="end" class="tk">AW-0：三者一起生成</text>
+      <circle cx="190" cy="318" r="8" fill="#79c0ff"/><text x="204" y="323" class="lab">EgoScale</text>
+      <circle cx="240" cy="270" r="8" fill="#79c0ff"/><text x="254" y="275" class="lab">π0.5（高階子任務用文字）</text>
+      <circle cx="610" cy="318" r="8" fill="#ffa657"/><text x="624" y="323" class="lab">DreamZero</text>
+      <circle cx="640" cy="250" r="8" fill="#ffa657"/><text x="654" y="246" class="lab">WLA</text><text x="654" y="264" class="tk2">子任務文字＋子目標影像</text>
+      <circle cx="210" cy="110" r="8" fill="#d2a8ff"/><text x="224" y="106" class="lab">CaP／ASPIRE／CaP-X</text><text x="224" y="124" class="tk2">程式在 policy 外面呼叫 API</text>
+      <circle cx="700" cy="110" r="12" fill="#7ee787"/><text x="684" y="106" text-anchor="end" class="lab" font-weight="700" fill="#e6edf3">AW-0</text><text x="684" y="124" text-anchor="end" class="tk2">程式在 policy 裡，與影片、動作同時去噪</text>
+      <text x="865" y="412" text-anchor="end" class="tk2">位置為示意，非量測</text>
+    </svg></div>
+    <figcaption><b>自繪圖 A</b>本站依論文 §1 與相關工作整理的定位圖。AW-0 的主張是：把 agentic 系統的「程式」搬進世界動作模型內部，讓它成為生成過程的一部分，而不是外掛的控制器。</figcaption>
+  </figure>
+
+  <p>論文挑了四個基線；下表「它代表的假設」一欄是本站依論文描述歸納的：</p>
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>類型</th><th>它代表的假設</th><th>重現方式（附錄 C）</th></tr>
+      <tr><td>π<sub>0.5</sub></td><td>VLA</td><td>語意推理強的 VLA，不必想像未來</td><td>官方 OpenPI、π<sub>0.5</sub> 預訓練權重，每任務微調 50 epoch</td></tr>
+      <tr><td>EgoScale</td><td>VLA＋大量人類第一人稱影片預訓練</td><td>人類影片的規模能遷移到靈巧操作</td><td>GR00T N1.7-3B 權重，VLM 凍結，微調 50 epoch</td></tr>
+      <tr><td>DreamZero</td><td>WAM</td><td>影片＋動作聯合生成，靠物理預見取勝</td><td>DreamZero-AgiBot 權重，三視角拼成一張圖，微調 10 epoch</td></tr>
+      <tr><td>WLA</td><td>WAM＋語言子任務</td><td>計畫用<strong>自然語言</strong>寫，自迴歸地依序生成子任務文字、子目標影像、動作</td><td>RynnBrain-2B＋Sana-600M，微調 50 epoch</td></tr>
+      <tr class="hl"><td><strong>AW-0</strong></td><td>WAM＋code</td><td>計畫用<strong>程式</strong>寫，與影片、動作<strong>平行地</strong>一起去噪</td><td>自家 2,913 小時預訓練，下游每任務微調 20 epoch</td></tr>
+    </table>
+  </div>
+  <p>WLA 是最該對照的一個：它同樣在 WAM 裡加入「計畫」，只是計畫寫成文字、而且自迴歸地先寫完。AW-0 有兩處不同：計畫的形式是程式，生成方式是聯合去噪。這兩個差異在 §8 的消融各自被檢驗。</p>
+</section>
+
+<!-- ─────────── 架構 ─────────── -->
+<section id="method">
+  <h2><span class="num">§2</span>架構：三個專家、一次聯合去噪</h2>
+  <p class="sec-sub">Mixture-of-Transformers＋離散遮罩擴散（code）＋連續 flow matching（影片、動作）</p>
+
+  <figure>
+    <img src="figs/fig1.jpg" alt="AW-0 總覽：預訓練資料、AW-0 模型、自動標註管線、後訓練任務" loading="lazy" width="1600" height="766">
+    <figcaption><b>原圖 1</b>（論文圖 1）總覽。左：約 3,000 小時的 YAM 機器人與人類第一人稱預訓練資料、子任務層級的語言標註、50 個可重用技能。中上：AW-0 模型，code／影片／動作三個專家共用 MoT 骨幹；混合執行時，有效的程式交給機器人跑，否則退回 WAM 的動作。中下：agentic 標註管線，由 coding agent 寫程式、coordinator 提煉技能。右：平行夾爪與靈巧手兩種後訓練任務。</figcaption>
+  </figure>
+
+  <p>AW-0 把問題寫成一個條件生成模型 <code>p(C₀, Z₀, A₀ | 𝒞ₜ)</code>，同時生成三樣東西：</p>
+  <ul>
+    <li><strong>C₀：一段技能程式</strong>，離散 token 序列，例如 <code>approach_best_grasp(robot, 'pear', ...)</code>。</li>
+    <li><strong>Z₀：未來影片</strong>，由預訓練 VAE 編碼的連續潛在變數。</li>
+    <li><strong>A₀：動作塊</strong>，未來 H=32 步的連續控制指令。</li>
+  </ul>
+  <p>條件 <code>𝒞ₜ = {𝒪ₜ, L, Sₜ, Mₜ}</code> 包含：目前的多視角影像、語言指令、機器人狀態，以及一份<strong>壓縮過的記憶</strong>（這一集到目前為止已經寫過的程式片段）。</p>
+
+  <figure>
+    <img src="figs/fig2.jpg" alt="AW-0 框架：三專家 MoT、聯合去噪步驟、code 擴散的訓練與取樣" loading="lazy" width="1600" height="1283">
+    <figcaption><b>原圖 2</b>（論文圖 2）AW-0 框架。上：Code 專家（ViT 影像 token＋語言 token＋遮罩 code token）、影片專家（VAE＋加噪的未來）、動作專家（機器人狀態＋加噪的動作）透過多模態共享注意力互通。右上是兩種執行模式。左下：每一步聯合去噪，code 輸出 token logits 並解開 top-k 個遮罩，影片與動作各走一步 flow。右下：code 擴散在訓練時隨機遮罩，取樣時依信心逐步解遮罩，已解開的 token 固定不再改。</figcaption>
+  </figure>
+
+  <h3>三個專家各自是什麼</h3>
+  <p>MoT 的意思是：每個專家有<strong>自己的</strong>注意力投影（W<sub>Q</sub>、W<sub>K</sub>、W<sub>V</sub>、W<sub>O</sub>）、LayerNorm 和 FFN，只在每一層的<strong>聯合注意力</strong>裡交換資訊。三個專家都是 28 層，共用 2,048 維的注意力空間（16 個 head × 128）。</p>
+  <div class="tablewrap">
+    <table>
+      <tr><th>專家</th><th>骨幹／初始化</th><th>殘差／FFN 寬</th><th>凍結與訓練</th><th>產出</th></tr>
+      <tr><td><strong>Code</strong></td><td>SDAR-1.7B 語言模型（LLaDA 式遮罩擴散）＋Qwen3-VL-2B 視覺塔</td><td class="num">2,048 / 6,144</td><td>詞嵌入、LayerNorm、FFN、詞表頭全凍結，只訓練 MoT 注意力投影與調變參數；視覺塔凍結，訓練一個把視覺特徵接到 code 嵌入的 merger</td><td>128 個 code 位置的 token logits</td></tr>
+      <tr><td><strong>影片</strong></td><td>Cosmos-Predict2.5-2B 影片 DiT；VAE 換成 Wan2.2（48 通道，凍結）</td><td class="num">2,048 / 8,192</td><td>換了 VAE，所以輸入／輸出投影重新初始化；多視角 3D RoPE</td><td>9 幀（時間偏移 0, 4, …, 32；第 1 幀是觀測條件，其餘 8 幀為未來）經 VAE 編碼後的潛在變數速度場</td></tr>
+      <tr><td><strong>動作</strong></td><td>從零訓練的 Action DiT</td><td class="num">1,024 / 4,096</td><td>全部訓練；狀態／動作維度改變時（如 RoboTwin 的 14 維）重設狀態與動作投影</td><td>32 步動作塊的速度場</td></tr>
+    </table>
+  </div>
+  <p>Code 專家<strong>會直接看圖</strong>：三個視角各縮到 224×320，每個視角合併成 70 個視覺 token，共 210 個，放在指令與程式 token 前面。影片和動作專家則透過 cross-attention 讀取預先算好的 Cosmos-Reason1 語言嵌入，動作專家另外讀取機器人狀態。</p>
+
+  <h3>注意力順序：code → 影片 → 動作</h3>
+  <p>同一個專家內部的 token 用雙向注意力；跨專家時按 code、影片、動作的順序<strong>分塊因果</strong>：影片讀得到 code，動作讀得到 code 和影片，反過來則讀不到。這個順序是全篇的關鍵設計，§8 的消融支持這一點：同樣有 code，把順序改成「影片先、code 後」，平均分數從 71.1 掉到 48.3（本站依論文圖 5 計算）。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 322" role="img" aria-labelledby="att-t att-d">
+      <title id="att-t">三種分塊因果注意力順序與真機平均分數</title>
+      <desc id="att-d">列是讀的一方，欄是被讀的一方。C→V→A 中影片與動作都讀得到 code，平均 71.1；V→C→A 中 code 排在影片之後，平均 48.3；V→A 沒有 code，平均 32.9。</desc>
+      <text x="155" y="26" text-anchor="middle" class="hd">C → V → A（AW-0）</text>
+      <text x="76" y="62" text-anchor="middle" class="tk">C</text><text x="122" y="62" text-anchor="middle" class="tk">V</text><text x="168" y="62" text-anchor="middle" class="tk">A</text>
+      <text x="44" y="98" text-anchor="middle" class="tk">C</text><text x="44" y="144" text-anchor="middle" class="tk">V</text><text x="44" y="190" text-anchor="middle" class="tk">A</text>
+      <rect x="54" y="72" width="44" height="44" rx="4" fill="#7ee787" opacity=".8"/><rect x="100" y="72" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/><rect x="146" y="72" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/>
+      <rect x="54" y="118" width="44" height="44" rx="4" fill="#79c0ff" opacity=".8"/><rect x="100" y="118" width="44" height="44" rx="4" fill="#79c0ff" opacity=".8"/><rect x="146" y="118" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/>
+      <rect x="54" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/><rect x="100" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/><rect x="146" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/>
+      <text x="122" y="244" text-anchor="middle" class="big">71.1</text><text x="122" y="268" text-anchor="middle" class="tk">YAM 78.9｜靈巧手 63.4</text>
+
+      <text x="455" y="26" text-anchor="middle" class="hd">V → C → A</text>
+      <text x="376" y="62" text-anchor="middle" class="tk">V</text><text x="422" y="62" text-anchor="middle" class="tk">C</text><text x="468" y="62" text-anchor="middle" class="tk">A</text>
+      <text x="344" y="98" text-anchor="middle" class="tk">V</text><text x="344" y="144" text-anchor="middle" class="tk">C</text><text x="344" y="190" text-anchor="middle" class="tk">A</text>
+      <rect x="354" y="72" width="44" height="44" rx="4" fill="#79c0ff" opacity=".8"/><rect x="400" y="72" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/><rect x="446" y="72" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/>
+      <rect x="354" y="118" width="44" height="44" rx="4" fill="#7ee787" opacity=".8"/><rect x="400" y="118" width="44" height="44" rx="4" fill="#7ee787" opacity=".8"/><rect x="446" y="118" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/>
+      <rect x="354" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/><rect x="400" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/><rect x="446" y="164" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/>
+      <text x="422" y="244" text-anchor="middle" class="big">48.3</text><text x="422" y="268" text-anchor="middle" class="tk">YAM 49.6｜靈巧手 47.1</text>
+
+      <text x="745" y="26" text-anchor="middle" class="hd">V → A（無 code）</text>
+      <text x="699" y="62" text-anchor="middle" class="tk">V</text><text x="745" y="62" text-anchor="middle" class="tk">A</text>
+      <text x="667" y="98" text-anchor="middle" class="tk">V</text><text x="667" y="144" text-anchor="middle" class="tk">A</text>
+      <rect x="677" y="72" width="44" height="44" rx="4" fill="#79c0ff" opacity=".8"/><rect x="723" y="72" width="44" height="44" rx="4" fill="#1c2330" stroke="#30363d"/>
+      <rect x="677" y="118" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/><rect x="723" y="118" width="44" height="44" rx="4" fill="#d2a8ff" opacity=".8"/>
+      <text x="722" y="244" text-anchor="middle" class="big">32.9</text><text x="722" y="268" text-anchor="middle" class="tk">YAM 36.2｜靈巧手 29.5</text>
+      <text x="450" y="294" text-anchor="middle" class="tk2">列＝讀的一方（query），欄＝被讀的一方（key）；有色格＝讀得到。數字為真機 8 任務平均 rubric 分數</text><text x="450" y="312" text-anchor="middle" class="tk2">71.1 見論文表 2、32.9 見論文圖 6；48.3 與分平台平均為本站依論文圖 5 計算</text>
+    </svg></div>
+    <figcaption><b>自繪圖 B</b>三種分塊因果注意力。V→C→A 裡 code 只能「解讀」已經想像好的未來，無法回頭引導或修正它；C→V→A 讓語意計畫從一開始就影響影片想像，動作再同時讀計畫和影片。</figcaption>
+  </figure>
+
+  <h3>聯合去噪：code 不是先寫完才輪到影片</h3>
+  <p>三種模態用不同的方式加雜訊。影片和動作是連續值，用 <strong>flow matching</strong>：<code>X_σ = (1−σ)X₀ + σε</code>，模型回歸速度 <code>ε − X₀</code>。雜訊等級 σ 由 u 經過位移函數 <code>σ = γu / (1+(γ−1)u)</code>（γ=5）得到，這個函數會把取樣推向高雜訊端。Code 是離散 token，用 <strong>吸收式遮罩擴散</strong>（LLaDA 那一派）：先抽遮罩比例 r ~ U(0,1)，每個 token 各以機率 r 被換成 <code>[MASK]</code>，模型只在被遮的位置算交叉熵。訓練時三種模態的雜訊等級<strong>各自獨立</strong>抽樣，觀測幀、視覺前綴和指令則不加雜訊。</p>
+  <p>推理時，每個重規劃點會重建 prompt，接上 G=128 個遮罩 token 當「畫布」，然後與影片、動作一起跑 T=4 步聯合去噪。每一步，code 專家對所有還被遮著的位置預測 logits，<strong>確定其中信心最高的 G/T=32 個</strong>，確定後就固定不改；影片用 UniPC、動作用 Euler 各走一步。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 330" role="img" aria-labelledby="dn-t dn-d" class="chart">
+<title id="dn-t">四步聯合去噪示意</title>
+<desc id="dn-d">128 個 code 位置每步確定信心最高的 32 個（不照左到右）；同一步裡影片與動作的雜訊一起下降，三條流每一步都依 code→影片→動作的順序單向讀取（後者讀前者）。</desc>
+<defs><pattern id="nz" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#0d1117"/><circle cx="2" cy="2" r="1.3" fill="#8b949e"/><circle cx="6" cy="5" r="1" fill="#6e7681"/><circle cx="4" cy="7" r=".8" fill="#c9d1d9"/></pattern></defs>
+<text x="212.0" y="26" text-anchor="middle" class="hd">起點</text><rect x="150.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M153.0,55 l7,7 M160.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="165.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M168.5,55 l7,7 M175.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="181.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M184.0,55 l7,7 M191.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="196.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M199.5,55 l7,7 M206.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="212.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M215.0,55 l7,7 M222.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="227.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M230.5,55 l7,7 M237.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="243.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M246.0,55 l7,7 M253.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="258.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M261.5,55 l7,7 M268.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="150.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M153.0,72 l7,7 M160.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="165.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M168.5,72 l7,7 M175.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="181.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M184.0,72 l7,7 M191.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="196.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M199.5,72 l7,7 M206.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="212.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M215.0,72 l7,7 M222.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="227.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M230.5,72 l7,7 M237.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="243.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M246.0,72 l7,7 M253.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="258.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M261.5,72 l7,7 M268.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><text x="212.0" y="104" text-anchor="middle" class="tk">0/128 已確定</text><rect x="150" y="122" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><rect x="164" y="160" width="96" height="12" rx="2" fill="#8b949e" opacity=".55"/><circle cx="226.9" cy="148" r="11" fill="#ffa657" opacity=".9"/><rect x="150" y="122" width="124" height="62" rx="6" fill="url(#nz)" opacity="1.00"/><text x="212.0" y="200" text-anchor="middle" class="tk">σ_v 高</text><rect x="150" y="218" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><polyline points="156.0,250.3 165.3,234.6 174.7,229.4 184.0,233.3 193.3,240.4 202.7,220.4 212.0,223.1 221.3,235.5 230.7,247.3 240.0,242.5 249.3,243.6 258.7,265.0 268.0,247.0" fill="none" stroke="#d2a8ff" stroke-width="2"/><text x="212.0" y="296" text-anchor="middle" class="tk">σ_a 高</text><text x="359.0" y="26" text-anchor="middle" class="hd">第 1 步</text><rect x="297.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M300.0,55 l7,7 M307.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="312.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M315.5,55 l7,7 M322.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="328.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M331.0,55 l7,7 M338.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="343.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="359.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M362.0,55 l7,7 M369.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="374.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M377.5,55 l7,7 M384.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="390.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M393.0,55 l7,7 M400.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="405.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="297.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M300.0,72 l7,7 M307.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="312.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="328.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M331.0,72 l7,7 M338.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="343.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M346.5,72 l7,7 M353.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="359.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M362.0,72 l7,7 M369.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="374.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M377.5,72 l7,7 M384.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="390.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="405.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M408.5,72 l7,7 M415.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><text x="359.0" y="104" text-anchor="middle" class="tk">32/128 已確定</text><rect x="297" y="122" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><rect x="311" y="160" width="96" height="12" rx="2" fill="#8b949e" opacity=".55"/><circle cx="373.9" cy="148" r="11" fill="#ffa657" opacity=".9"/><rect x="297" y="122" width="124" height="62" rx="6" fill="url(#nz)" opacity="0.75"/><text x="359.0" y="200" text-anchor="middle" class="tk">σ_v ↓</text><rect x="297" y="218" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><polyline points="303.0,259.0 312.3,241.6 321.7,233.1 331.0,227.8 340.3,228.2 349.7,236.4 359.0,224.0 368.3,233.7 377.7,238.4 387.0,238.0 396.3,247.2 405.7,244.1 415.0,250.2" fill="none" stroke="#d2a8ff" stroke-width="2"/><text x="359.0" y="296" text-anchor="middle" class="tk">σ_a ↓</text><text x="506.0" y="26" text-anchor="middle" class="hd">第 2 步</text><rect x="444.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M447.0,55 l7,7 M454.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="459.5" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M462.5,55 l7,7 M469.5,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="475.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M478.0,55 l7,7 M485.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="490.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="506.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="521.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="537.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M540.0,55 l7,7 M547.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="552.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="444.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M447.0,72 l7,7 M454.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="459.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="475.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M478.0,72 l7,7 M485.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="490.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="506.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M509.0,72 l7,7 M516.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="521.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="537.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="552.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M555.5,72 l7,7 M562.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><text x="506.0" y="104" text-anchor="middle" class="tk">64/128 已確定</text><rect x="444" y="122" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><rect x="458" y="160" width="96" height="12" rx="2" fill="#8b949e" opacity=".55"/><circle cx="520.9" cy="148" r="11" fill="#ffa657" opacity=".9"/><rect x="444" y="122" width="124" height="62" rx="6" fill="url(#nz)" opacity="0.50"/><text x="506.0" y="200" text-anchor="middle" class="tk">σ_v ↓</text><rect x="444" y="218" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><polyline points="450.0,248.2 459.3,248.1 468.7,239.1 478.0,232.9 487.3,233.0 496.7,229.6 506.0,227.7 515.3,236.0 524.7,238.2 534.0,237.2 543.3,247.3 552.7,252.9 562.0,263.7" fill="none" stroke="#d2a8ff" stroke-width="2"/><text x="506.0" y="296" text-anchor="middle" class="tk">σ_a ↓</text><text x="653.0" y="26" text-anchor="middle" class="hd">第 3 步</text><rect x="591.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="606.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="622.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M625.0,55 l7,7 M632.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="637.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="653.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="668.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="684.0" y="52" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M687.0,55 l7,7 M694.0,55 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="699.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="591.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="606.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="622.0" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M625.0,72 l7,7 M632.0,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><rect x="637.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="653.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="668.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="684.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="699.5" y="69" width="13" height="13" rx="2" fill="none" stroke="#6e7681"/><path d="M702.5,72 l7,7 M709.5,72 l-7,7" stroke="#6e7681" stroke-width="1.2"/><text x="653.0" y="104" text-anchor="middle" class="tk">96/128 已確定</text><rect x="591" y="122" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><rect x="605" y="160" width="96" height="12" rx="2" fill="#8b949e" opacity=".55"/><circle cx="667.9" cy="148" r="11" fill="#ffa657" opacity=".9"/><rect x="591" y="122" width="124" height="62" rx="6" fill="url(#nz)" opacity="0.25"/><text x="653.0" y="200" text-anchor="middle" class="tk">σ_v ↓</text><rect x="591" y="218" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><polyline points="597.0,253.5 606.3,244.4 615.7,243.1 625.0,232.8 634.3,231.4 643.7,231.9 653.0,228.0 662.3,232.1 671.7,232.7 681.0,241.6 690.3,248.0 699.7,253.1 709.0,261.2" fill="none" stroke="#d2a8ff" stroke-width="2"/><text x="653.0" y="296" text-anchor="middle" class="tk">σ_a ↓</text><text x="800.0" y="26" text-anchor="middle" class="hd">第 4 步</text><rect x="738.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="753.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="769.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="784.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="800.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="815.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="831.0" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="846.5" y="52" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="738.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="753.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="769.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="784.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="800.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="815.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="831.0" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><rect x="846.5" y="69" width="13" height="13" rx="2" fill="#7ee787" opacity=".85"/><text x="800.0" y="104" text-anchor="middle" class="tk">128/128 已確定</text><rect x="738" y="122" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><rect x="752" y="160" width="96" height="12" rx="2" fill="#8b949e" opacity=".55"/><circle cx="814.9" cy="148" r="11" fill="#ffa657" opacity=".9"/><rect x="738" y="122" width="124" height="62" rx="6" fill="url(#nz)" opacity="0.00"/><text x="800.0" y="200" text-anchor="middle" class="tk">σ_v → 0</text><rect x="738" y="218" width="124" height="62" rx="6" fill="#1c2330" stroke="#30363d"/><polyline points="744.0,252.0 753.3,245.8 762.7,240.0 772.0,235.3 781.3,231.9 790.7,230.2 800.0,230.3 809.3,232.1 818.7,235.7 828.0,240.5 837.3,246.3 846.7,252.6 856.0,258.8" fill="none" stroke="#d2a8ff" stroke-width="2"/><text x="800.0" y="296" text-anchor="middle" class="tk">σ_a → 0</text><text x="18" y="68" class="row">Code</text><text x="18" y="86" class="tk">離散遮罩擴散</text><text x="18" y="152" class="row">影片</text><text x="18" y="170" class="tk">連續 flow matching</text><text x="18" y="248" class="row">動作</text><text x="18" y="266" class="tk">連續 flow matching</text>
+<text x="450" y="322" text-anchor="middle" class="tk">示意：每一步三個專家同時前向傳遞一次；code 不是先寫完才輪到影片和動作</text>
+</svg></div>
+    <figcaption><b>自繪圖 C</b>聯合去噪示意（附錄 A 設定：4 步、128 token 畫布、每步確定 32 個）。code 的確定順序依信心而非由左到右；影片與動作在同一步裡一起變清楚，三條流每一步都按 C→V→A 單向讀取：影片讀 code，動作讀 code 與影片，code 不回讀。實際影片是 3 視角 × 9 幀（含 1 幀觀測）影像編碼成的潛在變數，動作是 32 步的 64 維向量，此圖只示意趨勢。</figcaption>
+  </figure>
+
+  <div class="callout green">
+    <span class="tag">設計亮點：計畫與動作同步長出來</span>
+    自迴歸的作法是先把計畫寫完，再拿去條件化影片和動作（WLA 就是這樣）。問題有兩個：一是 teacher forcing 訓練時看到的是標準答案前綴，推理時看到的是自己生成的前綴，<strong>錯誤會一路累積</strong>到後面的影片預測；二是逐 token 生成很慢。聯合去噪讓 code 跟影片、動作在同樣的 4 步裡一起重建，語意引導從第一步就存在。§8 的對照：自迴歸版 54.5 分、0.55 s；聯合去噪 71.1 分、0.23 s，快 2.39 倍。
+  </div>
+
+  <h3>雜訊重取樣：讓影片特徵對動作「有用」</h3>
+  <p>這段解決一個不太明顯的問題。影片專家繼承了 Cosmos 的預訓練雜訊分佈：<code>u = 0.999·b</code>，<code>b ~ Beta(7,1)</code>，幾乎所有樣本都落在高雜訊端。這對學會「從雜訊生成影片」沒問題，但動作專家會<strong>讀取影片專家的中間表徵</strong>。論文原文只說這是為了「給動作預測更有資訊的影片特徵」；本站的解讀是：高雜訊下未來幀幾乎還沒成形（觀測幀本身不加噪），能提供給動作的「預測性」資訊有限，若訓練時幾乎只看到這種狀態，動作專家就學不到怎麼利用較清楚的未來特徵。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 380" role="img" aria-labelledby="nz-t nz-d" class="chart">
+<title id="nz-t">影片雜訊等級的取樣分佈：預訓練 vs AW-0</title>
+<desc id="nz-d">橫軸 u（經 γ=5 位移後對應 σ），縱軸機率密度。預訓練分佈集中在 u 接近 1 的高雜訊端；AW-0 混入一半均勻分佈，讓低、中雜訊也被取樣到。</desc>
+<rect x="80" y="46" width="390.0" height="250" fill="#3987e5" opacity=".06"/>
+<text x="275.0" y="64" text-anchor="middle" class="ann">u &lt; 0.5（σ &lt; 0.83）：影片「比較清楚」的區段</text>
+<text x="275.0" y="84" text-anchor="middle" class="ann2">取樣機率　預訓練 0.8%　→　AW-0 25.4%</text>
+<line x1="80" x2="860" y1="296.0" y2="296.0" stroke="#30363d" stroke-width="1"/><text x="70" y="300.0" text-anchor="end" class="tk">0</text><line x1="80" x2="860" y1="262.7" y2="262.7" stroke="#30363d" stroke-width="1"/><text x="70" y="266.7" text-anchor="end" class="tk">1</text><line x1="80" x2="860" y1="229.3" y2="229.3" stroke="#30363d" stroke-width="1"/><text x="70" y="233.3" text-anchor="end" class="tk">2</text><line x1="80" x2="860" y1="196.0" y2="196.0" stroke="#30363d" stroke-width="1"/><text x="70" y="200.0" text-anchor="end" class="tk">3</text><line x1="80" x2="860" y1="162.7" y2="162.7" stroke="#30363d" stroke-width="1"/><text x="70" y="166.7" text-anchor="end" class="tk">4</text><line x1="80" x2="860" y1="129.3" y2="129.3" stroke="#30363d" stroke-width="1"/><text x="70" y="133.3" text-anchor="end" class="tk">5</text><line x1="80" x2="860" y1="96.0" y2="96.0" stroke="#30363d" stroke-width="1"/><text x="70" y="100.0" text-anchor="end" class="tk">6</text><line x1="80" x2="860" y1="62.7" y2="62.7" stroke="#30363d" stroke-width="1"/><text x="70" y="66.7" text-anchor="end" class="tk">7</text><text x="80.0" y="316" text-anchor="middle" class="tk">u=0</text><text x="80.0" y="334" text-anchor="middle" class="tk2">σ≈0.00</text><text x="236.0" y="316" text-anchor="middle" class="tk">u=0.2</text><text x="236.0" y="334" text-anchor="middle" class="tk2">σ≈0.56</text><text x="392.0" y="316" text-anchor="middle" class="tk">u=0.4</text><text x="392.0" y="334" text-anchor="middle" class="tk2">σ≈0.77</text><text x="548.0" y="316" text-anchor="middle" class="tk">u=0.6</text><text x="548.0" y="334" text-anchor="middle" class="tk2">σ≈0.88</text><text x="704.0" y="316" text-anchor="middle" class="tk">u=0.8</text><text x="704.0" y="334" text-anchor="middle" class="tk2">σ≈0.95</text><text x="860.0" y="316" text-anchor="middle" class="tk">u=1</text><text x="860.0" y="334" text-anchor="middle" class="tk2">σ≈1.00</text>
+<line x1="80" x2="860" y1="296" y2="296" stroke="#6e7681" stroke-width="1"/>
+<text x="22" y="171.0" transform="rotate(-90 22 171.0)" text-anchor="middle" class="tk">機率密度</text>
+<line x1="80" x2="860" y1="262.7" y2="262.7" stroke="#8b949e" stroke-width="2" stroke-dasharray="6 5"><title>均勻 U(0,1)：動作與 code 損失的參考分佈</title></line>
+<path d="M80.0,296.0 L82.0,296.0 L83.9,296.0 L85.8,296.0 L87.8,296.0 L89.8,296.0 L91.7,296.0 L93.7,296.0 L95.6,296.0 L97.5,296.0 L99.5,296.0 L101.5,296.0 L103.4,296.0 L105.3,296.0 L107.3,296.0 L109.2,296.0 L111.2,296.0 L113.2,296.0 L115.1,296.0 L117.0,296.0 L119.0,296.0 L120.9,296.0 L122.9,296.0 L124.8,296.0 L126.8,296.0 L128.8,296.0 L130.7,296.0 L132.7,296.0 L134.6,296.0 L136.6,296.0 L138.5,296.0 L140.4,296.0 L142.4,296.0 L144.4,296.0 L146.3,296.0 L148.2,296.0 L150.2,296.0 L152.2,296.0 L154.1,296.0 L156.1,296.0 L158.0,296.0 L159.9,296.0 L161.9,296.0 L163.8,296.0 L165.8,296.0 L167.8,296.0 L169.7,296.0 L171.6,296.0 L173.6,296.0 L175.6,296.0 L177.5,296.0 L179.4,296.0 L181.4,296.0 L183.4,296.0 L185.3,296.0 L187.2,296.0 L189.2,296.0 L191.1,296.0 L193.1,296.0 L195.1,296.0 L197.0,296.0 L198.9,296.0 L200.9,296.0 L202.8,296.0 L204.8,296.0 L206.8,296.0 L208.7,296.0 L210.7,296.0 L212.6,296.0 L214.5,296.0 L216.5,296.0 L218.4,296.0 L220.4,296.0 L222.3,296.0 L224.3,296.0 L226.2,296.0 L228.2,296.0 L230.2,296.0 L232.1,296.0 L234.1,296.0 L236.0,296.0 L238.0,296.0 L239.9,296.0 L241.8,296.0 L243.8,296.0 L245.8,296.0 L247.7,296.0 L249.7,296.0 L251.6,296.0 L253.6,296.0 L255.5,296.0 L257.5,296.0 L259.4,296.0 L261.4,296.0 L263.3,296.0 L265.2,296.0 L267.2,296.0 L269.1,296.0 L271.1,295.9 L273.1,295.9 L275.0,295.9 L276.9,295.9 L278.9,295.9 L280.9,295.9 L282.8,295.9 L284.8,295.9 L286.7,295.9 L288.6,295.9 L290.6,295.9 L292.6,295.9 L294.5,295.9 L296.5,295.9 L298.4,295.9 L300.3,295.9 L302.3,295.9 L304.2,295.9 L306.2,295.9 L308.1,295.9 L310.1,295.8 L312.0,295.8 L314.0,295.8 L315.9,295.8 L317.9,295.8 L319.9,295.8 L321.8,295.8 L323.8,295.8 L325.7,295.8 L327.6,295.8 L329.6,295.7 L331.6,295.7 L333.5,295.7 L335.5,295.7 L337.4,295.7 L339.4,295.7 L341.3,295.7 L343.2,295.7 L345.2,295.6 L347.2,295.6 L349.1,295.6 L351.0,295.6 L353.0,295.6 L354.9,295.5 L356.9,295.5 L358.8,295.5 L360.8,295.5 L362.8,295.5 L364.7,295.4 L366.6,295.4 L368.6,295.4 L370.6,295.4 L372.5,295.3 L374.4,295.3 L376.4,295.3 L378.4,295.3 L380.3,295.2 L382.2,295.2 L384.2,295.2 L386.2,295.1 L388.1,295.1 L390.1,295.1 L392.0,295.0 L394.0,295.0 L395.9,295.0 L397.8,294.9 L399.8,294.9 L401.8,294.8 L403.7,294.8 L405.6,294.8 L407.6,294.7 L409.6,294.7 L411.5,294.6 L413.4,294.6 L415.4,294.5 L417.4,294.5 L419.3,294.4 L421.2,294.4 L423.2,294.3 L425.1,294.2 L427.1,294.2 L429.1,294.1 L431.0,294.0 L432.9,294.0 L434.9,293.9 L436.9,293.8 L438.8,293.8 L440.8,293.7 L442.7,293.6 L444.7,293.5 L446.6,293.5 L448.5,293.4 L450.5,293.3 L452.4,293.2 L454.4,293.1 L456.3,293.0 L458.3,292.9 L460.2,292.8 L462.2,292.7 L464.1,292.6 L466.1,292.5 L468.1,292.4 L470.0,292.3 L471.9,292.2 L473.9,292.1 L475.8,292.0 L477.8,291.9 L479.7,291.7 L481.7,291.6 L483.6,291.5 L485.6,291.4 L487.5,291.2 L489.5,291.1 L491.4,290.9 L493.4,290.8 L495.3,290.6 L497.3,290.5 L499.2,290.3 L501.2,290.2 L503.1,290.0 L505.1,289.8 L507.1,289.7 L509.0,289.5 L510.9,289.3 L512.9,289.1 L514.9,288.9 L516.8,288.8 L518.8,288.6 L520.7,288.4 L522.6,288.2 L524.6,287.9 L526.5,287.7 L528.5,287.5 L530.5,287.3 L532.4,287.1 L534.4,286.8 L536.3,286.6 L538.2,286.3 L540.2,286.1 L542.2,285.8 L544.1,285.6 L546.0,285.3 L548.0,285.0 L550.0,284.8 L551.9,284.5 L553.9,284.2 L555.8,283.9 L557.8,283.6 L559.7,283.3 L561.7,283.0 L563.6,282.7 L565.6,282.3 L567.5,282.0 L569.4,281.7 L571.4,281.3 L573.3,281.0 L575.3,280.6 L577.2,280.2 L579.2,279.9 L581.1,279.5 L583.1,279.1 L585.0,278.7 L587.0,278.3 L589.0,277.9 L590.9,277.4 L592.9,277.0 L594.8,276.6 L596.8,276.1 L598.7,275.7 L600.6,275.2 L602.6,274.7 L604.5,274.3 L606.5,273.8 L608.5,273.3 L610.4,272.8 L612.4,272.3 L614.3,271.7 L616.2,271.2 L618.2,270.6 L620.1,270.1 L622.1,269.5 L624.0,268.9 L626.0,268.4 L628.0,267.8 L629.9,267.1 L631.9,266.5 L633.8,265.9 L635.8,265.3 L637.7,264.6 L639.6,263.9 L641.6,263.3 L643.6,262.6 L645.5,261.9 L647.5,261.2 L649.4,260.4 L651.4,259.7 L653.3,259.0 L655.2,258.2 L657.2,257.4 L659.2,256.6 L661.1,255.8 L663.1,255.0 L665.0,254.2 L666.9,253.3 L668.9,252.5 L670.8,251.6 L672.8,250.7 L674.8,249.8 L676.7,248.9 L678.6,248.0 L680.6,247.0 L682.5,246.1 L684.5,245.1 L686.4,244.1 L688.4,243.1 L690.4,242.1 L692.3,241.0 L694.2,240.0 L696.2,238.9 L698.1,237.8 L700.1,236.7 L702.0,235.5 L704.0,234.4 L706.0,233.2 L707.9,232.1 L709.9,230.9 L711.8,229.6 L713.8,228.4 L715.7,227.1 L717.6,225.9 L719.6,224.6 L721.5,223.2 L723.5,221.9 L725.5,220.6 L727.4,219.2 L729.4,217.8 L731.3,216.4 L733.2,214.9 L735.2,213.5 L737.1,212.0 L739.1,210.5 L741.1,208.9 L743.0,207.4 L745.0,205.8 L746.9,204.2 L748.9,202.6 L750.8,200.9 L752.8,199.3 L754.7,197.6 L756.7,195.9 L758.6,194.1 L760.6,192.3 L762.5,190.5 L764.4,188.7 L766.4,186.9 L768.3,185.0 L770.3,183.1 L772.2,181.2 L774.2,179.2 L776.1,177.2 L778.1,175.2 L780.0,173.2 L782.0,171.1 L783.9,169.0 L785.9,166.9 L787.9,164.8 L789.8,162.6 L791.8,160.4 L793.7,158.1 L795.6,155.8 L797.6,153.5 L799.5,151.2 L801.5,148.8 L803.5,146.4 L805.4,144.0 L807.4,141.5 L809.3,139.0 L811.2,136.5 L813.2,133.9 L815.1,131.3 L817.1,128.7 L819.0,126.0 L821.0,123.3 L823.0,120.5 L824.9,117.7 L826.9,114.9 L828.8,112.1 L830.8,109.2 L832.7,106.2 L834.6,103.3 L836.6,100.3 L838.6,97.2 L840.5,94.1 L842.5,91.0 L844.4,87.9 L846.4,84.6 L848.3,81.4 L850.2,78.1 L852.2,74.8 L854.2,71.4 L856.1,68.0 L858.1,64.5 L859.2,296.0 L859.2,296.0 L860.0,296.0" fill="none" stroke="#d95f2b" stroke-width="2.5"><title>預訓練分佈 p_pre：u = 0.999·Beta(7,1)，密度 7u⁶ 幾乎全擠在高雜訊端</title></path>
+<path d="M80.0,279.3 L82.0,279.3 L83.9,279.3 L85.8,279.3 L87.8,279.3 L89.8,279.3 L91.7,279.3 L93.7,279.3 L95.6,279.3 L97.5,279.3 L99.5,279.3 L101.5,279.3 L103.4,279.3 L105.3,279.3 L107.3,279.3 L109.2,279.3 L111.2,279.3 L113.2,279.3 L115.1,279.3 L117.0,279.3 L119.0,279.3 L120.9,279.3 L122.9,279.3 L124.8,279.3 L126.8,279.3 L128.8,279.3 L130.7,279.3 L132.7,279.3 L134.6,279.3 L136.6,279.3 L138.5,279.3 L140.4,279.3 L142.4,279.3 L144.4,279.3 L146.3,279.3 L148.2,279.3 L150.2,279.3 L152.2,279.3 L154.1,279.3 L156.1,279.3 L158.0,279.3 L159.9,279.3 L161.9,279.3 L163.8,279.3 L165.8,279.3 L167.8,279.3 L169.7,279.3 L171.6,279.3 L173.6,279.3 L175.6,279.3 L177.5,279.3 L179.4,279.3 L181.4,279.3 L183.4,279.3 L185.3,279.3 L187.2,279.3 L189.2,279.3 L191.1,279.3 L193.1,279.3 L195.1,279.3 L197.0,279.3 L198.9,279.3 L200.9,279.3 L202.8,279.3 L204.8,279.3 L206.8,279.3 L208.7,279.3 L210.7,279.3 L212.6,279.3 L214.5,279.3 L216.5,279.3 L218.4,279.3 L220.4,279.3 L222.3,279.3 L224.3,279.3 L226.2,279.3 L228.2,279.3 L230.2,279.3 L232.1,279.3 L234.1,279.3 L236.0,279.3 L238.0,279.3 L239.9,279.3 L241.8,279.3 L243.8,279.3 L245.8,279.3 L247.7,279.3 L249.7,279.3 L251.6,279.3 L253.6,279.3 L255.5,279.3 L257.5,279.3 L259.4,279.3 L261.4,279.3 L263.3,279.3 L265.2,279.3 L267.2,279.3 L269.1,279.3 L271.1,279.3 L273.1,279.3 L275.0,279.3 L276.9,279.3 L278.9,279.3 L280.9,279.3 L282.8,279.3 L284.8,279.3 L286.7,279.3 L288.6,279.3 L290.6,279.3 L292.6,279.3 L294.5,279.3 L296.5,279.3 L298.4,279.3 L300.3,279.3 L302.3,279.3 L304.2,279.3 L306.2,279.3 L308.1,279.3 L310.1,279.3 L312.0,279.3 L314.0,279.2 L315.9,279.2 L317.9,279.2 L319.9,279.2 L321.8,279.2 L323.8,279.2 L325.7,279.2 L327.6,279.2 L329.6,279.2 L331.6,279.2 L333.5,279.2 L335.5,279.2 L337.4,279.2 L339.4,279.2 L341.3,279.2 L343.2,279.2 L345.2,279.2 L347.2,279.1 L349.1,279.1 L351.0,279.1 L353.0,279.1 L354.9,279.1 L356.9,279.1 L358.8,279.1 L360.8,279.1 L362.8,279.1 L364.7,279.1 L366.6,279.0 L368.6,279.0 L370.6,279.0 L372.5,279.0 L374.4,279.0 L376.4,279.0 L378.4,279.0 L380.3,279.0 L382.2,278.9 L384.2,278.9 L386.2,278.9 L388.1,278.9 L390.1,278.9 L392.0,278.9 L394.0,278.8 L395.9,278.8 L397.8,278.8 L399.8,278.8 L401.8,278.8 L403.7,278.7 L405.6,278.7 L407.6,278.7 L409.6,278.7 L411.5,278.6 L413.4,278.6 L415.4,278.6 L417.4,278.6 L419.3,278.5 L421.2,278.5 L423.2,278.5 L425.1,278.5 L427.1,278.4 L429.1,278.4 L431.0,278.4 L432.9,278.3 L434.9,278.3 L436.9,278.3 L438.8,278.2 L440.8,278.2 L442.7,278.1 L444.7,278.1 L446.6,278.1 L448.5,278.0 L450.5,278.0 L452.4,277.9 L454.4,277.9 L456.3,277.9 L458.3,277.8 L460.2,277.8 L462.2,277.7 L464.1,277.7 L466.1,277.6 L468.1,277.6 L470.0,277.5 L471.9,277.4 L473.9,277.4 L475.8,277.3 L477.8,277.3 L479.7,277.2 L481.7,277.1 L483.6,277.1 L485.6,277.0 L487.5,276.9 L489.5,276.9 L491.4,276.8 L493.4,276.7 L495.3,276.7 L497.3,276.6 L499.2,276.5 L501.2,276.4 L503.1,276.3 L505.1,276.3 L507.1,276.2 L509.0,276.1 L510.9,276.0 L512.9,275.9 L514.9,275.8 L516.8,275.7 L518.8,275.6 L520.7,275.5 L522.6,275.4 L524.6,275.3 L526.5,275.2 L528.5,275.1 L530.5,275.0 L532.4,274.9 L534.4,274.7 L536.3,274.6 L538.2,274.5 L540.2,274.4 L542.2,274.3 L544.1,274.1 L546.0,274.0 L548.0,273.9 L550.0,273.7 L551.9,273.6 L553.9,273.4 L555.8,273.3 L557.8,273.1 L559.7,273.0 L561.7,272.8 L563.6,272.7 L565.6,272.5 L567.5,272.3 L569.4,272.2 L571.4,272.0 L573.3,271.8 L575.3,271.6 L577.2,271.4 L579.2,271.3 L581.1,271.1 L583.1,270.9 L585.0,270.7 L587.0,270.5 L589.0,270.3 L590.9,270.1 L592.9,269.8 L594.8,269.6 L596.8,269.4 L598.7,269.2 L600.6,268.9 L602.6,268.7 L604.5,268.5 L606.5,268.2 L608.5,268.0 L610.4,267.7 L612.4,267.5 L614.3,267.2 L616.2,266.9 L618.2,266.7 L620.1,266.4 L622.1,266.1 L624.0,265.8 L626.0,265.5 L628.0,265.2 L629.9,264.9 L631.9,264.6 L633.8,264.3 L635.8,264.0 L637.7,263.6 L639.6,263.3 L641.6,263.0 L643.6,262.6 L645.5,262.3 L647.5,261.9 L649.4,261.6 L651.4,261.2 L653.3,260.8 L655.2,260.4 L657.2,260.0 L659.2,259.6 L661.1,259.2 L663.1,258.8 L665.0,258.4 L666.9,258.0 L668.9,257.6 L670.8,257.1 L672.8,256.7 L674.8,256.2 L676.7,255.8 L678.6,255.3 L680.6,254.8 L682.5,254.4 L684.5,253.9 L686.4,253.4 L688.4,252.9 L690.4,252.4 L692.3,251.8 L694.2,251.3 L696.2,250.8 L698.1,250.2 L700.1,249.7 L702.0,249.1 L704.0,248.5 L706.0,248.0 L707.9,247.4 L709.9,246.8 L711.8,246.2 L713.8,245.5 L715.7,244.9 L717.6,244.3 L719.6,243.6 L721.5,243.0 L723.5,242.3 L725.5,241.6 L727.4,240.9 L729.4,240.2 L731.3,239.5 L733.2,238.8 L735.2,238.1 L737.1,237.3 L739.1,236.6 L741.1,235.8 L743.0,235.0 L745.0,234.2 L746.9,233.4 L748.9,232.6 L750.8,231.8 L752.8,231.0 L754.7,230.1 L756.7,229.3 L758.6,228.4 L760.6,227.5 L762.5,226.6 L764.4,225.7 L766.4,224.8 L768.3,223.8 L770.3,222.9 L772.2,221.9 L774.2,220.9 L776.1,220.0 L778.1,218.9 L780.0,217.9 L782.0,216.9 L783.9,215.8 L785.9,214.8 L787.9,213.7 L789.8,212.6 L791.8,211.5 L793.7,210.4 L795.6,209.2 L797.6,208.1 L799.5,206.9 L801.5,205.7 L803.5,204.5 L805.4,203.3 L807.4,202.1 L809.3,200.8 L811.2,199.6 L813.2,198.3 L815.1,197.0 L817.1,195.7 L819.0,194.3 L821.0,193.0 L823.0,191.6 L824.9,190.2 L826.9,188.8 L828.8,187.4 L830.8,185.9 L832.7,184.5 L834.6,183.0 L836.6,181.5 L838.6,179.9 L840.5,178.4 L842.5,176.8 L844.4,175.3 L846.4,173.7 L848.3,172.0 L850.2,170.4 L852.2,168.7 L854.2,167.0 L856.1,165.3 L858.1,163.6 L859.2,279.3 L859.2,296.0 L860.0,296.0" fill="none" stroke="#3987e5" stroke-width="2.5"><title>AW-0 訓練分佈 q = 0.5·p_pre + 0.5·U(0,1)</title></path>
+<text x="750.8" y="89.3" text-anchor="end" class="lab">預訓練 p_pre（Beta(7,1)）</text>
+<line x1="754.7" y1="94.3" x2="821.0" y2="123.3" stroke="#8b949e" stroke-width="1"/>
+<text x="735.2" y="187.7" text-anchor="end" class="lab">AW-0：q = ½ p_pre + ½ U</text>
+<line x1="739.1" y1="192.7" x2="805.4" y2="203.3" stroke="#8b949e" stroke-width="1"/>
+<text x="103.4" y="254.7" class="lab">均勻 U(0,1)：動作／code 損失的參考</text>
+</svg></div>
+    <figcaption><b>自繪圖 D</b>（本站依論文式 3、5、6 與附錄 A 參數繪製）預訓練分佈 vs AW-0 的混合分佈。u 小於 0.5 的區段（位移後 σ 小於 0.83，影片相對清楚）在預訓練分佈下只有 0.8% 的機會被抽到；混入一半均勻分佈後變成 25.4%。滑鼠移到曲線上可看說明。</figcaption>
+  </figure>
+
+  <p>AW-0 的作法是：取樣時改用混合分佈 <code>q = α·p_pre + (1−α)·U(0,1)</code>（α=0.5），再用兩組<strong>重要性權重</strong>分別校正影片目標與動作／code 目標。影片損失乘上 <code>w_v = p_pre / q</code>，讓影片目標在期望上仍按原本 Cosmos 的雜訊分佈加權（近似成立，因為權重有做批次正規化），不因混入均勻分佈而改變影片學習的重點；論文的說法是用這組權重「平衡影片學習與預測引導」。動作與 code 損失乘上 <code>w_g = U / q</code>，相當於在均勻分佈上學，各種雜訊等級的影片特徵都練到。權重設了 4.0 的上限，再正規化成批次平均為 1；不過 α=0.5 時 w_v 最大約 1.75、w_g 最大 2，上限實際上不會觸發（本站計算）。三項損失的權重是（影片 1、code 0.5、動作 1）。</p>
+
+  <h3>記憶快取：單張畫面看不出進度</h3>
+  <p>只看當下一張圖，模型常常分不清任務做到哪一步：毛巾摺好一條還是兩條？牌發出去了沒？所以 code 專家會拿到一份「這一集到目前為止寫過的程式片段」，壓縮成 K 個可學習的記憶槽，放在 code 流的 prompt 前面。訓練時，記憶裡放的是標註好的前幾段，但會以機率 p 換成<strong>模型自己預測的版本</strong>，讓模型習慣「記憶可能有錯」。推理時每一集開頭清空，之後每解出一段就加一段進去。（論文沒有報告 K 和 p 的數值。）</p>
+</section>
+
+<!-- ─────────── Code 從哪來 ─────────── -->
+<section id="code">
+  <h2><span class="num">§3</span>Code 長什麼樣、從哪來：自動標註管線</h2>
+  <p class="sec-sub">宣告式 API → coding agent 寫、coordinator 審 → 凍結技能庫 → 驗證過才重用快取</p>
+
+  <h3>宣告式 API：只宣告、不執行</h3>
+  <p>標註用的 API 是 <strong>declaration-only</strong>：只有宣告、沒有實作，任何呼叫都不會真的執行；但每個呼叫都<strong>宣告自己會產生哪些接觸事件</strong>（哪隻手依序開、合），程式因此能與示範對齊（附錄 K）。在 YAM 上，這是逐一比對夾爪感測器記錄的開合事件；人類影片沒有事件清單，接觸由 annotator 從畫面推斷。（本站的理解：遙控收來的真機資料沒有環境可以執行候選程式來驗證，所以改成比對事件。論文正式版沒有明寫這個動機。）</p>
+
+  <figure>
+    <img src="figs/fig3.jpg" alt="平行夾爪與靈巧手兩套宣告式 API" loading="lazy" width="1600" height="1049">
+    <figcaption><b>原圖 3</b>（附錄 K）兩套 API。兩者共用 10 個語意接觸動詞（pick、grasp、place、release、regrasp、insert、attach、handover、rotate、press）。差別在底層：平行夾爪用末端位姿（<code>move_arm</code> 帶目標位置與 rpy、<code>servo_ee_delta</code>、<code>freespace_move</code>）加感知函式（<code>sample_grasp_pose</code>、<code>detect_objects_oneshot</code>）；靈巧手的手臂移動只有語意化的相對動作（沿某方向 <code>move_arm</code>、<code>goto_relative</code> 到某物體的某種相對位置），另有 <code>close_hand</code>／<code>open_hand</code>，沒有感知函式。</figcaption>
+  </figure>
+
+  <p>程式不只是一串動作清單，也承載<strong>控制邏輯</strong>：迴圈、條件判斷、計數。下面兩個是論文附錄的標註範例，每個顏色區塊對應一段影格範圍：</p>
+
+  <figure>
+    <img src="figs/fig4.jpg" alt="Flip Scoreboard 的關鍵幀與程式標籤：讀分數、算目標、翻兩次、按按鈕" loading="lazy" width="1600" height="835">
+    <figcaption><b>原圖 4</b>（附錄 E）<em>Flip Scoreboard</em>「計分板加 2 再按按鈕」。程式先讀板上的數字，算出 <code>target = current + 2</code>，接著左手扶板，右手呼叫兩次 <code>turn_over_object</code>（註解寫明 3→4、4→5），最後按紅色按鈕。<strong>「數到幾次」寫在程式裡</strong>。論文認為這類計數邏輯是 §7 這個任務大幅領先的原因之一，屬推論、未直接驗證。注意這是訓練示範的<em>標註</em>，不是模型輸出。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig5.jpg" alt="Arrange Fruits 的關鍵幀與程式標籤：掃描碗內、移出不該在的水果、補進指定水果" loading="lazy" width="1600" height="1013">
+    <figcaption><b>原圖 5</b>（附錄 E）<em>Arrange Fruits</em>「左碗最後只留香蕉和小黃瓜」。<code>for item in robot.scan('left bowl')</code> 把不屬於指令的水果移出去，接著兩個 <code>if ... not in</code> 判斷要不要補香蕉、補小黃瓜。這類「依指令挑物體」的語意判斷寫成程式後一目了然。</figcaption>
+  </figure>
+
+  <div class="callout blue">
+    <span class="tag">讀這兩張圖時要記得</span>
+    預設模式下，<code>robot.read_number</code>、<code>robot.scan</code> 這些呼叫<strong>從頭到尾沒有被執行</strong>。模型只是「寫出」這段計畫，讓影片與動作專家透過注意力讀它。程式在這裡的角色比較像結構化的思考鏈，而不是控制器。
+  </div>
+
+  <h3>三階段標註：一個寫、一個審，凍結後才量產</h3>
+
+  <figure>
+    <img src="figs/fig6.jpg" alt="自動標註管線：技能發現、技能庫、語料標註" loading="lazy" width="1600" height="1074">
+    <figcaption><b>原圖 6</b>（論文圖 3）自動標註管線。上：技能發現。Coding agent 根據 primitive API、已有技能、子任務影格寫程式，coordinator 提煉並收錄技能。中：技能庫，50 個可重用技能，例如 <code>tilt_pour_over_target</code> 的實作。下：技能庫凍結後標註整個語料，接觸與運動證據相符就重用快取，不符才重新呼叫模型並寫回。</figcaption>
+  </figure>
+
+  <ol>
+    <li><strong>技能發現（第 1 階段）。</strong>每個任務抽一集，由 <strong>Gemini 3.1 Pro</strong> 擔任 annotator，對著宣告式 API 寫子任務層級的程式。<strong>Claude Code（Claude Opus 4.8）</strong>擔任 coordinator，每一輪之間按固定書面協定審核，把有問題的片段分成五類：偵測器限制、annotator 看錯、抽象層級錯、詞彙缺口、切段瑕疵。<em>只有「詞彙缺口」會變成技能提案。</em>候選技能要同時符合四個條件才收錄：泛用（把單集特有的數值提成參數）、在至少兩個不同任務重複出現、層級是「一個動作招式」而不是「整個任務食譜」、不與既有技能重複。每個技能另外要推導出自己的接觸契約。coordinator 不寫程式，也不能改 annotator、prompt、API 或驗證程式。</li>
+    <li><strong>凍結重標（第 2 階段）。</strong>技能庫凍結，用最終詞彙把第 1 階段的樣本重標一次，建立「子任務 → 程式」的快取。</li>
+    <li><strong>量產（第 3 階段）。</strong>其餘語料先查快取，<strong>證據相符才重用</strong>。YAM 的標準是：程式隱含的接觸事件與夾爪感測器記錄的事件完全一致（允許左右鏡像，運動參數重新推導）。人類影片的標準是：手部運動軌跡輪廓與新片段的距離在固定閾值內，且迴圈模板永不重用。快取沒命中才呼叫 annotator，結果寫回快取。下游任務的 100 條示範也用同一條管線、在凍結的技能庫下標上程式再拿去微調；annotator 不能新增技能名稱，技能庫沒涵蓋的動作只能用 primitive 寫。</li>
+  </ol>
+  <p>每段程式都要通過<strong>靜態檢查</strong>：程式脈絡下的語法、呼叫的函式是否存在、參數綁定、字面值是否屬於詞彙表。沒過的話，annotator 會看到自己的輸出和問題清單並重寫。YAM 的 prompt 還有一條硬規則：感測器記到的夾爪開合事件是<strong>權威答案</strong>，程式必須依序重現每一次開合，不能增加、刪除或調換順序。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>預訓練語料（附錄 B）</th><th>YAM 機器人</th><th>人類第一人稱</th><th>合計</th></tr>
+      <tr><td>集數</td><td class="num">73,101</td><td class="num">175,541</td><td class="num">248,642</td></tr>
+      <tr><td>時數</td><td class="num">1,919.3 h</td><td class="num">993.9 h</td><td class="num">2,913.2 h</td></tr>
+      <tr><td>任務數</td><td class="num">279</td><td class="num">327</td><td class="num">606</td></tr>
+      <tr><td>子任務片段</td><td class="num">986,314</td><td class="num">1,089,059</td><td class="num">2,075,373</td></tr>
+      <tr><td>每集平均片段數</td><td class="num">13.5</td><td class="num">6.2</td><td class="num">8.3</td></tr>
+      <tr><td>凍結技能庫</td><td class="num">23 個</td><td class="num">27 個</td><td class="num">50 個</td></tr>
+    </table>
+  </div>
+  <p class="note">YAM 以 30 Hz 錄製左腕、右腕、頂視三路影像；人類影片只有一路頭戴相機（複製到三個輸入槽），手部動作重定向成每手 22 自由度的靈巧手關節目標。</p>
+
+  <p>技能庫長什麼樣？挑幾個看看：</p>
+  <div class="tablewrap">
+    <table>
+      <tr><th>技能</th><th>來源</th><th>做什麼</th></tr>
+      <tr><td><code>fold_edge_over</code></td><td>YAM</td><td>雙臂捏住布邊、帶過去、放開：一次對摺</td></tr>
+      <tr><td><code>approach_best_grasp</code></td><td>YAM</td><td>取樣抓取候選，選這隻手搆得到的最佳一個並移過去</td></tr>
+      <tr><td><code>ratchet_twist_off</code></td><td>YAM</td><td>對螺紋件做兩次棘輪式轉動，角度正負決定鎖緊或鬆開</td></tr>
+      <tr><td><code>run_zipper_along_seam</code></td><td>YAM</td><td>一手壓住包，一手拉拉鍊沿縫走一段</td></tr>
+      <tr><td><code>stir_contents</code></td><td>人類</td><td>把已拿在手上的工具放進容器裡繞圈攪拌</td></tr>
+      <tr><td><code>pour_into_target</code></td><td>人類</td><td>把容器口移到目標上方，傾倒到空，再扶正，握法不變</td></tr>
+      <tr><td><code>scoop_and_carry</code></td><td>人類</td><td>用手上的器具從來源容器舀一份，帶到目的地上方</td></tr>
+      <tr><td><code>thread_through_and_pull_out</code></td><td>人類</td><td>一手把繩、帶、針穿過孔，另一手接住穿出的一端拉過去</td></tr>
+    </table>
+  </div>
+
+  <figure>
+    <img src="figs/fig7.jpg" alt="YAM 技能在預訓練 code 專家嵌入空間中的 t-SNE 分佈" loading="lazy" width="1600" height="940">
+    <figcaption><b>原圖 7</b>（附錄 B）YAM 最常見的 18 個技能，在預訓練 code 專家嵌入空間中的 t-SNE 分佈，每點是一個片段。不同技能的片段大致落在各自的區域，論文據此認為技能標籤能預測片段裡的動作，可以當作動作生成的條件。（論文沒交代這個嵌入用了哪些輸入；若包含程式片段本身，技能名稱就在輸入裡，分得開有一部分是必然的。）</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 混合執行 ─────────── -->
+<section id="hybrid">
+  <h2><span class="num">§4</span>混合執行：程式什麼時候真的會被跑</h2>
+  <p class="sec-sub">同一次前向傳遞同時給出動作塊和程式片段，由仲裁器決定這一段由誰驅動機器人</p>
+
+  <p>預設模式下，code 只是條件，機器人執行的是動作專家產出的動作塊。論文另外探索了<strong>混合模式</strong>：在每個重規劃點，把解出來的程式片段像 Code-as-Policies 那樣，對一組感知與控制 primitive 真的執行；不能執行時，就用同一次前向傳遞產出的動作塊。仲裁規則（附錄 I）如下：</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 480" role="img" aria-labelledby="hy-t hy-d">
+      <title id="hy-t">混合執行的仲裁流程</title>
+      <desc id="hy-d">每個重規劃點一次前向傳遞得到動作塊與程式片段。程式依序通過四道閘門才執行，任一關沒過就播放動作塊 H 步。</desc>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+      <rect x="30" y="14" width="840" height="50" rx="10" fill="#1c2330" stroke="#ffa657"/>
+      <text x="450" y="44" text-anchor="middle" class="lab">重規劃點：一次前向傳遞 π(o, ℓ) → 動作塊 a₁…a_H　＋　下一階段的 code 片段 c</text>
+      <g>
+        <rect x="30" y="90" width="300" height="50" rx="8" fill="#1c2330" stroke="#7ee787"/><text x="44" y="111" class="lab" font-weight="700">① 階段閘門</text><text x="44" y="130" class="tk">未完成、不倒退、失敗次數 &lt; R</text>
+        <rect x="30" y="160" width="300" height="50" rx="8" fill="#1c2330" stroke="#7ee787"/><text x="44" y="181" class="lab" font-weight="700">② 依賴閘門</text><text x="44" y="200" class="tk">讀到的變數都已在命名空間裡定義</text>
+        <rect x="30" y="230" width="300" height="50" rx="8" fill="#1c2330" stroke="#7ee787"/><text x="44" y="251" class="lab" font-weight="700">③ 語法／白名單／非空</text><text x="44" y="270" class="tk">原樣可編譯、只呼叫已知函式</text>
+        <rect x="30" y="300" width="300" height="50" rx="8" fill="#1c2330" stroke="#7ee787"/><text x="44" y="321" class="lab" font-weight="700">④ 無望重試</text><text x="44" y="340" class="tk">同階段失敗過且狀況沒變 → 不過</text>
+      </g>
+      <line x1="180" y1="64" x2="180" y2="88" stroke="#8b949e" marker-end="url(#ah)"/>
+      <line x1="180" y1="140" x2="180" y2="158" stroke="#7ee787" marker-end="url(#ah)"/><text x="190" y="154" class="tk2">過</text>
+      <line x1="180" y1="210" x2="180" y2="228" stroke="#7ee787" marker-end="url(#ah)"/><text x="190" y="224" class="tk2">過</text>
+      <line x1="180" y1="280" x2="180" y2="298" stroke="#7ee787" marker-end="url(#ah)"/><text x="190" y="294" class="tk2">過</text>
+      <line x1="180" y1="350" x2="180" y2="378" stroke="#7ee787" marker-end="url(#ah)"/><text x="190" y="368" class="tk2">全部通過</text>
+      <path d="M330,115 H390 M330,185 H390 M330,255 H390 M330,325 H390 M390,115 V325" stroke="#d2a8ff" fill="none"/>
+      <line x1="390" y1="215" x2="428" y2="215" stroke="#d2a8ff" marker-end="url(#ah)"/><text x="350" y="108" class="tk2">不過</text>
+      <rect x="430" y="170" width="440" height="90" rx="10" fill="#1c2330" stroke="#d2a8ff"/>
+      <text x="446" y="198" class="lab" font-weight="700">播放動作塊 a₁…a_H（H 步）</text>
+      <text x="446" y="220" class="sm">與預設模式完全相同</text>
+      <text x="446" y="242" class="tk">程式片段原樣檢查、不修補；下個重規劃點再判</text>
+      <rect x="30" y="380" width="300" height="62" rx="10" fill="#1c2330" stroke="#7ee787"/>
+      <text x="44" y="404" class="lab" font-weight="700">在共享命名空間執行 c</text>
+      <text x="44" y="426" class="tk">同一次前向傳遞的動作塊丟棄（即使拋例外）</text>
+      <line x1="330" y1="400" x2="428" y2="400" stroke="#8b949e" marker-end="url(#ah)"/>
+      <line x1="330" y1="425" x2="648" y2="425" stroke="#8b949e" marker-end="url(#ah)"/>
+      <rect x="430" y="382" width="210" height="34" rx="8" fill="#1c2330" stroke="#30363d"/><text x="442" y="404" class="sm">無例外 → 階段 k 標記完成</text>
+      <rect x="650" y="408" width="220" height="34" rx="8" fill="#1c2330" stroke="#30363d"/><text x="662" y="430" class="sm">拋例外 → n_k＋1</text>
+      <text x="450" y="470" text-anchor="middle" class="tk2">閘門只問「能不能跑」，不問「跑了會不會比動作塊好」：論文在限制一節自己點出這一點</text>
+    </svg></div>
+    <figcaption><b>自繪圖 E</b>依論文演算法 1、2 重畫。共享命名空間 G 在整集內持續存在，裡面有環境的技能 API、可重用輔助函式，以及開場時跑過一次的感知設定區塊。回傳旗標代表「有沒有嘗試執行」，不代表成功與否。</figcaption>
+  </figure>
+
+  <p>模擬裡，程式透過一組感知與控制 primitive 執行：Molmo 做開放詞彙定位、SAM 3 做分割、Contact-GraspNet 產生抓取、RoboTwin 原生的運動規劃與夾爪控制。<strong>評估時程式和 primitive 都不讀模擬器的特權資訊</strong>；收示範資料時則用了特權物體狀態與標註好的抓取點，以提高收集效率。</p>
+  <div class="callout red">
+    <span class="tag">比較範圍：混合模式的訓練資料不一樣</span>
+    預設模式用 RoboTwin 原生運動規劃器收的示範。混合模式的示範則是<strong>執行 Claude Opus 4.8 寫的 CaP 程式</strong>收來的，每一集用的那段程式直接當它的 code 標籤，這樣模型才學得會寫出能在模擬器裡跑的程式。論文附錄 J 明說：兩種設定的比較是「整套配置」對「整套配置」，<strong>沒有分離出混合執行本身的效果</strong>。§6 的混合模式數字要帶著這個前提讀。
+  </div>
+</section>
+
+<!-- ─────────── 設定 ─────────── -->
+<section id="setup">
+  <h2><span class="num">§5</span>實驗設定：一個模擬基準、兩種真機</h2>
+  <p class="sec-sub">RoboTwin 2.0 的 50 個任務；YAM 平行夾爪與 Tianji–Sharpa 靈巧手各 4 個任務</p>
+
+  <figure>
+    <img src="figs/fig8.jpg" alt="YAM 工作站與 Tianji–Sharpa 工作站" loading="lazy" width="1543" height="820">
+    <figcaption><b>原圖 8</b>（附錄 D，兩張子圖並排）左：YAM 工作站，兩支 6 自由度手臂配線性夾爪，頂部與兩腕各一支 RealSense D405（底部那支相機不使用）。右：Tianji 人形軀幹加兩隻 Sharpa Wave 22 自由度靈巧手，頭部與兩腕各一支 SHW5G 相機。</figcaption>
+  </figure>
+
+  <p><strong>遙控收資料</strong>：YAM 用標準的主從臂，操作員動主臂，關節角直接當從臂的目標，手把扳機控制夾爪。Tianji–Sharpa 用 Manus 手套，手套上掛 PICO 追蹤器，操作員脖子上掛一台 Apple Vision Pro；手腕位姿對應到手臂末端，手指動作重定向成 22 維關節目標。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 260" role="img" aria-labelledby="sa-t sa-d">
+      <title id="sa-t">統一的 64 維狀態／動作空間</title>
+      <desc id="sa-d">左右各 32 維：9 維末端位姿、22 維靈巧手關節、1 維夾爪寬度。不同機體用不到的維度補零。</desc>
+      <text x="20" y="66" class="row">左側</text><text x="20" y="121" class="row">右側</text>
+      <rect x="150" y="40" width="202" height="40" rx="5" fill="#79c0ff" opacity=".8"/><rect x="354" y="40" width="493" height="40" rx="5" fill="#d2a8ff" opacity=".8"/><rect x="849" y="40" width="21" height="40" rx="5" fill="#ffa657" opacity=".9"/>
+      <rect x="150" y="95" width="202" height="40" rx="5" fill="#79c0ff" opacity=".8"/><rect x="354" y="95" width="493" height="40" rx="5" fill="#d2a8ff" opacity=".8"/><rect x="849" y="95" width="21" height="40" rx="5" fill="#ffa657" opacity=".9"/>
+      <text x="251" y="65" text-anchor="middle" class="sm" fill="#0d1117" font-weight="700">末端位姿 9</text>
+      <text x="600" y="65" text-anchor="middle" class="sm" fill="#0d1117" font-weight="700">靈巧手關節 22</text>
+      <text x="251" y="120" text-anchor="middle" class="sm" fill="#0d1117" font-weight="700">xyz 3 ＋ 6D 旋轉 6</text>
+      <text x="600" y="120" text-anchor="middle" class="sm" fill="#0d1117" font-weight="700">（人類手部重定向／Sharpa）</text>
+      <text x="859" y="30" text-anchor="middle" class="tk2">夾爪 1</text>
+      <text x="510" y="160" text-anchor="middle" class="tk">2 × (9 + 22 + 1) = 64 維</text>
+      <circle cx="160" cy="190" r="6" fill="#ffa657"/><text x="174" y="195" class="sm">YAM（平行夾爪）：用位姿＋夾爪，22 維手指補 0、不正規化</text>
+      <circle cx="160" cy="216" r="6" fill="#d2a8ff"/><text x="174" y="221" class="sm">人類影片／Tianji–Sharpa（靈巧手）：用位姿＋手指，夾爪維補 0</text>
+      <circle cx="160" cy="242" r="6" fill="#6e7681"/><text x="174" y="247" class="sm">RoboTwin：不用這個空間，改用模擬器原生的 14 維關節</text>
+    </svg></div>
+    <figcaption><b>自繪圖 F</b>統一狀態／動作空間（附錄 A）。狀態一律用絕對值；動作塊的位姿是相對於該塊第一幀的增量，夾爪寬度與手指關節則是絕對目標。機體用不到的維度補 0、不正規化，其餘維度用第 1 與第 99 百分位數逐維正規化。同一個 64 維介面讓 YAM 夾爪與人手資料能混在一起預訓練，後訓練的 Tianji–Sharpa 靈巧手也沿用同一介面。</figcaption>
+  </figure>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th></th><th>RoboTwin 2.0（模擬）</th><th>真機</th></tr>
+      <tr><td>訓練資料</td><td>每任務 50 條乾淨示範（官方排行榜規定），50 任務共 2,500 條，每個方法訓練一個多任務 policy</td><td>每任務 100 條示範，每個方法每任務各訓一個 policy；AW-0 微調 20 epoch</td></tr>
+      <tr><td>評估</td><td>Clean（乾淨桌面、固定光照、無干擾物）與 Random（背景、桌面材質、光照、桌高、干擾物全隨機），每任務每設定 50 次</td><td>3 個訓練種子 × 每種子 16 次 = 每任務 48 次，物體初始位姿隨機</td></tr>
+      <tr><td>指標</td><td>成功率</td><td><strong>加總式 rubric 分數</strong>：每完成一個子步驟拿部分分數（附錄 E）</td></tr>
+    </table>
+  </div>
+  <p>Rubric 的例子：<em>Flip Scoreboard</em> 扶住板子 0.1、翻成功一張 0.2、<strong>剛好翻 k 次</strong> 0.4、放開 0.1、在正確分數時按按鈕 0.2。<em>Replace Lightbulb</em> 分兩種條件：燈泡壞了就要拆掉換新的；燈泡是好的，按開關看到亮就該收手不動，收手這一項佔 0.7。<em>Solve Rubik's Cube</em> 每次只隨機轉亂一面的一個四分之一圈，所以「解」等於轉回那一下。<strong>因此 rubric 分數不等於成功率</strong>，71.1 分不代表 71% 的成功率。</p>
+</section>
+
+<!-- ─────────── 模擬結果 ─────────── -->
+<section id="sim">
+  <h2><span class="num">§6</span>模擬結果：乾淨場景大勝，隨機化露出破口</h2>
+  <p class="sec-sub">RoboTwin 2.0 的 50 個雙臂任務，每任務 50 次評估</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>Clean</th><th>Random</th><th>平均</th></tr>
+      <tr><td>π<sub>0.5</sub></td><td class="num">54.9</td><td class="num">27.7</td><td class="num">41.3</td></tr>
+      <tr><td>DreamZero</td><td class="num">33.6</td><td class="num">17.6</td><td class="num">25.6</td></tr>
+      <tr><td>EgoScale</td><td class="num">26.2</td><td class="num">2.9</td><td class="num">14.5</td></tr>
+      <tr><td>WLA</td><td class="num">64.8</td><td class="num">3.6</td><td class="num">34.2</td></tr>
+      <tr class="hl"><td><strong>AW-0</strong></td><td class="num best">80.8</td><td class="num">20.6</td><td class="num best">50.7</td></tr>
+      <tr class="hl"><td><strong>AW-0（混合）</strong></td><td class="num">63.1</td><td class="num best">29.2</td><td class="num">46.2</td></tr>
+    </table>
+  </div>
+  <p class="note">論文表 1。成功率（%），50 個任務 × 每任務 50 次的平均。</p>
+
+  <figure>
+    <img src="figs/fig9.jpg" alt="RoboTwin 2.0 Clean 與 Random 的平均成功率長條圖" loading="lazy" width="1600" height="1143">
+    <figcaption><b>原圖 9</b>（論文圖 4）表 1 的長條圖。斜線是混合模式。</figcaption>
+  </figure>
+
+  <p>論文的讀法：兩種推理模式<strong>互補</strong>。預設模式的優勢幾乎都來自 Clean，80.8% 比 WLA 高 16.0 個百分點。到了 Random 就掉到 20.6%，論文認為這與先前研究指出的像素層級分佈外預測難題一致；這個數字輸給 π<sub>0.5</sub>（27.7%），但仍贏過最強的 WAM 基線 DreamZero（17.6%）。混合模式在 Random 拿到 29.2%，是全場最高；代價是 Clean 掉到 63.1%，比預設模式少 17.7 個百分點。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 338" role="img" aria-labelledby="rt-t" class="chart"><title id="rt-t">RoboTwin 2.0：Clean 與 Random 成功率及保留率（本站依論文表 1 計算）</title><circle cx="196" cy="26" r="6" fill="#3987e5"/><text x="208" y="31" class="lab">Clean（乾淨桌面）</text><circle cx="360" cy="26" r="6" fill="#d95f2b"/><text x="372" y="31" class="lab">Random（領域隨機化）</text><text x="850" y="31" text-anchor="end" class="tk">保留率＝Random÷Clean</text><line x1="190.0" x2="190.0" y1="48" y2="308" stroke="#30363d"/><text x="190.0" y="326" text-anchor="middle" class="tk">0%</text><line x1="300.0" x2="300.0" y1="48" y2="308" stroke="#30363d"/><text x="300.0" y="326" text-anchor="middle" class="tk">20%</text><line x1="410.0" x2="410.0" y1="48" y2="308" stroke="#30363d"/><text x="410.0" y="326" text-anchor="middle" class="tk">40%</text><line x1="520.0" x2="520.0" y1="48" y2="308" stroke="#30363d"/><text x="520.0" y="326" text-anchor="middle" class="tk">60%</text><line x1="630.0" x2="630.0" y1="48" y2="308" stroke="#30363d"/><text x="630.0" y="326" text-anchor="middle" class="tk">80%</text><line x1="740.0" x2="740.0" y1="48" y2="308" stroke="#30363d"/><text x="740.0" y="326" text-anchor="middle" class="tk">100%</text><text x="174" y="75" text-anchor="end" class="lab" font-weight="700" fill="#e6edf3">AW-0</text><line x1="303.3" x2="634.4" y1="70" y2="70" stroke="#6e7681" stroke-width="2"/><circle cx="634.4" cy="70" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>AW-0　Clean 80.8%</title></circle><circle cx="303.3" cy="70" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>AW-0　Random 20.6%</title></circle><text x="646.4" y="74" class="val">80.8</text><text x="291.3" y="74" text-anchor="end" class="val">20.6</text><text x="850" y="75" text-anchor="end" class="ret">25%</text><text x="174" y="117" text-anchor="end" class="lab">WLA</text><line x1="209.8" x2="546.4" y1="112" y2="112" stroke="#6e7681" stroke-width="2"/><circle cx="546.4" cy="112" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>WLA　Clean 64.8%</title></circle><circle cx="209.8" cy="112" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>WLA　Random 3.6%</title></circle><text x="558.4" y="116" class="val">64.8</text><text x="209.8" y="100" text-anchor="middle" class="val">3.6</text><text x="850" y="117" text-anchor="end" class="ret">6%</text><text x="174" y="159" text-anchor="end" class="lab" font-weight="700" fill="#e6edf3">AW-0 hybrid</text><line x1="350.6" x2="537.0" y1="154" y2="154" stroke="#6e7681" stroke-width="2"/><circle cx="537.0" cy="154" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>AW-0 hybrid　Clean 63.1%</title></circle><circle cx="350.6" cy="154" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>AW-0 hybrid　Random 29.2%</title></circle><text x="549.0" y="158" class="val">63.1</text><text x="338.6" y="158" text-anchor="end" class="val">29.2</text><text x="850" y="159" text-anchor="end" class="ret">46%</text><text x="174" y="201" text-anchor="end" class="lab">π0.5</text><line x1="342.4" x2="491.9" y1="196" y2="196" stroke="#6e7681" stroke-width="2"/><circle cx="491.9" cy="196" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>π0.5　Clean 54.9%</title></circle><circle cx="342.4" cy="196" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>π0.5　Random 27.7%</title></circle><text x="503.9" y="200" class="val">54.9</text><text x="330.4" y="200" text-anchor="end" class="val">27.7</text><text x="850" y="201" text-anchor="end" class="ret">50%</text><text x="174" y="243" text-anchor="end" class="lab">DreamZero</text><line x1="286.8" x2="374.8" y1="238" y2="238" stroke="#6e7681" stroke-width="2"/><circle cx="374.8" cy="238" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>DreamZero　Clean 33.6%</title></circle><circle cx="286.8" cy="238" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>DreamZero　Random 17.6%</title></circle><text x="386.8" y="242" class="val">33.6</text><text x="274.8" y="242" text-anchor="end" class="val">17.6</text><text x="850" y="243" text-anchor="end" class="ret">52%</text><text x="174" y="285" text-anchor="end" class="lab">EgoScale</text><line x1="205.9" x2="334.1" y1="280" y2="280" stroke="#6e7681" stroke-width="2"/><circle cx="334.1" cy="280" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>EgoScale　Clean 26.2%</title></circle><circle cx="205.9" cy="280" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>EgoScale　Random 2.9%</title></circle><text x="346.1" y="284" class="val">26.2</text><text x="205.9" y="268" text-anchor="middle" class="val">2.9</text><text x="850" y="285" text-anchor="end" class="ret">11%</text></svg></div>
+    <figcaption><b>自繪圖 G</b>（本站計算）同一個方法從 Clean 到 Random 保留了多少成功率。換成相對比例來看，最抗隨機化的是 DreamZero（52%）和 π<sub>0.5</sub>（50%）；AW-0 預設模式只保留 25%，混合模式 46%。WLA 從 64.8 掉到 3.6，幾乎全毀。AW-0 平均分數領先，主要是 Clean 那一端拉開的。滑鼠移到圓點上可看數值。</figcaption>
+  </figure>
+
+  <h3>混合模式不是全面更好：逐任務看</h3>
+  <p>我們從附錄的 50 任務逐項表（論文表 11）重算，混合模式對預設模式的勝負如下：</p>
+  <ul>
+    <li><strong>Clean</strong>：混合贏 14 個、平 1 個、<strong>輸 35 個</strong>。輸最多的是 Handover Block（82→4）、Put Bottles Dustbin（86→14）、Place Bread Skillet（90→24）、Handover Mic（98→34）、Place Dual Shoes（64→2）。</li>
+    <li><strong>Random</strong>：混合贏 24 個、平 7 個、輸 19 個。贏最多的是 Stack Blocks Two（18→82）、Press Stapler（8→68）、Place A2B Right（26→80）、Click Bell（18→72）、Blocks Ranking RGB／Size（各 +50）。</li>
+    <li>Random 設定下，AW-0 預設模式只在 20 個任務贏過 π<sub>0.5</sub>，混合模式 25 個，剛好一半。</li>
+  </ul>
+  <p>大致傾向（本站觀察，非論文結論）：按順序排方塊、A 放到 B 這類<strong>結構化取放</strong>，在 Random 下混合模式明顯較好；<strong>交接類與部分不規則物體</strong>（交接方塊、交接麥克風、擺鞋）在 Clean 下大幅掉分。但反例不少：Stack Blocks Three（Clean 92→62）、Stack Bowls Two／Three（98→52、78→44）同屬規則物體卻掉分，不規則的 Pick Dual Bottles 反而 80→96。混合模式連訓練示範都不同（§4），論文也沒有給逐任務的程式執行佔比，無法斷定掉分就是「交給程式」造成的。論文對 Clean 掉分的解釋是：code 這條路會繼承底層感知與控制 primitive 的失敗模式，而仲裁器只看程式「有效」就放行，不會預測它是否比被取代的動作塊更好。</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>設定</th><th>集合</th><th>Code 執行步數佔比</th><th>直接動作佔比</th><th>每集平均步數</th></tr>
+      <tr><td rowspan="3">Clean</td><td>全部</td><td class="num">8.5%</td><td class="num">91.5%</td><td class="num">26,720</td></tr>
+      <tr><td>成功集</td><td class="num">14.5%</td><td class="num">85.5%</td><td class="num">11,549</td></tr>
+      <tr><td>失敗集</td><td class="num">6.3%</td><td class="num">93.7%</td><td class="num">52,687</td></tr>
+      <tr><td rowspan="3">Random</td><td>全部</td><td class="num">5.6%</td><td class="num">94.4%</td><td class="num">41,716</td></tr>
+      <tr><td>成功集</td><td class="num best">35.0%</td><td class="num">65.0%</td><td class="num">8,400</td></tr>
+      <tr><td>失敗集</td><td class="num">3.7%</td><td class="num">96.3%</td><td class="num">55,483</td></tr>
+    </table>
+  </div>
+  <p class="note">論文附錄 J 表 12。失敗集會跑到步數上限，步數約是成功集的 5 倍，而且幾乎全是直接動作，所以「全部」那一列被失敗集稀釋了。</p>
+  <p>在 Random 的成功集裡，程式負責了三分之一的物理時間：學出來的動作在視覺分佈外不可靠時，程式這條路就補上來。</p>
+
+  <figure>
+    <img src="figs/fig10.jpg" alt="RoboTwin 混合模式範例：blocks_ranking_rgb 與 pick_dual_bottles 的程式／動作交替" loading="lazy" width="1600" height="586">
+    <figcaption><b>原圖 10</b>（附錄 J，上下兩列）綠色＝程式執行，紫色＝直接動作，數字是步數。上：<code>blocks_ranking_rgb</code>（按紅、綠、藍排方塊）。論文說三輪取放「幾乎全由程式完成」、直接動作只在階段交界接手；但從圖上的進度條量，中段那次交界的直接動作約佔全集三成步數，程式約七成。下：<code>pick_dual_bottles</code>，程式找到瓶子、把夾爪帶過去，但瓶子形狀不規則，抓不牢；直接動作接手完成抓取後，程式再接回來收尾。</figcaption>
+  </figure>
+
+  <details>
+    <summary>展開：RoboTwin 2.0 的 50 個任務逐項成功率（論文表 11，可點欄位標題排序）</summary>
+    <div class="inner">
+      <div class="tablewrap">
+        <table class="tight sortable" id="pertask">
+          <thead><tr><th class="sortable" data-col="0">任務</th><th class="sortable" data-col="1">π0.5 C</th><th class="sortable" data-col="2">π0.5 R</th><th class="sortable" data-col="3">Ego C</th><th class="sortable" data-col="4">Ego R</th><th class="sortable" data-col="5">DZ C</th><th class="sortable" data-col="6">DZ R</th><th class="sortable" data-col="7">WLA C</th><th class="sortable" data-col="8">WLA R</th><th class="sortable" data-col="9">AW-0 C</th><th class="sortable" data-col="10">AW-0 R</th><th class="sortable" data-col="11">混合 C</th><th class="sortable" data-col="12">混合 R</th><th class="sortable" data-col="13">混合−預設 R</th></tr></thead>
+          <tbody>
+<tr><td>Adjust Bottle</td><td class="num">62</td><td class="num">18</td><td class="num">26</td><td class="num">0</td><td class="num">0</td><td class="num">6</td><td class="num best">100</td><td class="num">0</td><td class="num best">100</td><td class="num best">50</td><td class="num">90</td><td class="num">48</td><td class="num down">-2</td></tr>
+<tr><td>Beat Block Hammer</td><td class="num">48</td><td class="num">16</td><td class="num">22</td><td class="num">0</td><td class="num">26</td><td class="num">12</td><td class="num">82</td><td class="num">0</td><td class="num best">94</td><td class="num best">28</td><td class="num">46</td><td class="num">24</td><td class="num down">-4</td></tr>
+<tr><td>Blocks Ranking RGB</td><td class="num">74</td><td class="num">16</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">54</td><td class="num">0</td><td class="num best">96</td><td class="num">32</td><td class="num">94</td><td class="num best">82</td><td class="num up">+50</td></tr>
+<tr><td>Blocks Ranking Size</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">16</td><td class="num">0</td><td class="num">32</td><td class="num">0</td><td class="num">56</td><td class="num">0</td><td class="num best">64</td><td class="num best">50</td><td class="num up">+50</td></tr>
+<tr><td>Click Alarmclock</td><td class="num">44</td><td class="num">56</td><td class="num">88</td><td class="num">16</td><td class="num best">100</td><td class="num">24</td><td class="num best">100</td><td class="num">42</td><td class="num">96</td><td class="num">56</td><td class="num best">100</td><td class="num best">62</td><td class="num up">+6</td></tr>
+<tr><td>Click Bell</td><td class="num">32</td><td class="num">40</td><td class="num">92</td><td class="num">36</td><td class="num best">100</td><td class="num">66</td><td class="num best">100</td><td class="num">48</td><td class="num">96</td><td class="num">18</td><td class="num best">100</td><td class="num best">72</td><td class="num up">+54</td></tr>
+<tr><td>Dump Bin Bigbin</td><td class="num">72</td><td class="num best">70</td><td class="num">32</td><td class="num">18</td><td class="num">0</td><td class="num">0</td><td class="num best">100</td><td class="num">12</td><td class="num">98</td><td class="num">20</td><td class="num">78</td><td class="num">14</td><td class="num down">-6</td></tr>
+<tr><td>Grab Roller</td><td class="num">94</td><td class="num">46</td><td class="num">96</td><td class="num">6</td><td class="num">64</td><td class="num">22</td><td class="num best">100</td><td class="num">0</td><td class="num best">100</td><td class="num">32</td><td class="num">92</td><td class="num best">50</td><td class="num up">+18</td></tr>
+<tr><td>Handover Block</td><td class="num">16</td><td class="num best">0</td><td class="num">4</td><td class="num best">0</td><td class="num">0</td><td class="num best">0</td><td class="num">8</td><td class="num best">0</td><td class="num best">82</td><td class="num best">0</td><td class="num">4</td><td class="num best">0</td><td class="num">+0</td></tr>
+<tr><td>Handover Mic</td><td class="num">26</td><td class="num">4</td><td class="num">0</td><td class="num">0</td><td class="num">16</td><td class="num">0</td><td class="num">68</td><td class="num">0</td><td class="num best">98</td><td class="num best">12</td><td class="num">34</td><td class="num">2</td><td class="num down">-10</td></tr>
+<tr><td>Hanging Mug</td><td class="num">10</td><td class="num best">4</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">8</td><td class="num">0</td><td class="num best">30</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">+0</td></tr>
+<tr><td>Lift Pot</td><td class="num">8</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">8</td><td class="num">0</td><td class="num">88</td><td class="num">0</td><td class="num best">90</td><td class="num best">4</td><td class="num">66</td><td class="num">0</td><td class="num down">-4</td></tr>
+<tr><td>Move Can Pot</td><td class="num">28</td><td class="num">0</td><td class="num">24</td><td class="num">0</td><td class="num">4</td><td class="num">4</td><td class="num">64</td><td class="num">0</td><td class="num">76</td><td class="num">6</td><td class="num best">82</td><td class="num best">52</td><td class="num up">+46</td></tr>
+<tr><td>Move Pillbottle Pad</td><td class="num">60</td><td class="num best">44</td><td class="num">36</td><td class="num">0</td><td class="num">34</td><td class="num">16</td><td class="num">72</td><td class="num">0</td><td class="num">92</td><td class="num">6</td><td class="num best">96</td><td class="num">6</td><td class="num">+0</td></tr>
+<tr><td>Move Playingcard Away</td><td class="num">90</td><td class="num best">52</td><td class="num">46</td><td class="num">0</td><td class="num">0</td><td class="num">4</td><td class="num">94</td><td class="num">0</td><td class="num best">100</td><td class="num">46</td><td class="num">86</td><td class="num">30</td><td class="num down">-16</td></tr>
+<tr><td>Move Stapler Pad</td><td class="num">22</td><td class="num best">6</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num best">38</td><td class="num">0</td><td class="num">26</td><td class="num">2</td><td class="num up">+2</td></tr>
+<tr><td>Open Laptop</td><td class="num">68</td><td class="num">20</td><td class="num">20</td><td class="num">0</td><td class="num">66</td><td class="num">22</td><td class="num best">90</td><td class="num">0</td><td class="num">84</td><td class="num">38</td><td class="num">72</td><td class="num best">48</td><td class="num up">+10</td></tr>
+<tr><td>Open Microwave</td><td class="num">26</td><td class="num">8</td><td class="num">8</td><td class="num">2</td><td class="num">12</td><td class="num">8</td><td class="num">0</td><td class="num">0</td><td class="num">20</td><td class="num">4</td><td class="num best">46</td><td class="num best">24</td><td class="num up">+20</td></tr>
+<tr><td>Pick Diverse Bottles</td><td class="num">56</td><td class="num">18</td><td class="num">44</td><td class="num">0</td><td class="num">40</td><td class="num">16</td><td class="num best">76</td><td class="num">12</td><td class="num best">76</td><td class="num best">36</td><td class="num">74</td><td class="num">32</td><td class="num down">-4</td></tr>
+<tr><td>Pick Dual Bottles</td><td class="num">82</td><td class="num">14</td><td class="num">38</td><td class="num">4</td><td class="num">54</td><td class="num best">42</td><td class="num">80</td><td class="num">0</td><td class="num">80</td><td class="num">28</td><td class="num best">96</td><td class="num">28</td><td class="num">+0</td></tr>
+<tr><td>Place A2B Left</td><td class="num">60</td><td class="num">10</td><td class="num">0</td><td class="num">0</td><td class="num">22</td><td class="num">14</td><td class="num">48</td><td class="num">0</td><td class="num">84</td><td class="num">30</td><td class="num best">98</td><td class="num best">58</td><td class="num up">+28</td></tr>
+<tr><td>Place A2B Right</td><td class="num">58</td><td class="num">14</td><td class="num">4</td><td class="num">0</td><td class="num">24</td><td class="num">8</td><td class="num">54</td><td class="num">0</td><td class="num">80</td><td class="num">26</td><td class="num best">96</td><td class="num best">80</td><td class="num up">+54</td></tr>
+<tr><td>Place Bread Basket</td><td class="num">68</td><td class="num best">44</td><td class="num">44</td><td class="num">0</td><td class="num">62</td><td class="num">12</td><td class="num">84</td><td class="num">0</td><td class="num best">92</td><td class="num">20</td><td class="num">80</td><td class="num">6</td><td class="num down">-14</td></tr>
+<tr><td>Place Bread Skillet</td><td class="num">86</td><td class="num best">46</td><td class="num">32</td><td class="num">0</td><td class="num">36</td><td class="num">34</td><td class="num">64</td><td class="num">0</td><td class="num best">90</td><td class="num">14</td><td class="num">24</td><td class="num">2</td><td class="num down">-12</td></tr>
+<tr><td>Place Burger Fries</td><td class="num">90</td><td class="num best">78</td><td class="num">78</td><td class="num">0</td><td class="num">70</td><td class="num">62</td><td class="num best">100</td><td class="num">0</td><td class="num">94</td><td class="num">20</td><td class="num">66</td><td class="num">22</td><td class="num up">+2</td></tr>
+<tr><td>Place Can Basket</td><td class="num">40</td><td class="num">0</td><td class="num">6</td><td class="num">0</td><td class="num">26</td><td class="num best">12</td><td class="num">42</td><td class="num">6</td><td class="num best">70</td><td class="num">8</td><td class="num">26</td><td class="num">8</td><td class="num">+0</td></tr>
+<tr><td>Place Cans Plasticbox</td><td class="num">94</td><td class="num best">74</td><td class="num">40</td><td class="num">0</td><td class="num">0</td><td class="num">12</td><td class="num best">100</td><td class="num">0</td><td class="num">98</td><td class="num">12</td><td class="num">80</td><td class="num">34</td><td class="num up">+22</td></tr>
+<tr><td>Place Container Plate</td><td class="num">96</td><td class="num best">58</td><td class="num">46</td><td class="num">0</td><td class="num">96</td><td class="num">44</td><td class="num best">100</td><td class="num">0</td><td class="num">94</td><td class="num">26</td><td class="num">86</td><td class="num">22</td><td class="num down">-4</td></tr>
+<tr><td>Place Dual Shoes</td><td class="num">54</td><td class="num best">12</td><td class="num">8</td><td class="num">0</td><td class="num">20</td><td class="num">0</td><td class="num">32</td><td class="num">0</td><td class="num best">64</td><td class="num best">12</td><td class="num">2</td><td class="num">2</td><td class="num down">-10</td></tr>
+<tr><td>Place Empty Cup</td><td class="num">74</td><td class="num best">56</td><td class="num">72</td><td class="num">0</td><td class="num">76</td><td class="num">50</td><td class="num">94</td><td class="num">0</td><td class="num best">98</td><td class="num">16</td><td class="num">96</td><td class="num">14</td><td class="num down">-2</td></tr>
+<tr><td>Place Fan</td><td class="num">36</td><td class="num best">30</td><td class="num">12</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">8</td><td class="num">0</td><td class="num best">70</td><td class="num">4</td><td class="num">16</td><td class="num">10</td><td class="num up">+6</td></tr>
+<tr><td>Place Mouse Pad</td><td class="num">18</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="num">10</td><td class="num">0</td><td class="num">26</td><td class="num">0</td><td class="num best">64</td><td class="num">0</td><td class="num">18</td><td class="num best">4</td><td class="num up">+4</td></tr>
+<tr><td>Place Object Basket</td><td class="num">24</td><td class="num">4</td><td class="num">0</td><td class="num">0</td><td class="num">10</td><td class="num">0</td><td class="num">42</td><td class="num">2</td><td class="num best">84</td><td class="num best">14</td><td class="num">50</td><td class="num">4</td><td class="num down">-10</td></tr>
+<tr><td>Place Object Scale</td><td class="num">58</td><td class="num">44</td><td class="num">8</td><td class="num">0</td><td class="num">36</td><td class="num">8</td><td class="num">36</td><td class="num">0</td><td class="num">70</td><td class="num">18</td><td class="num best">88</td><td class="num best">50</td><td class="num up">+32</td></tr>
+<tr><td>Place Object Stand</td><td class="num best">94</td><td class="num">40</td><td class="num">26</td><td class="num">0</td><td class="num">50</td><td class="num">26</td><td class="num">92</td><td class="num">6</td><td class="num">92</td><td class="num">26</td><td class="num">62</td><td class="num best">56</td><td class="num up">+30</td></tr>
+<tr><td>Place Phone Stand</td><td class="num">40</td><td class="num">4</td><td class="num">8</td><td class="num">0</td><td class="num">22</td><td class="num">0</td><td class="num">86</td><td class="num">0</td><td class="num best">90</td><td class="num">22</td><td class="num">82</td><td class="num best">54</td><td class="num up">+32</td></tr>
+<tr><td>Place Shoe</td><td class="num">64</td><td class="num">24</td><td class="num">22</td><td class="num">6</td><td class="num">18</td><td class="num">6</td><td class="num">72</td><td class="num">0</td><td class="num best">78</td><td class="num">22</td><td class="num">60</td><td class="num best">30</td><td class="num up">+8</td></tr>
+<tr><td>Press Stapler</td><td class="num">42</td><td class="num">32</td><td class="num best">100</td><td class="num">20</td><td class="num">88</td><td class="num">44</td><td class="num">82</td><td class="num">0</td><td class="num">86</td><td class="num">8</td><td class="num best">100</td><td class="num best">68</td><td class="num up">+60</td></tr>
+<tr><td>Put Bottles Dustbin</td><td class="num">14</td><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">4</td><td class="num">6</td><td class="num">16</td><td class="num">0</td><td class="num best">86</td><td class="num best">12</td><td class="num">14</td><td class="num">0</td><td class="num down">-12</td></tr>
+<tr><td>Put Object Cabinet</td><td class="num">22</td><td class="num">0</td><td class="num">12</td><td class="num">0</td><td class="num">4</td><td class="num">0</td><td class="num best">68</td><td class="num">0</td><td class="num">56</td><td class="num best">6</td><td class="num">66</td><td class="num">0</td><td class="num down">-6</td></tr>
+<tr><td>Rotate QRcode</td><td class="num">50</td><td class="num">2</td><td class="num">32</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">22</td><td class="num">0</td><td class="num best">70</td><td class="num">4</td><td class="num">40</td><td class="num best">28</td><td class="num up">+24</td></tr>
+<tr><td>Scan Object</td><td class="num">62</td><td class="num best">38</td><td class="num">4</td><td class="num">0</td><td class="num">40</td><td class="num">20</td><td class="num best">80</td><td class="num">0</td><td class="num">68</td><td class="num">10</td><td class="num">16</td><td class="num">10</td><td class="num">+0</td></tr>
+<tr><td>Shake Bottle Horizontally</td><td class="num">98</td><td class="num">74</td><td class="num">72</td><td class="num">30</td><td class="num best">100</td><td class="num best">86</td><td class="num best">100</td><td class="num">26</td><td class="num best">100</td><td class="num">62</td><td class="num best">100</td><td class="num">26</td><td class="num down">-36</td></tr>
+<tr><td>Shake Bottle</td><td class="num">96</td><td class="num">72</td><td class="num">80</td><td class="num">6</td><td class="num best">100</td><td class="num best">76</td><td class="num best">100</td><td class="num">24</td><td class="num best">100</td><td class="num">58</td><td class="num">94</td><td class="num">30</td><td class="num down">-28</td></tr>
+<tr><td>Stack Blocks Three</td><td class="num">68</td><td class="num">16</td><td class="num">0</td><td class="num">0</td><td class="num">10</td><td class="num">0</td><td class="num">12</td><td class="num">0</td><td class="num best">92</td><td class="num">18</td><td class="num">62</td><td class="num best">56</td><td class="num up">+38</td></tr>
+<tr><td>Stack Blocks Two</td><td class="num">80</td><td class="num">56</td><td class="num">6</td><td class="num">0</td><td class="num">58</td><td class="num">46</td><td class="num best">90</td><td class="num">0</td><td class="num">70</td><td class="num">18</td><td class="num">80</td><td class="num best">82</td><td class="num up">+64</td></tr>
+<tr><td>Stack Bowls Three</td><td class="num">38</td><td class="num">36</td><td class="num">0</td><td class="num">0</td><td class="num">14</td><td class="num">14</td><td class="num best">88</td><td class="num">0</td><td class="num">78</td><td class="num best">40</td><td class="num">44</td><td class="num">4</td><td class="num down">-36</td></tr>
+<tr><td>Stack Bowls Two</td><td class="num">82</td><td class="num">44</td><td class="num">0</td><td class="num">0</td><td class="num">88</td><td class="num">24</td><td class="num best">100</td><td class="num">0</td><td class="num">98</td><td class="num best">56</td><td class="num">52</td><td class="num">44</td><td class="num down">-12</td></tr>
+<tr><td>Stamp Seal</td><td class="num">32</td><td class="num">2</td><td class="num">6</td><td class="num">0</td><td class="num">40</td><td class="num best">16</td><td class="num">40</td><td class="num">0</td><td class="num best">78</td><td class="num">2</td><td class="num">58</td><td class="num">4</td><td class="num up">+2</td></tr>
+<tr><td>Turn Switch</td><td class="num best">56</td><td class="num best">40</td><td class="num">12</td><td class="num">0</td><td class="num">14</td><td class="num">18</td><td class="num">42</td><td class="num">0</td><td class="num">44</td><td class="num">28</td><td class="num">52</td><td class="num">28</td><td class="num">+0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:8px">C＝Clean、R＝Random；綠字＝該任務該設定六個方法中最高（含並列）。最後一欄是混合模式減預設模式的 Random 成功率差（本站計算）。</p>
+    </div>
+  </details>
+</section>
+
+<!-- ─────────── 真機結果 ─────────── -->
+<section id="real">
+  <h2><span class="num">§7</span>真機結果：靈巧手那一側拉開最多</h2>
+  <p class="sec-sub">8 個任務 × 每任務 48 次，加總式 rubric 分數（%）</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>方法</th><th>Arrange Fruits</th><th>Pack Backpack</th><th>Replace Lightbulb</th><th>Fold Towels</th><th>Fruits w/ Tong</th><th>Deal Poker</th><th>Flip Scoreboard</th><th>Solve Cube</th><th>平均</th></tr>
+      <tr><td></td><td colspan="4" style="text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--muted)">YAM（平行夾爪）</td><td colspan="4" style="text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--muted)">Tianji–Sharpa（靈巧手）</td><td></td></tr>
+      <tr><td>π<sub>0.5</sub></td><td class="num">70.8</td><td class="num">49.7</td><td class="num">63.8</td><td class="num">81.7</td><td class="num">7.3</td><td class="num">13.1</td><td class="num">26.3</td><td class="num">36.1</td><td class="num">43.6</td></tr>
+      <tr><td>DreamZero</td><td class="num">53.3</td><td class="num">36.7</td><td class="num">67.4</td><td class="num">79.8</td><td class="num">22.6</td><td class="num">37.1</td><td class="num">28.4</td><td class="num">42.5</td><td class="num">46.0</td></tr>
+      <tr><td>EgoScale</td><td class="num">37.5</td><td class="num">27.3</td><td class="num">60.2</td><td class="num">53.3</td><td class="num">17.6</td><td class="num">25.6</td><td class="num">40.8</td><td class="num">24.9</td><td class="num">35.9</td></tr>
+      <tr><td>WLA</td><td class="num">39.6</td><td class="num">29.6</td><td class="num">56.0</td><td class="num">74.6</td><td class="num">14.2</td><td class="num">22.9</td><td class="num">29.7</td><td class="num">52.3</td><td class="num">39.9</td></tr>
+      <tr class="hl"><td><strong>AW-0</strong></td><td class="num best">91.7</td><td class="num best">64.6</td><td class="num best">75.0</td><td class="num best">84.4</td><td class="num best">54.2</td><td class="num best">58.3</td><td class="num best">68.8</td><td class="num best">72.1</td><td class="num best">71.1</td></tr>
+      <tr><td>領先最強基線</td><td class="num">+20.9</td><td class="num">+14.9</td><td class="num">+7.6</td><td class="num">+2.7</td><td class="num">+31.6</td><td class="num">+21.2</td><td class="num">+28.0</td><td class="num">+19.8</td><td class="num">+25.1</td></tr>
+    </table>
+  </div>
+  <p class="note">論文表 2。最後一列為本站計算：前 8 欄是逐任務減去該任務四個基線的最高分；平均欄是 71.1 減平均最強的 DreamZero（46.0）。若把逐任務領先取平均則是 +18.3。論文沒有報告標準差。</p>
+
+  <p>把 8 個任務按平台拆開（本站計算）：YAM 那一側 AW-0 平均 78.9，最強的 π<sub>0.5</sub> 是 66.5；<strong>靈巧手那一側 AW-0 63.4，最強的 DreamZero 只有 32.7</strong>。π<sub>0.5</sub> 在 YAM 平均 66.5、在 Sharpa 只剩 20.7，暗示靈巧手平台整體更難。但兩個平台的任務完全不同，無法把難度單獨歸給 22 自由度的手。另一個要注意的：<em>Fold Towels</em> 上 AW-0 跟 π<sub>0.5</sub> 幾乎打平（84.4 vs 81.7）。</p>
+
+  <h3>語言遵循與語意推理：該挑哪顆水果、要翻幾次</h3>
+  <p>領先幅度和任務需要的推理類型很有關係。<em>Arrange Fruits</em> 要依指令挑出特定水果（91.7 vs π<sub>0.5</sub> 70.8、DreamZero 53.3），<em>Flip Scoreboard</em> 要數次數（68.8 vs 基線 26.3–40.8）。論文觀察到 VLA 基線（尤其 π<sub>0.5</sub>）的語意理解其實不差，WAM 基線反而在這類性質上比較不可靠，而 code 把語意推理「補回」WAM。附錄 G 用預測的未來畫面直接比給讀者看：</p>
+
+  <figure>
+    <img src="figs/fig11.jpg" alt="Arrange Fruits 上三個模型預測的未來畫面：Code、Subgoal、w/o Code" loading="lazy" width="1600" height="551">
+    <figcaption><b>原圖 11</b>（附錄 G）指令「讓左碗最後只剩芒果」，右腕相機的未來畫面預測。AW-0（Code）把互動導向芒果；自然語言子目標版（Subgoal）在蘋果和芒果之間搖擺；沒有 code 的版本直接去拿蘋果。三者的初始觀測相似但不完全相同，各取自不同次的評估。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="figs/fig12.jpg" alt="Deal Poker 插牌階段三個模型預測的未來畫面" loading="lazy" width="1600" height="551">
+    <figcaption><b>原圖 12</b>（附錄 G）<em>Deal Poker</em> 最後把牌插進窄縫的階段。論文認為 AW-0 預測的畫面中，牌與縫的對齊和插入較準確（本站看圖：三組畫面其實都相當模糊）；Subgoal 和沒有 code 的版本預測得比較模糊，手和物體周圍有扭曲。論文據此認為顯式的技能呼叫與物件參數，也幫助影片專家預測精細的相對運動。</figcaption>
+  </figure>
+
+  <h3>接觸密集的任務：DreamZero 在兩個任務贏 π<sub>0.5</sub>，code 再往上推</h3>
+  <p>在 <em>Replace Lightbulb</em> 和 <em>Deal Poker</em> 上，DreamZero 贏過 π<sub>0.5</sub>（67.4 vs 63.8、37.1 vs 13.1）。論文的解讀是：預測未來狀態為動作提供了穩定的物理動態特徵。（WAM 並非處處佔優：WLA 在 Replace Lightbulb 輸 π<sub>0.5</sub>，56.0 vs 63.8。）AW-0 在此之上再加入技能程式的引導，讓技能層級的計畫與連續控制對齊。</p>
+
+  <h3>真機混合執行：只測了一個任務</h3>
+  <p>在 YAM 的 <em>Fold and Stack Towels</em> 上，同一個後訓練模型改用混合執行，rubric 分數從 84.4 升到 <strong>90.6</strong>。論文說，程式直接執行的那幾段，幫助模型分辨堆疊順序並讓動作更穩定。靈巧手沒有測：因為目前沒有給靈巧手用的 code-as-policy 系統。也要注意：論文沒有說明 YAM 真機上執行程式用的是哪一套感知與控制 primitive（標註用的宣告式 API 本身沒有實作），用的是同一個以宣告式標籤後訓練的模型；84.4→90.6 只有單一任務、沒有標準差，也不是在分佈偏移下量的。</p>
+
+  <figure>
+    <img src="figs/fig13.jpg" alt="Fold and Stack Towels 真機混合執行：程式執行與直接動作交替" loading="lazy" width="1600" height="701">
+    <figcaption><b>原圖 13</b>（附錄 G）同一集從上列接到下列。綠＝程式執行，紫＝直接動作。論文的觀察是：靈巧的摺疊主要靠動作專家，靠近毛巾、搬運堆疊這類較結構化的動作多由程式執行，為堆疊順序與移動方向提供引導。不過本例最後把毛巾疊上去的幾格仍是直接動作。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 消融 ─────────── -->
+<section id="ablation">
+  <h2><span class="num">§8</span>消融：code 到底貢獻了什麼</h2>
+  <p class="sec-sub">全部在真機 8 任務、同一套評估協定下做；四個問題</p>
+
+  <h3>1 · code 該接在哪：順序比有沒有更重要</h3>
+  <figure>
+    <img src="figs/fig14.jpg" alt="注意力順序消融：C→V→A、V→C→A、V→A" loading="lazy" width="1600" height="496">
+    <figcaption><b>原圖 14</b>（論文圖 5）三種注意力順序，在 8 個任務上的平均 rubric 分數。</figcaption>
+  </figure>
+  <p>三個變體用同樣的預訓練資料、訓練預算與最佳化設定。平均分數（本站計算）：<strong>C→V→A 71.1、V→C→A 48.3、V→A 32.9</strong>。把 code 放在影片之後（V→C→A），比沒有 code 多 15.5 分；放在影片之前，又多 22.8 分。差距最大的是 <em>Arrange Fruits</em>：V→C→A 只有 31.3，C→V→A 有 91.7。本站推測：<strong>語言遵循可能得在想像未來之前就決定</strong>。V→C→A 裡 code 讀的是已經想像好的未來，難以回頭修正；論文的說法是這個順序讓 code 只能「對影片預測做推理，無法引導或修正它」。（附錄 G 那張「去拿蘋果」的畫面來自完全沒有 code 的版本，不是 V→C→A。）唯一的例外是 <em>Replace Lightbulb</em>，V→C→A 略高（77.1 vs 75.0）。</p>
+  <div class="callout purple">
+    <span class="tag">本站注記：拿掉 code 的 AW-0 比所有基線都差</span>
+    V→A 的 32.9 低於 π<sub>0.5</sub>（43.6）、DreamZero（46.0）、EgoScale（35.9）、WLA（39.9）。也就是說，2,913 小時的自家預訓練加上同樣的後訓練，<strong>如果沒有 code 流，這個 WAM 是全場最弱的</strong>。這說明 AW-0 的領先幾乎都來自 code 這條流。但 V→A 拿掉的是<strong>整個 code 專家</strong>：唯一的語意視覺塔（Qwen3-VL ViT）、讀指令的 SDAR 語言骨幹、記憶快取都一起拿掉了，不只是「程式」這種表示法。同一個專家改輸出自然語言子目標仍有 63.6 分（見下方第 3 題），所以「寫成程式而非文字」本身約貢獻 7.5 分，其餘約 30.7 分來自「有一條看圖、讀指令的規劃流」（本站計算）。論文沒說明第 3 題的變體是否用對應標籤重新預訓練；若只在後訓練換標籤，這 7.5 分是「預訓練已學過程式」前提下的差距。這也間接回應了「是不是自家預訓練資料比較多」的質疑（見 §9）。另一方面，這也代表「Cosmos 影片骨幹＋從零訓練的 action DiT」本身在這 8 個任務上不算強，規劃流（code 專家）是在一個偏弱的基礎上補回來的。
+  </div>
+
+  <h3>2 · code 專家該用什麼看圖：ViT 遠勝 VAE</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>Code 專家的視覺條件</th><th>Arrange Fruits</th><th>Pack Backpack</th><th>Replace Lightbulb</th><th>Fold Towels</th><th>Fruits w/ Tong</th><th>Deal Poker</th><th>Flip Scoreboard</th><th>Solve Cube</th><th>平均</th></tr>
+      <tr class="hl"><td><strong>獨立 ViT（AW-0）</strong></td><td class="num best">91.7</td><td class="num best">64.6</td><td class="num best">75.0</td><td class="num best">84.4</td><td class="num best">54.2</td><td class="num best">58.3</td><td class="num best">68.8</td><td class="num best">72.1</td><td class="num best">71.1</td></tr>
+      <tr><td>沿用 Wan2.2 VAE 特徵</td><td class="num">83.3</td><td class="num">39.6</td><td class="num">66.7</td><td class="num">61.3</td><td class="num">41.7</td><td class="num">47.9</td><td class="num">50.0</td><td class="num">53.9</td><td class="num">55.6</td></tr>
+    </table>
+  </div>
+  <p class="note">論文表 3。</p>
+  <p>8 個任務全部由 ViT 勝出，差距最大的是 <em>Pack Backpack</em>（64.6 vs 39.6，+25.0）與 <em>Fold Towels</em>（84.4 vs 61.3，+23.1）。論文特別點名 Pack Backpack 與 <em>Solve Cube</em>（72.1 vs 53.9），說這兩個任務需要細緻地辨認物體屬性與任務狀態。VAE 特徵是為了<strong>像素重建</strong>最佳化的，不擅長「該選哪個技能」這種語意區分。</p>
+
+  <h3>3 · 計畫該寫成什麼：註解、技能、程式結構各有貢獻</h3>
+  <figure>
+    <img src="figs/fig15.jpg" alt="Code 標籤內容消融：完整程式、無註解、無技能、自然語言子目標" loading="lazy" width="1600" height="500">
+    <figcaption><b>原圖 15</b>（論文圖 7）四種計畫表示法。y 軸從 40 起跳，視覺上會放大差距。</figcaption>
+  </figure>
+  <div class="tablewrap">
+    <table>
+      <tr><th>計畫表示</th><th>平均</th><th>YAM</th><th>靈巧手</th><th>相對完整程式</th></tr>
+      <tr class="hl"><td><strong>完整程式（註解＋技能＋結構）</strong></td><td class="num best">71.1</td><td class="num">78.9</td><td class="num">63.4</td><td class="num">—</td></tr>
+      <tr><td>拿掉註解</td><td class="num">62.8</td><td class="num">70.3</td><td class="num">55.4</td><td class="num">8 任務全輸</td></tr>
+      <tr><td>拿掉技能呼叫（只剩 primitive）</td><td class="num">63.3</td><td class="num">72.1</td><td class="num">54.5</td><td class="num">8 任務全輸；Deal Poker 58.3→42.0</td></tr>
+      <tr><td>自然語言子目標</td><td class="num">63.6</td><td class="num">73.9</td><td class="num">53.4</td><td class="num">輸 7 任務；Fruits w/ Tong 反勝 58.3 vs 54.2</td></tr>
+    </table>
+  </div>
+  <p class="note">平均與分平台平均為本站依原圖 15 的數值計算。</p>
+  <p>三個讀點：<strong>註解有用</strong>，說明性的語言把程式結構和任務意圖接起來；<strong>技能有用</strong>，拿掉技能後仍是結構化程式，分數卻照樣下滑，表示「可重用的抽象」本身有價值；<strong>程式勝過純文字</strong>，結構化的語意引導對動作來說是更好的條件。三個變體的分數都落在 63 分上下，比完整程式少約 8 分。</p>
+
+  <h3>4 · 聯合去噪 vs 自迴歸：又快又好</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>任務</th><th>聯合去噪（AW-0）</th><th>自迴歸 code</th></tr>
+      <tr><td>Arrange Fruits</td><td class="num best">91.7</td><td class="num">81.3</td></tr>
+      <tr><td>Pack Backpack</td><td class="num best">64.6</td><td class="num">62.5</td></tr>
+      <tr><td>Replace Lightbulb</td><td class="num">75.0</td><td class="num best">79.2</td></tr>
+      <tr><td>Fold Towels</td><td class="num best">84.4</td><td class="num">53.2</td></tr>
+      <tr><td>Fruits w/ Tong</td><td class="num best">54.2</td><td class="num">20.8</td></tr>
+      <tr><td>Deal Poker</td><td class="num best">58.3</td><td class="num">44.1</td></tr>
+      <tr><td>Flip Scoreboard</td><td class="num best">68.8</td><td class="num">39.3</td></tr>
+      <tr><td>Solve Cube</td><td class="num best">72.1</td><td class="num">55.8</td></tr>
+      <tr><td><strong>平均</strong></td><td class="num best">71.1</td><td class="num">54.5</td></tr>
+    </table>
+  </div>
+  <p class="note">論文表 4。</p>
+  <figure>
+    <img src="figs/fig16.jpg" alt="效能與推理延遲：w/o Code 0.19 s、聯合去噪 0.23 s、自迴歸 0.55 s" loading="lazy" width="1600" height="910">
+    <figcaption><b>原圖 16</b>（論文圖 6）長條是 8 任務平均分數，紅線是 RTX 5090 上的端到端推理延遲（含視覺編碼、聯合去噪、影片解碼、動作後處理）。</figcaption>
+  </figure>
+  <p>聯合去噪在 8 個任務中贏 7 個，速度是自迴歸的 2.39 倍（0.23 vs 0.55 s）。跟完全不帶 code 的版本比，只多 0.04 s（21.1%），8 個任務卻全部進步。每次推理產出 32 步動作，以 30 Hz 資料計約 1.07 秒（本站推算）；論文沒有報告部署時的控制頻率、推理是否與執行重疊，延遲是在 RTX 5090 上量的。</p>
+
+  <h3>生成的程式品質：能 parse，不見得對</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>TF loss</th><th>TF 準確率</th><th>接地落差</th><th>可解析率</th><th>實體 F1</th><th>Primitive F1</th><th>技能呼叫率</th></tr>
+      <tr><td class="num">0.535</td><td class="num">89.7%</td><td class="num">1.774</td><td class="num">87.5%</td><td class="num">0.534</td><td class="num">0.365</td><td class="num">29.2%</td></tr>
+    </table>
+  </div>
+  <p class="note">附錄 F 表 10：預訓練 code 專家在預訓練驗證集上的表現（尚未下游微調）。TF＝teacher forcing；接地落差（grounding gap，看程式是否真的對應到畫面）＝把視覺觀測在樣本間打亂後，code loss 增加多少；實體 F1＝生成程式中的引號字串（物件名稱等）與參考程式的重疊；Primitive F1＝呼叫的 robot API 名稱的重疊；技能呼叫率＝含技能呼叫（以 robot 為第一個參數的函式）的程式比例。</p>
+  <p>把影像打亂後 code loss 增加 1.774，代表程式確實「看了圖才寫」。但實體 F1 只有 0.534、primitive F1 只有 0.365：<strong>語法有效（87.5%）和語意正確是兩回事</strong>。論文也附上一好一壞兩個例子：</p>
+  <figure>
+    <img src="figs/fig17.jpg" alt="預訓練 code 專家在 YAM 驗證樣本上的生成：技能結構正確但參數多了兩維" loading="lazy" width="1600" height="864">
+    <figcaption><b>原圖 17</b>（附錄 F）預訓練模型對「用布擦鍵盤」的生成。交接布、迴圈 8 次呼叫 <code>scrub_back_and_forth</code> 的結構都對，但位移參數多了兩個元素：<strong>技能選對、參數錯</strong>，直接執行就會失敗。</figcaption>
+  </figure>
+  <figure>
+    <img src="figs/fig18.jpg" alt="後訓練模型在 Pack Backpack 真機部署時的線上生成，與另一條示範的標註完全一致" loading="lazy" width="1600" height="847">
+    <figcaption><b>原圖 18</b>（附錄 F）後訓練模型在 <em>Pack Backpack</em> 真機部署時線上生成的程式，與另一條示範同一子任務的標註<strong>逐字相同</strong>，技能、物件、手臂、數值參數都對。附錄另一個 <em>Solve Rubik's Cube</em> 的例子技能呼叫正確，但註解少了一個字又斷到下一行，沒有註解符號，原樣無法執行。</figcaption>
+  </figure>
+</section>
+
+<!-- ─────────── 查證與限制 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§9</span>查證筆記與限制</h2>
+  <p class="sec-sub">論文自己認的三條、失敗案例六類，以及我們對回原文後補充的幾條</p>
+
+  <p><strong>論文自列（附錄 L）</strong>：</p>
+  <ul>
+    <li><strong>程式接地與技能覆蓋。</strong>計畫品質受限於自動標註的準確度和技能庫的覆蓋範圍；技能選對但參數錯的情況存在，語法有效不保證能正確執行。未來可以用執行回饋改善接地、擴充技能。</li>
+    <li><strong>預測的穩健性與混合執行。</strong>結構化計畫沒有消除對視覺分佈偏移的敏感；混合執行改善了 Random，卻拉低了 Clean。仲裁只看有效性、不估計優勢，應該學一個依執行可靠度與預期進度來仲裁的機制。</li>
+    <li><strong>離持續學習還遠。</strong>真機混合執行只在 YAM 上做，因為靈巧手沒有 code-as-policy 系統；整個系統也不會從自己的互動中線上學習。</li>
+  </ul>
+
+  <figure>
+    <img src="figs/fig19.jpg" alt="六類失敗案例：容器抓取、物體被拖動、對位不準、工具碰撞、滑脫、接觸丟失" loading="lazy" width="1600" height="1258">
+    <figcaption><b>原圖 19</b>（附錄 H）六類代表性失敗，紅框放大失敗處。容器抓取：水果靠籃邊，夾爪左側落在籃外，夾到籃壁。物體被拖動：拉拉鍊時整個背包被拖倒。對位不準：燈泡在燈座上方但軸沒對正，沒鎖進去。工具碰撞：夾子沒張開就戳到梨子。滑脫：牌疊在兩手之間滑落。接觸丟失：指尖滑過計分板數字卡的邊緣，沒翻過去。</figcaption>
+  </figure>
+  <p>（本站觀察）六類全是<strong>細粒度的接觸與相對位姿</strong>，與 <a href="../last-r1/">LaST-R1</a> 的真機失敗清單一致。論文沒有附上失敗回合生成的程式，無法確認是「計畫寫對、手沒跟上」；容器抓取那一例甚至可能是抓取選擇本身就錯了。</p>
+
+  <p><strong>我們對回原文後補充的</strong>：</p>
+  <ul>
+    <li><strong>摘要說「穩健性提升」，要打折讀。</strong>模擬 Random 設定下，預設模式（20.6）輸 π<sub>0.5</sub>（27.7）；混合模式 29.2 只贏 1.5 個百分點，而且用的是另一套訓練示範（§4）。換成保留率，最抗隨機化的反而是 DreamZero 和 π<sub>0.5</sub>（自繪圖 G）。真機上沒有做分佈偏移測試：混合執行的 84.4→90.6 是在同樣條件下量的；論文在真機講的「穩健」是指接觸密集任務的技能執行（§7 的 Replace Lightbulb、Deal Poker 分數），加上 Deal Poker 一組定性的未來畫面（原圖 12；原圖 11 談的是語言遵循）。</li>
+    <li><strong>跟基線比，預訓練資料不對等。</strong>AW-0 預訓練用了 1,919 小時的 <strong>YAM 機器人資料</strong>，跟 4 個 YAM 評估任務是同一種平台；基線則各自從通用權重出發。論文內部的 V→A 消融（同樣預訓練、拿掉整個 code 專家，含 ViT 與語言骨幹，32.9 分）說明光靠資料拿不到這個領先，這是比較有力的反證。但「AW-0 對 π<sub>0.5</sub>」這組數字本身，仍混合了資料、架構與 code 三個因素。各方法的微調預算也不同（π<sub>0.5</sub> 50 epoch、DreamZero 10、AW-0 20）。另外，約 994 小時人類第一人稱影片的手部動作被重定向成每手 22 維靈巧手關節目標，與 Tianji–Sharpa 共用同一組關節欄位（自繪圖 F），而 AW-0 領先最多的正是靈巧手那一側。V→A 在靈巧手只有 29.5，說明光有這份資料不夠；但基線的預訓練是否含同格式的靈巧手資料，論文沒有交代。</li>
+    <li><strong>沒有不確定性估計。</strong>真機有 3 個種子 × 16 次，卻沒有報告標準差或信賴區間；分數是加總式 rubric 的部分分數，不是成功率。</li>
+    <li><strong>幾個設計沒有消融。</strong>雜訊重取樣（α=0.5、重要性權重）、記憶快取（K、p 沒給數值）、信心排序解碼，論文都沒有對照實驗。標註管線的快取命中率、實際省下多少次 VLM 呼叫、標註成本，正文也都沒有報告。</li>
+    <li><strong>未來畫面比較只是定性單例。</strong>原圖 11、12 每個模型各一組，論文自己註明初始觀測「相似但不相同」。</li>
+    <li><strong>一處小矛盾。</strong>Deal Poker 的失敗案例，內文說是右手把牌疊交給左手時左手沒接穩；原圖 19 的圖說則寫成「抽牌時牌疊滑出手」。</li>
+    <li><strong>整條 code 監督訊號都是 LLM 產的。</strong>AI 使用聲明：標註用 Gemini 3.1 Pro 與 Claude Opus 4.8；模擬混合模式的示範程式由 Claude Opus 4.8 撰寫；語言潤飾與部分圖表準備用 GPT-6 Astra。程式標籤的上限就是這兩個前沿模型的看圖寫碼能力，論文的第一條限制也承認這一點。</li>
+    <li><strong>開源狀態（2026-10-27 查）。</strong>GitHub <a href="https://github.com/ZhuoyangLiu2005/agentic-wam">ZhuoyangLiu2005/agentic-wam</a>（BSD-2-Clause，2026-10-04 建立，121 stars、6 forks）號稱附上含預訓練在內的完整程式碼、VLM 標註管線、兩套凍結技能庫、RoboTwin 混合評估，還附了 Claude Code skills（setup、標註、訓練的 runbook）。Hugging Face 有預訓練權重與 RoboTwin 後訓練權重。<strong>預訓練語料沒有釋出</strong>；預訓練的起點 Cosmos-Predict2.5-2B 也不在這次發布內，要另外從 NVIDIA 的公開版本取得。README 寫「程式從不被 policy 執行」，指的是預設模式。</li>
+  </ul>
+</section>
+
+<!-- ─────────── 本站觀點 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§10</span>重點筆記：對狀態偵測專案的啟示</h2>
+  <p class="sec-sub">本站觀點，非原文：「固定鏡頭偵測食材狀態、gate 食譜 FSM」的專案能從這篇抄什麼</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼（一段話定位）</div>
+    <p>AW-0 把「計畫」從 policy 外面的控制器，變成 policy 裡面的一條生成模態。程式不必被執行，也能當很好的條件：在 AW-0 測過的四種計畫表示裡最好，比沒有計畫好上一大截；而且計畫與影片、動作平行生成時，推理延遲只多 0.04 s（+21%）。代價主要在訓練端：多一個 code 專家，以及一條 LLM 標註管線（成本論文沒有報告）。對烹飪狀態偵測專案（固定相機、偵測器約 1 Hz、食譜 FSM 被事件觸發、手上只有數十段錄影）來說，可以直接搬的是三樣東西：<strong>結構化的「目前步驟」當條件</strong>、<strong>用感測事件驗證 LLM 寫的標籤</strong>、<strong>以「能不能跑」以外的標準來仲裁腳本與學習模型</strong>。不能搬的是規模：2,913 小時預訓練、48 張 H100。</p>
+  </div>
+
+  <ul>
+    <li><strong>把 FSM 的目前步驟寫成「程式」餵給偵測器，不要寫成一句話。</strong>§8 的標籤消融在 AW-0 裡量到的是：完整程式 71.1、純文字子目標 63.6、拿掉註解 62.8。不過那是「模型自己生成的計畫」去條件化動作生成；換成「FSM 給定的步驟」去條件化偵測器，效果大小要自己驗證。對熟度偵測器來說，條件可以是 <code>wait_until(egg, 'white_set', region='edge')  # 蛋白邊緣轉白、中心仍透明</code>，而不只是「等蛋熟」。動詞、物件、參數加上一句說明性註解，各自有貢獻。這與本站<a href="../state-detection/">狀態偵測選型指南</a>的「VLM 問答適合語意」互補：語意由條件提供，偵測器專心看畫面。</li>
+    <li><strong>單張畫面看不出進度，就把「已經走過的步驟」也餵進去。</strong>AW-0 的記憶快取就是為「單張畫面看不出進度」而設計的（毛巾的例子是本站舉的；論文沒有對記憶快取做消融，也沒給 K、p）。訓練時以機率 p 把歷史換成模型自己的預測，用意是讓模型不被自己的錯誤帶偏。對應到 FSM：偵測器的輸入除了影像，再加上 FSM 已確認的步驟序列；訓練時偶爾放進錯誤的歷史，模擬「FSM 前一步判錯」的情況，免得上線第一次誤判就一路錯下去。</li>
+    <li><strong>標 35 段錄影，可以照抄「一個寫、一個審、感測器當裁判」。</strong>AW-0 在 YAM 上把夾爪感測器的開合事件當<strong>權威答案</strong>，LLM 寫的程式必須依序重現這些事件才算數；事件簽章一樣就重用快取。煮食場景的權威事件來源：爐火開關、熱像儀上鍋面溫度跨越閾值、鍋鏟接觸鍋面的時間點。讓 VLM 寫步驟標籤，再用這些事件序列自動驗證，不一致才退回重寫或交給人看。人力只花在對不上的片段。</li>
+    <li><strong>人類技能庫的 27 個技能裡，至少六、七個可以直接當廚房動詞。</strong><code>stir_contents</code>、<code>pour_into_target</code>、<code>scoop_and_carry</code>、<code>turn_over_object</code>、<code>unscrew_cap</code>、<code>wipe_surface_back_and_forth</code>。做料理機器人的技能詞彙表時，可以直接沿用這些名稱與「接觸契約」的寫法：每個技能宣告自己的開合事件。收錄規則也值得抄：至少兩道菜都用得到、是一個招式而不是一份食譜、與既有技能不重複。</li>
+    <li><strong>腳本與學習模型的仲裁，要估「優勢」，不只看「能跑」。</strong>RoboTwin 的結果值得警惕：混合模式只要程式有效就放行，Clean 從 80.8 掉到 63.1。論文歸因於 primitive 的失敗模式，以及只看有效性的仲裁；不過這組比較同時換了訓練示範，沒有分離出仲裁本身的效果。另一方面，在 Random 下，排方塊、A 放到 B 這類結構化取放，混合模式又比預設模式高 50 分以上（同樣帶著換了訓練示範的前提）。對應到廚房：倒醬汁、放鍋蓋這類結構化動作交給腳本；翻蛋、攪拌這類跟形變與接觸打交道的動作交給學習模型。仲裁條件除了「前置條件成立」，還應該加上「這類步驟過去用腳本的成功率」。</li>
+    <li><strong>判斷狀態要用語意編碼器，不要用重建用的 latent。</strong>ViT 71.1 對 VAE 55.6，8 個任務全勝。熟度判斷是語意區分，應該從 DINO、SigLIP 這類特徵出發，而不是影片生成模型的 VAE latent（AW-0 測的是 Qwen3-VL-2B 視覺塔這種語言對齊特徵，用途是選技能；DINO 這類純自監督特徵 AW-0 沒有測）。即使整套系統裡已經有一個影片模型，「判斷」那一路也值得另接一個語意視覺塔。</li>
+  </ul>
+
+  <h3>跟本站另外幾篇對照</h3>
+  <ul>
+    <li><a href="../aspire/">ASPIRE</a> 讓 coding agent 在 policy 外面寫程式、跑程式、修程式，並把修好的存成技能。AW-0 把同一種程式搬進 policy 裡面當條件。兩篇有作者重疊（ASPIRE 一作 Runyu Lu 也列名 AW-0），AW-0 模擬混合模式的訓練示範，就是由 Claude Opus 4.8 依 ASPIRE 的 agentic 框架寫 CaP 程式、執行收集來的（預設模式的示範則用 RoboTwin 原生運動規劃器）。</li>
+    <li><a href="../robot-use-agents/">Robot-Use Agents</a>（Isola）談 LLM 把機器人當工具用，程式也在 policy 外。AW-0 的混合模式則是兩種路線的交界：程式能跑就跑，跑不了就交回學習模型。</li>
+    <li><a href="../last-r1/">LaST-R1</a> 主張文字 CoT 太慢、離散化會丟資訊，所以把推理搬進連續潛空間。AW-0 給了另一個答案：離散的推理 token（程式）只要和動作<strong>平行地一起去噪</strong>，代價就只有 0.04 s；真正慢又差的是自迴歸（0.55 s、54.5 分）。兩篇合起來看，至少在離散 token 這一邊，延遲主要取決於生成方式（平行去噪 vs 自迴歸）；離散與連續之間的直接比較，兩篇都沒有做。</li>
+    <li><a href="../retriever/">Retriever</a> 的多時鐘觀點：AW-0 每次推理 0.23 s、產出約 1 秒的動作塊，重規劃點之間由動作塊或程式接管。混合模式的仲裁器正好就是 Retriever 說的那種「在被決定的時刻切換執行者」的監控器。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">一句話帶走</span>
+    AW-0 最值得記住的不是 71.1 這個數字，而是兩件事：<strong>計畫寫成程式，即使不執行也是 AW-0 測過最好的條件</strong>（勝過自然語言子目標，而且註解、技能、結構都有貢獻）；<strong>計畫與動作平行生成，推理只多 0.04 s</strong>（+21%，自迴歸則又慢又差）。前者決定 FSM 的「目前步驟」該怎麼餵給偵測器，後者說明「推理」不一定要拖慢迴圈。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://arxiv.org/abs/2610.30136">Agentic World Action Models</a> — Liu, Niu, Zhang, Shao, Wang, Zheng, Sharma, Lu, Liu, Zhang, Herzig, Bai, Goldberg, Xu, Zhu, Wang, Fan, Darrell（UC Berkeley × NVIDIA × University of Pennsylvania），arXiv 2610.30136, 2026<br>
+    本頁：繁中解析；論文以 CC BY 4.0 授權，19 張原圖取自論文 LaTeX 原始檔（裁切白邊、縮放，原圖 8、10 為子圖並排合併），版權歸原作者；自繪圖 A–G 為本站依論文數據繪製 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var t = document.getElementById('pertask');
+  if (!t) return;
+  var body = t.tBodies[0];
+  t.querySelectorAll('th.sortable').forEach(function (th) {
+    th.setAttribute('aria-sort', 'none');
+    th.addEventListener('click', function () {
+      var col = +th.dataset.col, desc = th.getAttribute('aria-sort') !== 'descending';
+      t.querySelectorAll('th.sortable').forEach(function (h) { h.setAttribute('aria-sort', 'none'); });
+      th.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
+      var rows = Array.prototype.slice.call(body.rows);
+      rows.sort(function (a, b) {
+        var x = a.cells[col].textContent, y = b.cells[col].textContent;
+        var nx = parseFloat(x), ny = parseFloat(y);
+        var cmp = isNaN(nx) || isNaN(ny) ? x.localeCompare(y) : nx - ny;
+        return desc ? -cmp : cmp;
+      });
+      rows.forEach(function (r) { body.appendChild(r); });
+    });
+  });
+})();
+</script>
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
