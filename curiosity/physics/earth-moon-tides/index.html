@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070d1d" />
+  <meta name="description" content="互動地月潮汐模型：調整地球自轉速度，理解潮汐隆起、潮汐力矩與月球軌道遠近變化。" />
+  <title>潮汐引擎｜地球自轉，為什麼讓月球遠離？</title>
+  <style>
+    :root {
+      --bg:#070d1d; --panel:#101a2e; --panel2:#0b1426; --edge:#263451;
+      --ink:#f0f5ff; --muted:#a2afc7; --subtle:#70809e;
+      --aqua:#47d8e8; --mint:#4de6b1; --amber:#ffca72; --pink:#ff8f9e;
+      --active:var(--mint); --active-rgb:77,230,177;
+    }
+    * {box-sizing:border-box} html {scroll-behavior:smooth} body {margin:0; font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif; background:radial-gradient(ellipse 80% 42% at 52% -14%,#142c51 0%,transparent 79%),var(--bg); color:var(--ink); line-height:1.65; -webkit-font-smoothing:antialiased;}
+    button,input{font:inherit} button{cursor:pointer} button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--aqua);outline-offset:3px} button:disabled{opacity:.5;cursor:not-allowed}
+    .shell{max-width:1260px;margin:0 auto;padding:42px 24px 72px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+    .brand{display:flex;align-items:center;gap:10px;color:#bad5f1;font-weight:720;font-size:13px;letter-spacing:.12em}
+    .brand-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:11px;background:#203a59;color:var(--aqua);font-size:19px}
+    .tag{border:1px solid #2b4660;border-radius:999px;padding:5px 13px;color:#b2c6dd;background:#0e1d32;font-size:12px;white-space:nowrap}
+    h1{font-size:clamp(30px,4.5vw,58px);line-height:1.2;letter-spacing:-.045em;margin:0 0 16px;font-weight:850;max-width:870px}
+    .shine{background:linear-gradient(100deg,#81e5ff,#74eec8 58%,#c5fff1);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .lead{max-width:880px;color:#b5c5da;font-size:clamp(14px,1.5vw,17px);margin:0 0 28px;line-height:1.85}
+    .mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
+    .mode{border:1px solid #2d3f5d;background:#111c31;border-radius:17px;padding:17px 18px 15px;text-align:left;color:var(--ink);transition:background .2s,border .2s,transform .2s;position:relative;min-height:104px}
+    .mode:hover{background:#1a2944;transform:translateY(-1px)}
+    .mode[data-selected="true"]{border-color:var(--active);background:linear-gradient(145deg,rgba(var(--active-rgb),.14),#14223a 60%);box-shadow:inset 0 0 0 1px rgba(var(--active-rgb),.24),0 7px 28px rgba(0,0,0,.16)}
+    .mode small{display:block;color:#8fa0b8;font-size:12px;font-weight:600;letter-spacing:.02em}
+    .mode strong{display:block;margin:2px 0;font-size:18px;letter-spacing:-.02em}
+    .mode .hint{display:block;color:#9eaec5;font-size:12px}
+    .mode[data-selected="true"]::after{content:"正在展示";position:absolute;right:12px;top:12px;font-size:10px;border-radius:999px;padding:2px 8px;background:rgba(var(--active-rgb),.14);color:var(--active)}
+    .stage-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(310px,.8fr);gap:18px;align-items:stretch}
+    .panel{border:1px solid var(--edge);background:linear-gradient(150deg,#121e34 0%,#0a1325 80%);border-radius:22px;box-shadow:0 20px 70px rgba(0,0,0,.18)}
+    .stage{overflow:hidden;position:relative;display:flex;flex-direction:column;min-width:0}
+    .stage-header{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 23px 8px;gap:12px}
+    .eyebrow{font-size:11px;letter-spacing:.12em;font-weight:800;color:var(--subtle);margin:0 0 3px}
+    .section-heading{font-size:19px;font-weight:800;margin:0;letter-spacing:-.018em}
+    .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);margin-right:7px;box-shadow:0 0 0 4px rgba(77,230,177,.13)}
+    .small-stat{font-size:12px;color:#b6c7d9;white-space:nowrap;padding-top:5px}
+    #universe{width:100%;height:auto;display:block;aspect-ratio:760/530;overflow:visible;touch-action:pan-y}
+    .legend{display:flex;flex-wrap:wrap;gap:11px 18px;padding:2px 22px 17px;font-size:12px;color:#b3bfd0}
+    .legend span{display:inline-flex;align-items:center;gap:7px}
+    .swatch{width:15px;height:5px;border-radius:10px;background:var(--aqua)}
+    .swatch.amber{background:var(--amber)}.swatch.white{background:#dce6f5}.swatch.mint{background:var(--mint)}
+    .sim-notice{margin:0 21px 20px;border:1px dashed #345173;background:rgba(17,34,55,.72);padding:10px 13px;color:#9db1cb;border-radius:11px;font-size:12px;line-height:1.7}
+    .sim-notice strong{color:#ecf6ff}
+    .side{padding:22px;display:flex;flex-direction:column;gap:18px}
+    .state-pill{display:inline-flex;align-items:center;gap:8px;border-radius:30px;background:rgba(var(--active-rgb),.12);color:var(--active);padding:5px 12px;font-size:12px;font-weight:750;width:fit-content}
+    .side h2{margin:5px 0 6px;font-size:clamp(24px,2.4vw,30px);letter-spacing:-.04em;line-height:1.35}
+    .side .summary{color:#b8c6d8;line-height:1.85;margin:0;font-size:14px;min-height:76px}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .result{background:#101f35;border:1px solid #29405b;border-radius:14px;padding:12px}
+    .result-label{font-size:12px;color:#8fa5bd;margin:0 0 4px}
+    .result strong{font-size:17px;line-height:1.5;color:var(--active);display:block}
+    .exchange{background:linear-gradient(105deg,rgba(var(--active-rgb),.09),rgba(var(--active-rgb),.025));border:1px solid rgba(var(--active-rgb),.3);border-radius:15px;padding:15px 13px}
+    .exchange .ex-label{font-size:11px;font-weight:750;color:#a2b7c9;letter-spacing:.08em;margin-bottom:12px}
+    .transfer{display:flex;align-items:center;justify-content:space-around;gap:7px}
+    .transfer-node{font-size:14px;font-weight:760;text-align:center;flex:1;white-space:nowrap}
+    .transfer-node span{display:block;color:#9cb3cb;font-size:11px;font-weight:500;margin-top:3px}
+    .transfer-arrow{font-size:30px;line-height:1;color:var(--active);font-weight:800}
+    .detail-heading{color:#b6c7d9;font-size:11px;font-weight:850;letter-spacing:.11em;margin:0 0 8px}
+    .reason-chain{display:grid;grid-template-columns:20px 1fr;gap:9px 10px;color:#cad7e8;font-size:13px;line-height:1.6;margin:0}
+    .step-number{width:20px;height:20px;display:grid;place-items:center;border-radius:50%;font-weight:800;font-size:11px;background:#1f3855;color:var(--aqua);margin-top:1px}
+    .control-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:18px}
+    .control-panel,.chart-panel{padding:20px 22px}
+    .control-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+    .control-label{display:block;font-weight:750;font-size:14px}
+    .number-emphasis{font-variant-numeric:tabular-nums;font-weight:850;font-size:19px;color:#76e6de}
+    #spinRange{width:100%;accent-color:#54cddc;cursor:pointer;margin:10px 0 3px;height:22px}
+    .range-labels{display:flex;justify-content:space-between;font-size:11px;color:#8ea1bd;margin-bottom:13px}
+    .slider-caption{font-size:13px;color:#b7c6da;line-height:1.7;margin-bottom:14px;min-height:22px}
+    .btn-row{display:flex;gap:9px;flex-wrap:wrap}
+    .button{border:1px solid #324c69;border-radius:11px;padding:9px 14px;color:#e6f5fc;background:#172942;font-size:13px;font-weight:700;min-height:40px}
+    .button:hover{background:#213a58}.button.primary{background:#e5f8fa;color:#0b2b42;border-color:#e5f8fa}
+    .button.primary:hover{background:#c7e5eb}
+    .speed{display:inline-flex;align-items:center;gap:5px;padding-left:6px;color:#92a6c0;font-size:13px}
+    .speed select{font:inherit;background:#14243b;color:#e7f2fa;border:1px solid #344d69;border-radius:8px;padding:7px;cursor:pointer}
+    .chart-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:3px}
+    .trend-badge{font-size:12px;color:var(--active);font-weight:800}
+    #trendChart{width:100%;height:128px;display:block;margin-top:6px}
+    .chart-foot{font-size:12px;color:#90a6c0;line-height:1.65;margin:8px 0 0}
+    .callout{margin-top:19px;background:#102037;border:1px solid #294365;padding:19px 22px;border-radius:19px;display:grid;grid-template-columns:40px 1fr;gap:14px}
+    .callout-icon{width:39px;height:39px;border-radius:12px;background:#1c4261;display:grid;place-items:center;font-size:20px;color:#91e8f0}
+    .callout h3{margin:0 0 4px;font-size:16px}
+    .callout p{margin:0;color:#b8c9df;font-size:14px;line-height:1.75}
+    .lower-title{font-size:clamp(23px,2.5vw,30px);font-weight:850;letter-spacing:-.03em;margin:33px 0 14px}
+    .knowledge-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .knowledge{padding:19px 19px 17px;border-radius:18px;background:#0e1a2d;border:1px solid #293951}
+    .knowledge .k-index{font-size:12px;color:#75cfdd;font-weight:800;letter-spacing:.09em}
+    .knowledge h3{font-size:17px;margin:5px 0 9px}
+    .knowledge p{color:#b5c4d9;font-size:13px;line-height:1.8;margin:0}
+    details{border-radius:16px;border:1px solid #293951;background:#0e1a2d;margin-top:13px;padding:0 19px}
+    summary{padding:15px 3px;cursor:pointer;color:#d7e6f9;font-weight:730}
+    details .expand-content{padding:0 3px 18px;color:#adbed3;font-size:14px;line-height:1.85}
+    details strong{color:#e2f4fe}
+    .real-fact{display:inline-block;background:#1a3c48;padding:4px 10px;border-radius:7px;color:#91f1e1;font-weight:730;margin:3px 0}
+    .reference{font-size:12px;color:#879bb6;line-height:1.9;margin-top:25px}
+    .reference a{color:#9cdfe9;text-underline-offset:3px}
+    .reference a:hover{color:white}
+    .copyright{border-top:1px solid #21334c;padding-top:15px;margin-top:21px;color:#7d90ac;font-size:11px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:950px){.stage-layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}.side>.state-header{grid-column:1}.side>.result-grid{grid-column:2;grid-row:1}.side>.exchange{grid-column:1}.side>.reasons{grid-column:2}.side .summary{min-height:0}.stage{max-width:unset}}
+    @media(max-width:680px){.shell{padding:22px 12px 45px}.topbar{margin-bottom:23px}.tag{font-size:10px;padding:4px 9px}.brand{font-size:11px;letter-spacing:.08em}.brand-icon{width:29px;height:29px}.lead{margin-bottom:19px;font-size:14px}.mode-tabs{gap:7px}.mode{min-height:111px;padding:13px 10px 10px;border-radius:13px}.mode small{font-size:10px}.mode strong{font-size:14px;line-height:1.4;margin:5px 0}.mode .hint{font-size:10px;line-height:1.45}.mode[data-selected="true"]::after{display:none}.stage-header{padding:17px 14px 4px}.section-heading{font-size:16px}.small-stat{font-size:10px}.legend{padding:1px 12px 13px;gap:7px 11px;font-size:11px}.sim-notice{margin:0 12px 13px;font-size:11px;padding:9px 10px}.stage-layout{gap:12px}.side{display:flex;padding:17px;gap:14px}.side .summary{font-size:13px}.result strong{font-size:16px}.control-grid{grid-template-columns:1fr;gap:12px;margin-top:12px}.control-panel,.chart-panel{padding:17px}.callout{margin-top:12px;padding:15px 14px;gap:10px}.callout p{font-size:13px}.knowledge-grid{grid-template-columns:1fr;gap:10px}.knowledge{padding:16px}.lower-title{margin-top:28px}.reference{margin-top:19px}.stage{border-radius:17px}#universe{aspect-ratio:760/540}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.mode{transition:none}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div class="topbar">
+      <div class="brand"><div class="brand-icon" aria-hidden="true">◉</div> 地月系統 · 互動科學</div>
+      <div class="tag">可離線操作 · 不需安裝</div>
+    </div>
+    <h1>為什麼地球自轉，<br><span class="shine">會讓月球越來越遠？</span></h1>
+    <p class="lead">改變地球自轉速度，親眼看見<span style="color:#e8f6ff;font-weight:700">潮汐隆起超前或落後月球</span>，如何透過引力交換角動量，讓地球轉慢、讓月球遠離；反過來又會發生什麼事？</p>
+  </header>
+
+  <nav class="mode-tabs" aria-label="物理情境切換">
+    <button type="button" class="mode" data-mode="normal" data-selected="true" aria-pressed="true">
+      <small>情境 01 · 真實現況</small><strong>地球轉得比較快</strong><span class="hint">月球慢慢遠離地球 ↑</span>
+    </button>
+    <button type="button" class="mode" data-mode="stop" data-selected="false" aria-pressed="false">
+      <small>情境 02 · 假設實驗</small><strong>地球停止自轉</strong><span class="hint">月球逐漸靠近地球 ↓</span>
+    </button>
+    <button type="button" class="mode" data-mode="sync" data-selected="false" aria-pressed="false">
+      <small>情境 03 · 理想狀態</small><strong>地月同步旋轉</strong><span class="hint">平均潮汐力矩約為零 ≈</span>
+    </button>
+  </nav>
+
+  <section class="stage-layout" aria-label="地球與月球動態模型">
+    <div class="panel stage">
+      <div class="stage-header">
+        <div><div class="eyebrow">LIVE SIMULATION</div><h2 class="section-heading">地球、月球與潮汐隆起</h2></div>
+        <span class="small-stat"><span class="live-dot" id="liveDot"></span><span id="playStatus">動畫進行中</span></span>
+      </div>
+      <svg id="universe" viewBox="0 0 760 530" role="img" aria-labelledby="svgTitle svgDesc">
+        <title id="svgTitle">地球與月球在軌道上運行、潮汐隆起偏移的互動示意</title>
+        <desc id="svgDesc">可以切換地球自轉速度；地球自轉較快時潮汐隆起超前月球，使月球遠離。地球停止自轉則相反。大小、距離、潮汐角度、軌道變化均非實際比例。</desc>
+        <defs>
+          <radialGradient id="oceanGradient" cx="30%" cy="25%" r="88%"><stop stop-color="#2cb7d5"/><stop offset=".53" stop-color="#127aab"/><stop offset="1" stop-color="#0e355d"/></radialGradient>
+          <radialGradient id="moonGradient" cx="28%" cy="20%" r="87%"><stop stop-color="#f1f5ff"/><stop offset=".57" stop-color="#c9d4df"/><stop offset="1" stop-color="#77889f"/></radialGradient>
+          <linearGradient id="bulgeGradient" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#51edf5" stop-opacity=".72"/><stop offset="1" stop-color="#217eeb" stop-opacity=".21"/></linearGradient>
+          <filter id="tideGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10" /></filter>
+          <filter id="moonGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="12" /></filter>
+          <clipPath id="earthClip"><circle r="69"/></clipPath>
+          <marker id="forceArrow" markerWidth="9" markerHeight="9" refX="6.5" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#4de6b1" id="forceArrowFill"/></marker>
+          <marker id="orbitArrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#7992b5"/></marker>
+          <pattern id="starfield" width="146" height="127" patternUnits="userSpaceOnUse"><circle cx="16" cy="32" r="1.3" fill="#8eacd2" opacity=".38"/><circle cx="83" cy="94" r=".9" fill="#e6f4ff" opacity=".3"/><circle cx="129" cy="16" r=".8" fill="#9dcbf4" opacity=".22"/></pattern>
+        </defs>
+        <rect x="0" y="0" width="760" height="530" fill="url(#starfield)" />
+        <g opacity=".65"><circle cx="94" cy="92" r="1.6" fill="#c5e7ff"/><circle cx="679" cy="108" r="1.4" fill="#a8dcff"/><circle cx="637" cy="420" r="1.2" fill="#c5e7ff"/><circle cx="108" cy="430" r="1.5" fill="#c5e7ff"/></g>
+        <!-- Actual radius change is an intentionally amplified qualitative signal. -->
+        <circle id="orbitGuide" cx="330" cy="264" r="221" fill="none" stroke="#355371" stroke-width="1.5" stroke-dasharray="5 9" opacity=".72"/>
+        <path id="orbitArrowPath" d="M 462 89 A 220 220 0 0 1 510 137" fill="none" stroke="#819bbd" stroke-width="2.5" opacity=".9" marker-end="url(#orbitArrow)" stroke-linecap="round"/>
+        <text x="600" y="88" text-anchor="middle" font-size="15" fill="#819bbd">月球公轉方向 ↻</text>
+        <g id="referenceLine"><line id="moonLine" x1="330" y1="264" x2="520" y2="150" stroke="#b3c4d9" stroke-width="2" stroke-dasharray="6 8" opacity=".75" /></g>
+        <g id="earthScene" transform="translate(330 264)">
+          <ellipse id="bulgeGlow" cx="0" cy="0" rx="103" ry="76" fill="#3bdce8" opacity=".25" filter="url(#tideGlow)" />
+          <ellipse id="bulge" cx="0" cy="0" rx="105" ry="76" fill="url(#bulgeGradient)" stroke="#55e0f3" stroke-width="2" opacity=".93" />
+          <g id="bulgeAxis"><line x1="-127" y1="0" x2="127" y2="0" stroke="#63f4fa" stroke-width="1.5" stroke-dasharray="3 6" opacity=".9"/><circle cx="119" cy="0" r="6.5" fill="#7cf5f9" stroke="#0b2c43" stroke-width="3"/><circle cx="-119" cy="0" r="5.5" fill="#7cf5f9" stroke="#0b2c43" stroke-width="2"/></g>
+          <g id="lagArc"><path id="lagArcPath" d="" fill="none" stroke="#ffcb76" stroke-width="4.5" stroke-linecap="round"/></g>
+          <circle r="69" fill="url(#oceanGradient)" stroke="#80d6ee" stroke-opacity=".5" stroke-width="1.8"/>
+          <g clip-path="url(#earthClip)">
+            <g id="landMass" fill="#54bf9e" opacity=".94">
+              <path d="M -24 -60 C -35 -53 -55 -44 -47 -30 L -36 -23 L -29 -11 L -41 5 L -26 18 L -17 38 L -4 30 L 8 4 L -2 -10 L 13 -26 L 8 -45 L -7 -53 Z"/>
+              <path d="M 19 -47 C 31 -49 49 -34 52 -18 L 43 -6 L 57 9 L 47 20 L 35 14 L 25 25 L 20 47 L 9 53 L 0 37 L 9 22 L 10 8 L 0 -6 L 16 -14 Z"/>
+              <path d="M -61 11 L -51 20 L -48 37 L -37 34 L -32 22 Z"/>
+              <path d="M 34 48 L 51 39 L 60 50 L 46 57 Z"/>
+            </g>
+            <ellipse cx="-21" cy="-24" rx="48" ry="55" fill="#f5fcff" opacity=".07"/>
+            <path d="M-69 0H69M-69 25H69M-69 -25H69" stroke="#bdeeff" stroke-opacity=".13" stroke-width="1.5" fill="none" />
+          </g>
+          <circle r="70" fill="none" stroke="#75b7df" stroke-width="1" opacity=".6"/>
+          <g id="surfaceMarker"><circle cx="0" cy="-58" r="7" fill="#ffd36e" stroke="#ffffff" stroke-width="2"/><circle cx="0" cy="-58" r="14" fill="none" stroke="#ffd36e" stroke-width="1.6" stroke-dasharray="3 3" opacity=".7" /></g>
+          <circle r="4" fill="#f5fcff" opacity=".9" />
+        </g>
+        <g id="moonScene" transform="translate(520 150)">
+          <circle r="43" fill="#e2ecff" opacity=".14" filter="url(#moonGlow)"/>
+          <circle r="28" fill="url(#moonGradient)" stroke="#dce5ef" stroke-width="1.4"/>
+          <circle cx="-9" cy="-9" r="7.3" fill="#9da9bc" opacity=".62"/><circle cx="11" cy="7" r="6" fill="#8c9caf" opacity=".65"/><circle cx="-3" cy="14" r="3.2" fill="#8295ab" opacity=".62"/><circle cx="14" cy="-11" r="3.4" fill="#9aa7b8" opacity=".55"/>
+          <circle r="28" fill="none" stroke="#ffffff" opacity=".15"/>
+          <circle r="38" fill="none" stroke="#9cb3cb" stroke-dasharray="2 9" opacity=".4"/>
+        </g>
+        <path id="forceVector" d="" stroke="#4de6b1" stroke-width="5.5" fill="none" marker-end="url(#forceArrow)" stroke-linecap="round"/>
+        <g id="forceText" font-size="14" font-weight="700" fill="#4de6b1"><text id="forceLabel" x="555" y="120">向前的潮汐力矩</text></g>
+        <rect x="25" y="22" rx="11" width="175" height="40" fill="#0d2037" stroke="#31516a" opacity=".96" />
+        <circle cx="41" cy="42" r="5" fill="#47d8e8"/>
+        <text id="tideSVGLabel" x="53" y="47" fill="#c7edf4" font-size="16" font-weight="700">潮汐隆起：超前</text>
+        <rect x="25" y="452" rx="10" width="332" height="45" fill="#10213a" stroke="#324965" />
+        <text x="40" y="471" font-size="13" fill="#9fb3ce">橘色點＝固定地表位置</text>
+        <text id="tideSiteReadout" x="40" y="487" font-size="12" fill="#a9d8e3">目前：潮位過渡中</text>
+      </svg>
+      <div class="legend" aria-label="圖示圖例">
+        <span><i class="swatch"></i>潮汐隆起（放大）</span>
+        <span><i class="swatch amber"></i>地表固定觀測點</span>
+        <span><i class="swatch mint"></i>月球受潮汐力矩</span>
+        <span><i class="swatch white"></i>地月連線</span>
+      </div>
+      <p class="sim-notice"><strong>模型刻意放大：</strong> 地球與月球大小、距離、隆起高度、偏移角及軌道伸縮皆<strong>不是實際比例</strong>。特別是月球的靠近／遠離，被放大成短時間可見；這是說明方向的動畫，不是精準軌道預測。</p>
+    </div>
+
+    <aside class="panel side" aria-live="polite" aria-atomic="false">
+      <div class="state-header">
+        <span id="statePill" class="state-pill">● 月球正在遠離</span>
+        <h2 id="sideTitle">地球把角動量傳給月球</h2>
+        <p id="sideSummary" class="summary">地球自轉比較快，帶著潮汐隆起稍微跑到月球的前方；隆起對月球產生順著公轉方向的引力力矩。</p>
+      </div>
+      <div class="result-grid">
+        <div class="result"><p class="result-label">地球自轉</p><strong id="earthResult">逐漸變慢 ↘</strong></div>
+        <div class="result"><p class="result-label">月球軌道</p><strong id="moonResult">向外擴大 ↗</strong></div>
+      </div>
+      <div class="exchange">
+        <div class="ex-label">角動量的傳遞方向</div>
+        <div class="transfer"><div class="transfer-node">地球自轉<span id="earthFlowStatus">失去角動量</span></div><div class="transfer-arrow" id="transferArrow">→</div><div class="transfer-node">月球公轉<span id="moonFlowStatus">獲得角動量</span></div></div>
+      </div>
+      <div class="reasons"><p class="detail-heading">因果鏈 · 對照動畫看</p>
+        <div class="reason-chain">
+          <div class="step-number">1</div><span id="reason1">地球自轉比月球公轉快。</span>
+          <div class="step-number">2</div><span id="reason2">海洋潮汐隆起超前月球。</span>
+          <div class="step-number">3</div><span id="reason3">月球被往前拉，獲得軌道角動量。</span>
+          <div class="step-number">4</div><span id="reason4">地球轉慢；月球進入更大的軌道。</span>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="control-grid" aria-label="模型互動控制">
+    <div class="panel control-panel">
+      <div class="control-top"><label for="spinRange" class="control-label">自訂地球自轉速度</label><output id="spinValue" for="spinRange" class="number-emphasis">27.3 ×</output></div>
+      <input id="spinRange" type="range" min="0" max="32" step="0.1" value="27.3" aria-label="地球自轉角速度，相對於月球公轉角速度" />
+      <div class="range-labels"><span>0× · 停止自轉</span><span>1× · 同步</span><span>32× · 很快</span></div>
+      <div class="slider-caption" id="sliderCaption">目前地球自轉角速度約為月球公轉的 27.3 倍。</div>
+      <div class="btn-row">
+        <button class="button primary" id="playBtn" type="button" aria-label="暫停動畫">❚❚ 暫停</button>
+        <button class="button" id="stepBtn" type="button">+ 前進一天</button>
+        <button class="button" id="restartBtn" type="button">↺ 重新開始</button>
+        <label class="speed" for="speedSelect">動畫速度 <select id="speedSelect" aria-label="動畫速度"><option value="0.4">0.4×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+      </div>
+    </div>
+    <div class="panel chart-panel">
+      <div class="chart-top"><span class="control-label">月球軌道的變化趨勢</span><span class="trend-badge" id="trendBadge">↗ 越來越遠</span></div>
+      <canvas id="trendChart" role="img" aria-label="被強烈放大的月球軌道遠近變化趨勢，非實際距離或速度"></canvas>
+      <p class="chart-foot">縱軸只代表「更遠／更近」的方向，<strong>沒有公里刻度</strong>；此曲線與動畫的伸縮速度皆為教學用誇大示意。切換情境可重置比較。</p>
+    </div>
+  </section>
+
+  <div class="callout"><div class="callout-icon">✦</div><div><h3>觀察技巧：試著把地球自轉滑到 1×</h3><p>當地球自轉速度與月球公轉角速度相同，潮汐隆起的超前／落後角度會縮小至零。再把滑桿拉到 1× 左邊，原本向外的潮汐力矩便反過來，月球會往內遷移。<strong>真正決定方向的，是兩個角速度誰比較快，而不是地球有沒有在轉。</strong></p></div></div>
+
+  <h2 class="lower-title">把最容易誤會的三件事拆開看</h2>
+  <section class="knowledge-grid" aria-label="物理概念整理">
+    <article class="knowledge"><div class="k-index">01 / TIDE</div><h3>為什麼地球兩側都會隆起？</h3><p>因為月球引力在地球近側、中心與遠側的大小不同。扣除整個地球共同的加速度後，近側相對向月球、遠側相對背向月球，於是出現兩個潮汐隆起。</p></article>
+    <article class="knowledge"><div class="k-index">02 / TORQUE</div><h3>為什麼潮汐隆起不正對月球？</h3><p>海水與地球內部會耗散能量，潮汐形變有反應延遲。若地球轉得較快，隆起在慣性座標中會略微超前月球；若轉得較慢，就會落後。這個偏移產生力矩。</p></article>
+    <article class="knowledge"><div class="k-index">03 / ORBIT</div><h3>月球被往前拉，怎麼反而變慢？</h3><p>往前的力矩先增加月球的軌道角動量，使它進入更高的軌道。較高的近圓軌道有較慢的平均公轉速度，但半長軸更大、公轉週期更長。不能把它當成直線加速。</p></article>
+  </section>
+
+  <details>
+    <summary>現實到底變化多慢？這個動畫有哪些簡化？</summary>
+    <div class="expand-content">
+      <p><strong>實際觀測：</strong>NASA 的月球雷射測距資料顯示，月球目前平均每年遠離地球大約 <span class="real-fact">3.8 公分</span>。這不是動畫中看到的快速伸縮。地球平均自轉一圈約 24 小時；月球相對恆星公轉一圈約 27.3 天。</p>
+      <p><strong>簡化模型：</strong>假設地月共面、月球近圓軌道、海洋像均勻包覆地球的可變形流體；以固定但被放大的潮汐偏移角示範力矩正負。真實潮汐受到海盆形狀、大陸、海深、太陽引力、摩擦、潮汐共振與月球軌道偏心率影響，不能由單一橢圓精確推算各地潮位。</p>
+      <p><strong>「停止自轉」是假設：</strong>假設地球能瞬間停止轉動而不引發其他災難，且僅比較月球造成的潮汐力矩。月球仍會公轉，因此潮汐還在。潮汐力矩會逐漸帶動地球重新自轉，同時消耗月球軌道角動量。這不是說月球真的會一直無限制地靠近地球。</p>
+      <p><strong>同步情境：</strong>此處指地球自轉角速度 = 月球公轉角速度，不是指現實中「月球已經固定一面朝向地球」的月球潮汐鎖定。兩件事不同。忽略其他擾動時，同步狀態的平均月球潮汐力矩約為零。</p>
+    </div>
+  </details>
+  <details>
+    <summary>為什麼地球自轉變慢，卻不會讓月球被直接拉回來？</summary>
+    <div class="expand-content">
+      地球慢下來是<strong>自轉角動量下降</strong>，月球因受到潮汐隆起引力力矩而增加的是<strong>公轉軌道角動量</strong>。兩者透過引力交換，但不是月球直接繼承地球的自轉速度。月球在更高的近圓軌道上的平均線速度較小，這與「短時間受到向前的力矩」沒有矛盾。若近圓軌道半徑為 r，重力參數為 GM，速度約為 v = √(GM / r)，公轉週期約為 T = 2π√(r³ / GM)。
+    </div>
+  </details>
+
+  <footer class="reference">
+    <strong style="color:#c9d9eb">參考來源：</strong>
+    <a href="https://science.nasa.gov/moon/tides/" target="_blank" rel="noopener noreferrer">NASA — Tides</a>　·　
+    <a href="https://science.nasa.gov/moon/tidal-locking/" target="_blank" rel="noopener noreferrer">NASA — Tidal Locking</a>　·　
+    <a href="https://www.jpl.nasa.gov/news/the-apollo-experiment-that-keeps-on-giving/" target="_blank" rel="noopener noreferrer">NASA JPL — Lunar Laser Ranging</a>　·　
+    <a href="https://oceanservice.noaa.gov/facts/moon-tide.html" target="_blank" rel="noopener noreferrer">NOAA — Ocean Tides</a>
+    <div class="copyright">互動概念模型 · 純 HTML / CSS / JavaScript · 可離線開啟 · 不收集資料 · 以繁體中文說明</div>
+  </footer>
+</main>
+<script>
+(() => {
+  'use strict';
+  const TWO_PI = Math.PI * 2;
+  const SIDEREAL_DAYS = 27.3217;
+  const CENTER = {x:330,y:264};
+  const R0 = 221;
+  const colors = {out:'#4de6b1',in:'#ff8f9e',equal:'#8bc1e9'};
+  const $ = (id) => document.getElementById(id);
+  const modeButtons = Array.from(document.querySelectorAll('[data-mode]'));
+  const svg = $('universe');
+  const range = $('spinRange');
+  let ratio = 27.3;
+  let mode = 'normal';
+  let playing = true;
+  let simDays = 0;
+  let orbitDrift = 0;
+  let lastFrame = 0;
+  let rate = 1;
+  let lastSample = 0;
+  let history = [{time:0,drift:0}];
+  let lastChartTime=0;
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reducedMotion) playing = false;
+
+  const config = {
+    out: {
+      active:'#4de6b1', rgb:'77,230,177', pill:'● 月球正在遠離', title:'地球把角動量傳給月球',
+      summary:'地球自轉比較快，潮汐隆起稍微跑到月球的前方；隆起的引力會沿著公轉方向推進月球。',
+      e:'逐漸變慢 ↘', m:'向外擴大 ↗', es:'失去角動量',ms:'獲得角動量', arrow:'→', trend:'↗ 越來越遠', lag:'潮汐隆起：超前', force:'順向潮汐力矩',
+      steps:['地球自轉角速度大於月球公轉角速度。','潮汐隆起在月球前方（超前）。','月球被往前拉，獲得軌道角動量。','地球轉慢；月球逐漸進入更大的軌道。']
+    },
+    in: {
+      active:'#ff8f9e', rgb:'255,143,158', pill:'● 月球正在靠近', title:'月球把角動量傳給地球',
+      summary:'地球轉得太慢（甚至完全不轉），潮汐隆起落在月球的後方；隆起的引力會拖慢月球的公轉。',
+      e:'逐漸變快 ↗', m:'向內縮小 ↘', es:'獲得角動量',ms:'失去角動量', arrow:'←', trend:'↘ 越來越近',lag:'潮汐隆起：落後',force:'反向潮汐力矩',
+      steps:['月球公轉角速度大於地球自轉角速度。','潮汐隆起在月球後方（落後）。','月球被往後拉，失去軌道角動量。','地球被帶動旋轉；月球逐漸進入更小的軌道。']
+    },
+    equal: {
+      active:'#8bc1e9',rgb:'139,193,233',pill:'● 平均潮汐力矩約為零',title:'兩個角速度相同',
+      summary:'在這個理想化模型中，潮汐隆起對準月球，沒有持續超前或落後；因此沒有由速度差造成的平均潮汐力矩。',
+      e:'大致保持 ↔',m:'大致維持 ↔',es:'不持續交換',ms:'不持續交換',arrow:'≈',trend:'— 幾乎不變',lag:'潮汐隆起：對準',force:'平均力矩 ≈ 0',
+      steps:['地球自轉和月球公轉的角速度相等。','潮汐隆起在理想情況下對準月球。','沒有由角速度差造成的平均潮汐力矩。','忽略其他擾動，地球自轉與月球軌道近似不變。']
+    }
+  };
+  function signStatus(){ return ratio>1.000001?'out':ratio<.999999?'in':'equal'; }
+  function lagAngle(){ // Illustrative phase offset; not a measured terrestrial lag angle.
+    return Math.tanh((ratio-1)*4)*15*Math.PI/180;
+  }
+  const fmt = (v) => Math.abs(v-Math.round(v))<1e-4 ? String(Math.round(v)) : v.toFixed(1);
+  function resetProgress(){simDays=0;orbitDrift=0;lastSample=0;history=[{time:0,drift:0}];}
+  function setMode(newMode){
+    mode=newMode;
+    if(newMode==='normal')ratio=27.3;
+    else if(newMode==='stop')ratio=0;
+    else ratio=1;
+    range.value=String(ratio);
+    resetProgress();
+    updateUI();
+    render();
+  }
+  function updateUI(){
+    const state=signStatus(), c=config[state];
+    document.documentElement.style.setProperty('--active',c.active);
+    document.documentElement.style.setProperty('--active-rgb',c.rgb);
+    modeButtons.forEach(b=>{
+      const selected= b.dataset.mode===mode;
+      b.dataset.selected=String(selected);
+      b.setAttribute('aria-pressed',String(selected));
+    });
+    $('spinValue').textContent=fmt(ratio)+' ×';
+    $('sliderCaption').textContent=ratio===0?'地球停止自轉；月球仍會繞地球公轉。':ratio===1?'地球自轉與月球公轉角速度相同（同步）。':`地球每當月球繞一圈，自轉約 ${fmt(ratio)} 圈。`;
+    const items={'statePill':c.pill,'sideTitle':c.title,'sideSummary':c.summary,'earthResult':c.e,'moonResult':c.m,'earthFlowStatus':c.es,'moonFlowStatus':c.ms,'transferArrow':c.arrow,'trendBadge':c.trend,'tideSVGLabel':c.lag,'forceLabel':c.force};
+    Object.entries(items).forEach(([k,v])=>$(k).textContent=v);
+    c.steps.forEach((step,i)=>$('reason'+(i+1)).textContent=step);
+    $('forceVector').setAttribute('stroke',c.active);
+    $('forceArrowFill').setAttribute('fill',c.active);
+    $('forceLabel').setAttribute('fill',c.active);
+    $('forceVector').setAttribute('opacity',state==='equal'?'0':'1');
+    $('forceText').setAttribute('opacity',state==='equal'?'0':'1');
+    $('playBtn').textContent=playing?'❚❚ 暫停':'▶ 播放';
+    $('playBtn').setAttribute('aria-label',playing?'暫停動畫':'播放動畫');
+    $('playStatus').textContent=playing?'動畫進行中':'動畫已暫停';
+    $('liveDot').style.background=playing?'var(--mint)':'#70809e';
+  }
+  function arcPath(cx,cy,r,a1,a2){
+    const x1=cx+Math.cos(a1)*r, y1=cy+Math.sin(a1)*r;
+    const x2=cx+Math.cos(a2)*r, y2=cy+Math.sin(a2)*r;
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 ${a2<a1?0:1} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  }
+  function drawOrbitArrow(radius){
+    // A constant clockwise arc, independent of the orbit's instantaneous phase.
+    const a1=-.93,a2=-.52;
+    $('orbitArrowPath').setAttribute('d',arcPath(CENTER.x,CENTER.y,radius,a1,a2));
+  }
+  function render(){
+    const state=signStatus();
+    const a=-.50 + simDays*TWO_PI/SIDEREAL_DAYS;
+    const ea=-.78+simDays*TWO_PI*ratio/SIDEREAL_DAYS;
+    const phase=lagAngle();
+    const deg=(a+phase)*180/Math.PI;
+    const r=R0+orbitDrift;
+    const mx=CENTER.x+r*Math.cos(a);
+    const my=CENTER.y+r*Math.sin(a);
+    $('moonScene').setAttribute('transform',`translate(${mx.toFixed(2)} ${my.toFixed(2)})`);
+    $('moonLine').setAttribute('x2',mx.toFixed(2));$('moonLine').setAttribute('y2',my.toFixed(2));
+    $('orbitGuide').setAttribute('r',r.toFixed(2));
+    drawOrbitArrow(r);
+    $('bulge').setAttribute('transform',`rotate(${deg.toFixed(3)})`);
+    $('bulgeGlow').setAttribute('transform',`rotate(${deg.toFixed(3)})`);
+    $('bulgeAxis').setAttribute('transform',`rotate(${deg.toFixed(3)})`);
+    $('lagArcPath').setAttribute('d',Math.abs(phase)>0.0005 ? arcPath(0,0,137,a,a+phase) : '');
+    $('landMass').setAttribute('transform',`rotate(${(ea*180/Math.PI).toFixed(3)})`);
+    $('surfaceMarker').setAttribute('transform',`rotate(${(ea*180/Math.PI).toFixed(3)})`);
+    const d=state==='out'?1:state==='in'?-1:0;
+    const tangent={x:-Math.sin(a),y:Math.cos(a)};
+    const start={x:mx+tangent.x*d*37,y:my+tangent.y*d*37};
+    const end={x:mx+tangent.x*d*105,y:my+tangent.y*d*105};
+    $('forceVector').setAttribute('d',`M ${start.x.toFixed(1)} ${start.y.toFixed(1)} L ${end.x.toFixed(1)} ${end.y.toFixed(1)}`);
+    const label=$('forceLabel');
+    let fx=end.x+(-Math.sin(a))*d*10, fy=end.y+Math.cos(a)*d*10-10;
+    // Keep label within viewbox, using middle anchor when needed.
+    fx=Math.max(90,Math.min(640,fx));fy=Math.max(30,Math.min(480,fy));
+    label.setAttribute('x',fx.toFixed(1));label.setAttribute('y',fy.toFixed(1));
+    label.setAttribute('text-anchor',fx>515?'end':'start');
+    $('forceText').setAttribute('opacity',state==='equal'?'0':'1');
+    // Visual aid: instantaneous high tide relative to one fixed point on Earth's surface.
+    const localAngle=(ea-Math.PI/2)-(a+phase);
+    const tideLevel=Math.cos(2*localAngle);
+    $('surfaceMarker').style.opacity=.78 + Math.max(0,tideLevel)*.22;
+    $('tideSiteReadout').textContent=tideLevel>.55?'觀測點：接近高潮（水位較高）':tideLevel<-.55?'觀測點：接近低潮（水位較低）':'觀測點：潮位過渡中';
+  }
+  function nextFrame(ts){
+    if(!lastFrame)lastFrame=ts;
+    const elapsed=Math.min(ts-lastFrame,70);
+    lastFrame=ts;
+    if(playing){
+      const stepDays=elapsed/1500*rate;
+      simDays+=stepDays;
+      const state=signStatus();
+      // Strongly exaggerated non-physical visual radius drift for classroom illustration.
+      const driftSign=state==='out'?1:state==='in'?-1:0;
+      const driftStrength=Math.min(1,Math.abs(ratio-1)*2);
+      orbitDrift=Math.max(-38,Math.min(38,orbitDrift+driftSign*driftStrength*elapsed/1000*1.15*rate));
+      if(simDays-lastSample>.26){
+        history.push({time:simDays,drift:orbitDrift});
+        lastSample=simDays;
+        if(history.length>320)history.shift();
+      }
+      render();
+      if(ts-lastChartTime>65){drawChart();lastChartTime=ts;}
+    }
+    requestAnimationFrame(nextFrame);
+  }
+  function drawChart(){
+    const cvs=$('trendChart'),rect=cvs.getBoundingClientRect();
+    if(!rect.width)return;
+    const pxratio=Math.min(window.devicePixelRatio||1,2);
+    const w=rect.width,h=rect.height;
+    if(cvs.width!==Math.round(w*pxratio)||cvs.height!==Math.round(h*pxratio)){
+      cvs.width=Math.round(w*pxratio);cvs.height=Math.round(h*pxratio);
+    }
+    const ctx=cvs.getContext('2d');ctx.setTransform(pxratio,0,0,pxratio,0,0);ctx.clearRect(0,0,w,h);
+    const L=45,R=w-10,top=19,bottom=h-19;
+    const baseline=(top+bottom)/2;
+    ctx.strokeStyle='#29415f';ctx.lineWidth=1;
+    for(const y of [top,baseline,bottom]){ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();}
+    ctx.fillStyle='#8398b5';ctx.font='11px system-ui, sans-serif';ctx.textAlign='left';
+    ctx.fillText('更遠',5,top+4);ctx.fillText('起點',8,baseline+4);ctx.fillText('更近',5,bottom+4);
+    ctx.fillText('開始',L,bottom+16);ctx.textAlign='right';ctx.fillText('演示時間 →',R,bottom+16);
+    const state=signStatus(),c=config[state];
+    let series=history.slice();
+    if(!series.length)series=[{time:0,drift:0}];
+    if(series[series.length-1].time!==simDays)series.push({time:simDays,drift:orbitDrift});
+    let minTime=Math.max(0,simDays-35);
+    if(simDays<.5) minTime=0;
+    const span=Math.max(1,simDays-minTime);
+    const toX=(p)=>L+(p.time-minTime)/span*(R-L);
+    const toY=(p)=>baseline-p.drift/38*(baseline-top-8);
+    const visible=series.filter((p)=>p.time>=minTime);
+    if(!visible.length)visible=[series[series.length-1]];
+    const firstX=toX(visible[0]);
+    ctx.beginPath();ctx.moveTo(firstX,baseline);
+    visible.forEach(p=>ctx.lineTo(toX(p),toY(p)));
+    ctx.lineTo(toX(visible[visible.length-1]),baseline);ctx.closePath();
+    ctx.fillStyle=state==='out'?'rgba(77,230,177,.09)':state==='in'?'rgba(255,143,158,.10)':'rgba(139,193,233,.07)';ctx.fill();
+    ctx.beginPath();visible.forEach((p,i)=>i===0?ctx.moveTo(toX(p),toY(p)):ctx.lineTo(toX(p),toY(p)));
+    ctx.strokeStyle=c.active;ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    const end=visible[visible.length-1];ctx.beginPath();ctx.arc(toX(end),toY(end),4,0,TWO_PI);ctx.fillStyle=c.active;ctx.fill();
+  }
+  modeButtons.forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+  range.addEventListener('input',()=>{
+    ratio=Number(range.value);
+    if(Math.abs(ratio-1)<.049)ratio=1;
+    mode='custom';
+    resetProgress();
+    updateUI();render();drawChart();
+  });
+  $('playBtn').addEventListener('click',()=>{playing=!playing;updateUI();});
+  $('restartBtn').addEventListener('click',()=>{resetProgress();render();drawChart();});
+  $('stepBtn').addEventListener('click',()=>{
+    playing=false;simDays+=1;
+    const s=signStatus()==='out'?1:signStatus()==='in'?-1:0;
+    orbitDrift=Math.max(-38,Math.min(38,orbitDrift+s*1.65));
+    history.push({time:simDays,drift:orbitDrift});lastSample=simDays;
+    render();drawChart();updateUI();
+  });
+  $('speedSelect').addEventListener('change',(e)=>{rate=Number(e.target.value)||1;});
+  window.addEventListener('resize',drawChart,{passive:true});
+  updateUI();render();drawChart();requestAnimationFrame(nextFrame);
+})();
+</script>
+</body>
+</html>
