@@ -54,6 +54,12 @@
     opacity:.6;transition:opacity .18s,transform .18s}
   .card:hover .arrow{opacity:1;transform:translateX(3px)}
 
+  .typenav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
+  .typenav a{font-family:var(--mono);font-size:12.5px;padding:5px 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg2);color:var(--blue)}
+  .typenav a:hover{border-color:var(--accent-deep);color:var(--fg)}
+  .type{scroll-margin-top:24px}
+  .type + .type{margin-top:52px}
+  .sec-desc{color:var(--muted);font-size:14.5px;margin:-6px 0 18px;max-width:720px}
   .soon{border-style:dashed;opacity:.62}
   .soon:hover{transform:none;border-color:var(--line);box-shadow:none}
   .soon::before{display:none}
@@ -76,8 +82,16 @@
 
 <main>
   <div class="wrap">
-    <div class="sec-label">已發佈</div>
+    <nav class="typenav" aria-label="依類型瀏覽">
+      <a href="#topic">主題</a>
+      <a href="#single">單篇</a>
+    </nav>
+
+    <section class="type" id="topic">
+    <div class="sec-label">主題 · 問題發想</div>
+    <p class="sec-desc">從一個問題出發：把多篇來源放在一起對讀，或做成可以動手操作的模型（奇想實驗室）。結論先行、比較方案；有新資料會再更新。</p>
     <div class="grid">
+
       <a class="card" href="curiosity/index.html">
         <div class="kicker">Curiosity Lab · 互動物理 · 2026-10</div>
         <h2>奇想實驗室：地球停轉，月球會靠近還是遠離？</h2>
@@ -87,6 +101,47 @@
           <span class="arrow">探索 →</span>
         </div>
       </a>
+
+      <a class="card" href="state-detection/index.html">
+        <div class="kicker">Robotics · Papers × 8 · 實戰選型</div>
+        <h2>讓機器看懂「煮到哪了」：八篇狀態偵測論文對讀</h2>
+        <p>針對「固定鏡頭連續判斷食材狀態、gate 食譜 FSM、只有幾十趟自有錄影」的選型指南。三條路線對照：CLIP 相似度（水沸誤差 1.8s、3 條 run 訓 linear probe）、VLM 問答（GVL 零訓練吐進度百分比）、自訓 causal TCN（25 支影片 87% Acc 的手術配方）。含跨論文四大教訓與三階段行動方案、27 張原圖。</p>
+        <div class="foot">
+          <span class="pill">paper digest × 8</span>
+          <span class="pill">選型指南</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+      <a class="card" href="procedural-video/index.html">
+        <div class="kicker">Video Understanding · Papers × 3 · 對讀比較</div>
+        <h2>機器怎麼看懂「做事」的影片？三篇論文對讀</h2>
+        <p>一篇方法（CTU/DeepMind 自監督物體狀態變化，state precision +40%）、一篇資料集（RecipeQA 36K 自動生成題，神經基線≈亂猜）、一篇 survey（VideoQA 全景，NExT-QA 人類 88.4 vs SOTA 55.0）。同一條軸線對照讀：程序性理解、標注成本、benchmark 捷徑的兩次現形。含 20 張原圖。</p>
+        <div class="foot">
+          <span class="pill">paper digest × 3</span>
+          <span class="pill">比較分析</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+      <a class="card" href="cache-economics/index.html">
+        <div class="kicker">AI Infra · 術語圖解 · 2026-08</div>
+        <h2>Cache Miss 才是帳單：50 倍價差世界的成本工程</h2>
+        <p>把一則 DeepSeek 快取定價貼文裡的行話逐一畫成圖：KV cache、prompt caching、hit/miss rate、有效單價、記憶體階層、MLA/DSA/CSA/HCA。為什麼 hit rate 90% 和 99% 帳單差 4 倍、為什麼 disk cache 的前提是 KV 夠小（HBM 與 SSD 頻寬差數百倍）、為什麼 prefix 穩定性是工程師自己的功課。8 張自繪圖解＋數字查證。</p>
+        <div class="foot">
+          <span class="pill">concept explainer</span>
+          <span class="pill">cache economics</span>
+          <span class="arrow">讀 →</span>
+        </div>
+      </a>
+
+    </div>
+    </section>
+
+    <section class="type" id="single">
+    <div class="sec-label">單篇 · 論文與文章</div>
+    <p class="sec-desc">一篇論文或文章讀透：30 秒關鍵數字、逐節解析、原圖全收、數字對回原文。</p>
+    <div class="grid">
 
       <a class="card" href="robot-use-agents/index.html">
         <div class="kicker">Robotics · MIT Essay · Phillip Isola · 2026-09</div>
@@ -154,17 +209,6 @@
         </div>
       </a>
 
-      <a class="card" href="cache-economics/index.html">
-        <div class="kicker">AI Infra · 術語圖解 · 2026-08</div>
-        <h2>Cache Miss 才是帳單：50 倍價差世界的成本工程</h2>
-        <p>把一則 DeepSeek 快取定價貼文裡的行話逐一畫成圖：KV cache、prompt caching、hit/miss rate、有效單價、記憶體階層、MLA/DSA/CSA/HCA。為什麼 hit rate 90% 和 99% 帳單差 4 倍、為什麼 disk cache 的前提是 KV 夠小（HBM 與 SSD 頻寬差數百倍）、為什麼 prefix 穩定性是工程師自己的功課。8 張自繪圖解＋數字查證。</p>
-        <div class="foot">
-          <span class="pill">concept explainer</span>
-          <span class="pill">cache economics</span>
-          <span class="arrow">讀 →</span>
-        </div>
-      </a>
-
       <a class="card" href="coot/index.html">
         <div class="kicker">Multi-Agent RL · ICML 2026 · NTU</div>
         <h2>CooT：把「隊友」當成 in-context 的題目來解</h2>
@@ -205,28 +249,6 @@
         <div class="foot">
           <span class="pill">research digest</span>
           <span class="pill">VLM × robotics</span>
-          <span class="arrow">讀 →</span>
-        </div>
-      </a>
-
-      <a class="card" href="state-detection/index.html">
-        <div class="kicker">Robotics · Papers × 8 · 實戰選型</div>
-        <h2>讓機器看懂「煮到哪了」：八篇狀態偵測論文對讀</h2>
-        <p>針對「固定鏡頭連續判斷食材狀態、gate 食譜 FSM、只有幾十趟自有錄影」的選型指南。三條路線對照：CLIP 相似度（水沸誤差 1.8s、3 條 run 訓 linear probe）、VLM 問答（GVL 零訓練吐進度百分比）、自訓 causal TCN（25 支影片 87% Acc 的手術配方）。含跨論文四大教訓與三階段行動方案、27 張原圖。</p>
-        <div class="foot">
-          <span class="pill">paper digest × 8</span>
-          <span class="pill">選型指南</span>
-          <span class="arrow">讀 →</span>
-        </div>
-      </a>
-
-      <a class="card" href="procedural-video/index.html">
-        <div class="kicker">Video Understanding · Papers × 3 · 對讀比較</div>
-        <h2>機器怎麼看懂「做事」的影片？三篇論文對讀</h2>
-        <p>一篇方法（CTU/DeepMind 自監督物體狀態變化，state precision +40%）、一篇資料集（RecipeQA 36K 自動生成題，神經基線≈亂猜）、一篇 survey（VideoQA 全景，NExT-QA 人類 88.4 vs SOTA 55.0）。同一條軸線對照讀：程序性理解、標注成本、benchmark 捷徑的兩次現形。含 20 張原圖。</p>
-        <div class="foot">
-          <span class="pill">paper digest × 3</span>
-          <span class="pill">比較分析</span>
           <span class="arrow">讀 →</span>
         </div>
       </a>
@@ -286,6 +308,7 @@
       </div>
 
     </div>
+    </section>
   </div>
 </main>
 

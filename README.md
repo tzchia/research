@@ -12,28 +12,59 @@
 
 ## 目錄
 
+頁面分三種類型，讀法不同：
+
+- **書**：跟著原書一章一章讀的伴讀頁。
+- **主題**：從一個問題出發的頁面：多篇來源對讀的綜整，以及上方的奇想實驗室。
+- **單篇**：一篇論文或文章讀透的速覽頁。
+
+### 主題
+
+| 分類 | 頁面 | 一句話 |
+|---|---|---|
+| Robotics · Papers × 8 | [讓機器看懂「煮到哪了」](https://tzchia.github.io/research/state-detection/) | 食材狀態偵測選型指南：CLIP 相似度 vs VLM 問答 vs 自訓 TCN，附三階段行動方案 |
+| Video · Papers × 3 | [機器怎麼看懂「做事」的影片？](https://tzchia.github.io/research/procedural-video/) | 程序性影片理解三篇對讀：方法、資料集、survey 同軸比較 |
+| AI Infra · 術語圖解 | [Cache Miss 才是帳單：50 倍價差世界的成本工程](https://tzchia.github.io/research/cache-economics/) | KV cache、hit/miss rate、MLA/DSA/CSA/HCA 逐一圖解：hit rate 90%→99% 帳單差 4 倍，prefix 穩定性是工程師自己的功課 |
+
+### 單篇
+
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
 | Robotics · MIT Essay | [Robot-Use Agents：LLM 把機器人當工具用，新的是擴散速度](https://tzchia.github.io/research/robot-use-agents/) | Isola：Claude 當木偶師、機器人只需暴露 API；本站校準：只在 10 Hz 以上那層（83 Hz vs 0.3 Hz）、入碗 5→40→95% 但拼圖卡 10%、12 腳註逐條查證 |
 | Engineering · Blog | [AI 時代怎麼面試工程師？Coinbase 重建一年實錄](https://tzchia.github.io/research/coinbase-ai-interviews/) | AI 產碼 5.7%→50%+、兩輪面試 84% 相關的冗餘；重建成三訊號＋不加輪鐵律＋題目半衰期季度汰換，附查證：數字全自報 |
 | Robotics · CVPR 2026 | [RC-NF：給 VLA 請一個 100 ms 反應的「監工」](https://tzchia.github.io/research/rc-nf/) | 復旦：只用成功示範訓練的即時異常偵測，平均 AUC 0.931 vs GPT-5 0.850；空間錯位 VLM 近乎亂猜、RC-NF 0.968；86.7 ms 接管 π0 rollback/replan |
-| AI Infra · 術語圖解 | [Cache Miss 才是帳單：50 倍價差世界的成本工程](https://tzchia.github.io/research/cache-economics/) | KV cache、hit/miss rate、MLA/DSA/CSA/HCA 逐一圖解：hit rate 90%→99% 帳單差 4 倍，prefix 穩定性是工程師自己的功課 |
 | Multi-Agent RL · ICML 2026 | [CooT：把「隊友」當成 in-context 的題目來解](https://tzchia.github.io/research/coot/) | NTU 孫紹華實驗室：適應陌生隊友 = in-context learning，測試時零參數更新；Overall BR-prox 0.57 vs 0.44，真人實驗 50% 選它當最愛 |
 | Robotics · Blog | [機器人部署資料到底值多少錢？](https://tzchia.github.io/research/robot-deployment-data/) | Chris Paxton 部署飛輪懷疑論：高成功率靠限縮問題，限縮掉的正是資料的新穎性 |
 | Robotics · Tech Blog × 2 | [KinetIQ 兩篇導讀](https://tzchia.github.io/research/kinetiq/) | Humanoid 的 System 0–3 分層架構＋生產級 VLA 真機 RL（78→99%，3–5 天機器時間） |
 | Robotics · Benchmark | [Claude 玩機器人](https://tzchia.github.io/research/claude-robotics/) | Anthropic 紅隊 Embody：12 模型 × 5 身體 × 4 介面，「怎麼接」和模型是誰一樣重要 |
-| Robotics · Papers × 8 | [讓機器看懂「煮到哪了」](https://tzchia.github.io/research/state-detection/) | 食材狀態偵測選型指南：CLIP 相似度 vs VLM 問答 vs 自訓 TCN，附三階段行動方案 |
-| Video · Papers × 3 | [機器怎麼看懂「做事」的影片？](https://tzchia.github.io/research/procedural-video/) | 程序性影片理解三篇對讀：方法、資料集、survey 同軸比較 |
 | Robotics · Paper | [LC-IL：用「語言批評」直接當 loss](https://tzchia.github.io/research/lc-il/) | 別把回饋壓成一個分數——三段式語言標籤蒸餾成可微分評論員 |
 | Robotics · Paper | [ASPIRE：會自己寫程式、越修越強的機器人系統](https://tzchia.github.io/research/aspire/) | NVIDIA GEAR：coding agent 寫機器人程式、從多模態 trace 除錯、修好存成技能庫 |
 | AI Agent · Tooling | [Ponytail 詳解](https://tzchia.github.io/research/ponytail-illustrated.html) ·（[簡報版](https://tzchia.github.io/research/ponytail-deck.html)） | 讓 coding agent 像最懶的資深工程師那樣思考：六階梯、兩條紅線、誠實實測 |
 
-## 每頁的固定配方
+## 每類頁面的固定配方
+
+共通：純靜態 HTML，無框架；查證優先，數字與說法對回原文。
+
+### 書（伴讀）
+
+- **導讀為主、中文隨叫隨到**：預設讀英文導讀，每段可按「求救」展開繁中，也能整頁切雙語／中文。
+- **對應頁碼**：每段標原書（或 PDF）頁碼，方便對照原書閱讀。
+- **雙關與文字遊戲逐一拆解**，卡關點、自我測驗、術語表。
+- **不轉載原文**：內容是自己寫的摘要與解說；有版權的圖只標頁碼並連到介紹頁，公有領域的圖才放進頁面，改用自製互動圖解幫助理解。
+- 頁內自帶閱讀導覽（進度條＋章節 TOC＋scrollspy）。
+
+### 主題（問題發想）
+
+- **從問題出發**：先寫清楚要回答的問題，再把多篇來源放在一起對讀，或做成可操作、可檢驗的互動模型（奇想實驗室另有[方法與假設說明](curiosity/README.md)）。
+- **結論先行**：選型比較、方案取捨、行動建議；正反結果並列。
+- 原圖全收、閱讀導覽同「單篇」。
+
+### 單篇（論文與文章）
 
 - **繁中速覽**：30 秒關鍵數字卡 → 逐節解析 → 「重點筆記」讀後觀點（標明是本站觀點、不是原文）。
 - **原圖全收**：直接取自論文 LaTeX source / 原文附圖，標明出處與版權歸屬。
 - **查證優先**：所有數字對回原文；正結果與負結果一起放。
-- 純靜態 HTML，無框架；閱讀導覽由 `assets/readnav.js` 在瀏覽器端自動生成。
+- 閱讀導覽由 `assets/readnav.js` 在瀏覽器端自動生成。
 
 ---
 
