@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>光合作用從哪裡來？從「細胞拿到什麼好處」倒推回去 — FEMS Microbiol Rev 2018 綜述中文速覽</title>
+<meta name="description" content="Martin、Bryant、Beatty（FEMS Microbiology Reviews 2018）綜述中文圖解：最早的光合作用不是為了能量，而是為了拿到 H₂ 以外的電子；可能誕生在深海熱液噴口的微光下、以 H₂S 為電子來源、先有第一型反應中心；兩種反應中心在原藍綠菌體內複製而來，其他光合細菌的反應中心是後來從藍綠菌水平轉移過去的（輸出假說）。含 6 張原圖、7 張自繪圖與查證。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#ffa657; --accent-deep:#bd561d; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(126,231,135,.10),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:720px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px;scroll-margin-top:16px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+  .note{font-size:13px;color:var(--dim);margin-top:-14px}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto;padding:10px 6px 4px}
+  .svgwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:640px){.svgwrap svg{min-width:640px}}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  figure.dark figcaption b{color:var(--green)}
+
+  svg .tk{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .tk2{fill:#6e7681;font-family:var(--mono);font-size:11px}
+  svg .lab{fill:#c9d1d9;font-family:var(--sans);font-size:13px}
+  svg .val{fill:#c9d1d9;font-family:var(--mono);font-size:12px}
+  svg .ret{fill:#e6edf3;font-family:var(--mono);font-size:13px;font-weight:700}
+  svg .ann{fill:#79c0ff;font-family:var(--sans);font-size:13px}
+  svg .ann2{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .hd{fill:#e6edf3;font-family:var(--sans);font-size:14px;font-weight:700}
+  svg .row{fill:#e6edf3;font-family:var(--sans);font-size:15px;font-weight:700}
+  svg .sm{fill:#c9d1d9;font-family:var(--sans);font-size:12.5px}
+  svg .big{fill:#e6edf3;font-family:var(--mono);font-size:22px;font-weight:700}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout.blue{border-left-color:var(--blue)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+  .callout.blue .tag{color:var(--blue)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  td.up{color:var(--green)}
+  td.down{color:var(--red)}
+  tr.hl td{background:rgba(126,231,135,.06)}
+  table.tight th,table.tight td{padding:6px 8px;font-size:12px}
+
+  details{border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin:22px 0}
+  details summary{cursor:pointer;padding:12px 16px;font-size:14.5px;color:var(--fg);font-weight:600;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸";color:var(--accent);margin-right:8px;display:inline-block;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  details .inner{padding:0 14px 14px}
+  details .tablewrap{margin:6px 0 0}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--fg)}
+  th.sortable[aria-sort]::after{content:" ↕";color:var(--dim)}
+  th.sortable[aria-sort="descending"]::after{content:" ↓";color:var(--accent)}
+  th.sortable[aria-sort="ascending"]::after{content:" ↑";color:var(--accent)}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+  svg .num-b{fill:#0d1117;font-family:var(--mono);font-size:13px;font-weight:700}
+  figure.narrow img{max-width:400px;margin:0 auto}
+  figure.mid img{max-width:620px;margin:0 auto}
+  dl.gloss{margin:4px 0 0}
+  dl.gloss dt{color:#fff;font-weight:700;margin-top:12px}
+  dl.gloss dd{margin:2px 0 0 0;color:var(--muted);font-size:14.5px}
+  ol.steps{counter-reset:s;list-style:none;margin-left:0}
+  ol.steps>li{counter-increment:s;position:relative;padding-left:34px}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:2px;width:24px;height:24px;border-radius:50%;background:var(--bg3);border:1px solid var(--line);color:var(--accent);font-family:var(--mono);font-size:12.5px;text-align:center;line-height:22px}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Evolution · FEMS Microbiol Rev 2018 · Review Digest · 繁中速覽</div>
+    <h1>光合作用從哪裡來？從「細胞拿到什麼好處」倒推回去</h1>
+    <p class="subtitle">Martin、Bryant、Beatty 不靠演化樹的分支順序，而是每一步都問：這一步讓細胞多拿到了什麼？他們推出的路線是：最早的光合作用不是為了多一份能量，而是為了從 H₂ 以外的分子拿到電子。它可能誕生在深海熱液噴口的微光下，用硫化氫當電子來源。兩種反應中心都誕生在藍綠菌的祖先體內：先有 RC1，再由 RC1 複製、改造出 RC2；其他光合細菌的反應中心，則是後來從藍綠菌那裡「外銷」過去的。</p>
+    <div class="meta">
+      論文：<a href="https://doi.org/10.1093/femsre/fux056">A physiological perspective on the origin and evolution of photosynthesis</a>（FEMS Microbiology Reviews 42(2):205–231，2018；線上版 2017-11-21；CC BY 4.0；<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5972617/">PMC5972617</a>）<br>
+      作者：William F. Martin（德國杜塞道夫大學分子演化研究所，通訊作者）、Donald A. Bryant（美國賓州州立大學；蒙大拿州立大學）、J. Thomas Beatty（加拿大英屬哥倫比亞大學）<br>
+      文章類型：綜述＋假說，沒有新的實驗資料。作者在結論明說，每一條結論都是條件句，寫成直述句只是為了好讀<br>
+      本頁為繁中解析：數字對回 PMC 全文；標「本站計算／本站推算／本站觀察」的是我們自己的換算與意見
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── §0 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">五個數字抓骨架：生產躍升、電位落差、毫秒三重態、深海微光、唯一的合成途徑</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">×2,000<small> → ×30</small></div>
+      <div class="lbl">全球初級生產的兩次躍升（Raven 2009 的估計，論文引用）：從靠 H₂ 的化能合成換成不產氧光合作用，約 ×2,000；再換成產氧光合作用，又約 ×30。光合作用最大的貢獻，是讓「能拿去固碳的電子」變多</div>
+    </div>
+    <div class="kcard">
+      <div class="big">144<small> vs 564 mV</small></div>
+      <div class="lbl">從 H₂（−414 mV）換成 H₂S，電位只差 144 mV；換成 Fe²⁺ 要差 564 mV（本站依論文原圖 1 計算）。論文據此主張第一個光合電子供體是 H₂S，不是 Fe²⁺（§7）。電位只是論點之一，而且 Fe²⁺ 的電位隨鐵礦種類可差數百 mV（§12）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">7–15<small> ms</small></div>
+      <div class="lbl">鋅原紫質（Zn-PPIX）三重激發態的壽命，比葉綠素單重態（數奈秒）長約百萬倍；論文引的電位約 −1.6 V（另一種常用算法約 −0.9 V，兩者都比 Fd 負得多）。這段時間足以在細胞質裡碰上溶解的 Fd，不需要精密的反應中心（§4）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">10⁶<small> 倍</small></div>
+      <div class="lbl">熱液池邊 2 公分處的光子通量，約比海面陽光低六個數量級，但和黑海深處綠硫菌族群可用的光量同一級。這裡沒有紫外線，正適合剛開始用光的細胞（§6）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">1<small> 條</small></div>
+      <div class="lbl">現存生物從 Mg-原紫質 IX 到葉綠酸酯 a，只有一條合成途徑。論文據此主張兩種反應中心是在同一個基因體裡複製出來的；再加上其他理由，才把起點放在藍綠菌，提出「輸出假說」（§10）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    光合作用帶給細胞的第一個好處不是「多一份能量」，而是<em>多一種電子來源</em>。在光合作用出現以前，就目前所知，固碳要用的低電位電子只能從 H₂ 來，而且得靠「黃素電子分岔」這種機制才拿得到。有了葉綠素，細胞可以用光把 H₂S 的電子直接推上鐵氧還蛋白（Fd），生產從此不必守在 H₂ 冒出來的噴口旁。後面的每一步，作者都拿同一個問題檢查：RC1 複製成兩套、出現能拆水的強氧化劑、最後放出 O₂，各自讓細胞多拿到什麼？
+  </div>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 486" role="img" aria-labelledby="A-t A-d">
+<title id="A-t">論文提出的光合作用演化路線（八個階段）</title>
+<desc id="A-d">從氫氣化能自營，經鋅原紫質、葉綠素與第一型反應中心、反應中心複製、強氧化劑、放氧複合體，到大氧化事件，以及反應中心經水平基因轉移外銷到其他細菌門。</desc>
+<defs><marker id="aA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<rect x="20" y="40" width="192" height="150" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<circle cx="40" cy="64" r="12" fill="#8b949e"/><text x="40" y="68.5" text-anchor="middle" class="num-b">1</text>
+<text x="60" y="69" class="hd">氫氣世界</text>
+<text x="34" y="100" class="sm">熱液噴口冒出 H₂</text>
+<text x="34" y="122" class="sm">黃素電子分岔</text>
+<text x="34" y="144" class="sm">造出 Fd⁻ 來固碳</text>
+<text x="34" y="176" class="ann2">光源：無（化能）</text>
+<rect x="242" y="40" width="192" height="150" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<circle cx="262" cy="64" r="12" fill="#d95f2b"/><text x="262" y="68.5" text-anchor="middle" class="num-b">2</text>
+<text x="282" y="69" class="hd">鋅原紫質試光</text>
+<text x="256" y="100" class="sm">Zn-PPIX 吸光</text>
+<text x="256" y="122" class="sm">長壽三重態把電子</text>
+<text x="256" y="144" class="sm">直接丟給 Fd</text>
+<text x="256" y="176" class="ann2">光源：熱液微光</text>
+<rect x="464" y="40" width="192" height="150" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<circle cx="484" cy="64" r="12" fill="#d95f2b"/><text x="484" y="68.5" text-anchor="middle" class="num-b">3</text>
+<text x="504" y="69" class="hd">葉綠素＋RC1</text>
+<text x="478" y="100" class="sm">改用 H₂S 當電子源</text>
+<text x="478" y="122" class="sm">H₂S → S⁰，還原 Fd</text>
+<text x="478" y="144" class="sm">生產不再綁著 H₂</text>
+<text x="478" y="176" class="ann2">光源：熱液微光</text>
+<rect x="686" y="40" width="192" height="150" rx="10" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<circle cx="706" cy="64" r="12" fill="#3987e5"/><text x="706" y="68.5" text-anchor="middle" class="num-b">4</text>
+<text x="726" y="69" class="hd">RC1 複製</text>
+<text x="700" y="100" class="sm">雙入口硫化物氧化</text>
+<text x="700" y="122" class="sm">2e⁻／6e⁻ 兩個入口</text>
+<text x="700" y="144" class="sm">進入有陽光的淺海</text>
+<text x="700" y="176" class="ann2">光源：陽光</text>
+<rect x="20" y="254" width="192" height="150" rx="10" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<circle cx="40" cy="278" r="12" fill="#3987e5"/><text x="40" y="282.5" text-anchor="middle" class="num-b">5</text>
+<text x="60" y="283" class="hd">強氧化劑出現</text>
+<text x="34" y="314" class="sm">RC2 祖先能氧化</text>
+<text x="34" y="336" class="sm">Mn²⁺（或 Fe²⁺？）</text>
+<text x="34" y="358" class="sm">可能留下 whiffs</text>
+<text x="34" y="390" class="ann2">光源：陽光</text>
+<rect x="242" y="254" width="192" height="150" rx="10" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<circle cx="262" cy="278" r="12" fill="#3987e5"/><text x="262" y="282.5" text-anchor="middle" class="num-b">6</text>
+<text x="282" y="283" class="hd">放氧複合體</text>
+<text x="256" y="314" class="sm">改用水當電子源</text>
+<text x="256" y="336" class="sm">PSII＋PSI 串聯</text>
+<text x="256" y="358" class="sm">＝藍綠菌</text>
+<text x="256" y="390" class="ann2">光源：陽光</text>
+<rect x="464" y="254" width="192" height="150" rx="10" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.6"/>
+<circle cx="484" cy="278" r="12" fill="#d2a8ff"/><text x="484" y="282.5" text-anchor="middle" class="num-b">7</text>
+<text x="504" y="283" class="hd">大氧化事件</text>
+<text x="478" y="314" class="sm">約 24 億年前</text>
+<text x="478" y="336" class="sm">大氣 O₂ 開始累積</text>
+<text x="478" y="358" class="sm">MIF 訊號消失</text>
+<text x="478" y="390" class="ann2">地質紀錄</text>
+<rect x="686" y="254" width="192" height="150" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<circle cx="706" cy="278" r="12" fill="#7ee787"/><text x="706" y="282.5" text-anchor="middle" class="num-b">8</text>
+<text x="726" y="283" class="hd">反應中心外銷</text>
+<text x="700" y="314" class="sm">RC＋葉綠素合成基因</text>
+<text x="700" y="336" class="sm">水平轉移給其他門</text>
+<text x="700" y="358" class="sm">（另見：葉綠體）</text>
+<text x="700" y="390" class="ann2">不定年，與 ⑦ 無先後</text>
+<line x1="215" y1="115" x2="238" y2="115" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<line x1="437" y1="115" x2="460" y2="115" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<line x1="659" y1="115" x2="682" y2="115" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<line x1="215" y1="329" x2="238" y2="329" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<line x1="437" y1="329" x2="460" y2="329" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<path d="M782.0,192 V222 H116.0 V250" fill="none" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aA)"/>
+<text x="20" y="430" class="ann">全球初級生產：①→③④ 約 ×2,000；→⑥ 再約 ×30（Raven 2009 估計，論文引用）</text>
+<text x="20" y="454" class="ann2">論文給的時間點：自營生物 ≥39.5 億年；不產氧光合作用可能在 33–34 億年前已存在；⑥ 大概在 ⑦（約 24 億年前）前後</text>
+<text x="20" y="22" class="ann2">框線顏色：灰＝無光（化能）　橘＝熱液微光　藍＝陽光；紫＝地質事件　綠＝水平基因轉移</text>
+</svg></div>
+    <figcaption><b>自繪圖 A</b>論文推出的八個階段（本站依全文整理）。①–⑥ 是生理上的先後次序；⑦ 是地質事件；⑧ 與 ⑦ 沒有先後關係，論文認為某些外銷發生得很早。論文給的時間點有：自營生物至少 39.5 億年；地化證據顯示不產氧光合作用可能在 33–34 億年前已經存在；放氧複合體大概在大氧化事件（約 24 億年前）前後出現。葉綠素的起源與各次外銷則刻意不定年。生產倍數取自論文引用的 Raven（2009）估計。</figcaption>
+  </figure>
+
+  <div class="callout blue">
+    <span class="tag">這是什麼樣的論文</span>
+    這是一篇綜述加假說，沒有新實驗。論證的材料是已知的氧化還原電位、酵素家族、現存細菌的生理，以及地化紀錄。作者刻意<strong>不拿演化樹的分支順序當主要證據</strong>，理由是光合作用相關基因在細菌之間大量水平轉移：核糖體建出來的樹講的是核糖體的歷史，不一定是光合作用的歷史。讀的時候，建議在每條結論前面都加一句「如果前面幾步成立的話」。
+  </div>
+</section>
+
+<!-- ─────────── §1 ─────────── -->
+<section id="primer">
+  <h2><span class="num">§1</span>先備知識：電位梯子、Fd、兩種反應中心</h2>
+  <p class="sec-sub">讀這篇只需要三個概念；其餘名詞放在本節最後的小抄</p>
+
+  <p><strong>光合作用其實是兩件事。</strong>論文先把「光合作用」拆成<strong>葉綠素光營養</strong>（chlorophototrophy：用葉綠素和光產生 ATP 或還原力）和<strong>固定 CO₂</strong>。兩件事不一定綁在一起：表 1 就有三個門的細菌會用光，卻不會固碳。</p>
+
+  <p><strong>電位梯子。</strong>每一對「電子供體／受體」都有一個中點電位（E₀′，pH 7 時的值）。可以把它想成高度：電位越負，電子在那個分子上就越「高」、越想往下走。電子會自發從負往正流，像水往低處流；反過來把電子送到更負的位置，就是<strong>上坡</strong>，一定要有東西付能量。原圖 1 就是這把梯子。</p>
+
+  <figure class="narrow">
+    <img src="figs/fig1.jpg" alt="原圖 1：pH 7 下各氧化還原對的中點電位，從 Fd −500 mV 到 O2/H2O +810 mV" loading="lazy" width="715" height="1823">
+    <figcaption><b>原圖 1</b>本文提到的氧化還原對與它們在 pH 7 的中點電位（mV）。最上面三對是化能自營初級生產的關鍵電位：Fd（−500）、CO₂／[CH₂O]（−434）、H⁺／H₂（−414）。天然的電子來源裡，只有 H₂ 負到勉強能用來還原 CO₂。往下依序是各種含硫化合物、醌、Fe²⁺、Mn²⁺、硝酸鹽，最底下是 O₂／H₂O（+810）。圖說另外提到，砷酸／亞砷酸（+54 mV，圖上沒畫）也有光合變形菌在用。</figcaption>
+  </figure>
+
+  <p><strong>Fd：固碳要的「低電位電子」。</strong>鐵氧還蛋白（ferredoxin，Fd）是一種帶鐵硫簇的小蛋白。厭氧固碳途徑的酵素要它提供約 −500 mV 的電子，比 H₂（−414 mV）還負 86 mV。還原態的 Fd 寫成 Fd⁻（或 Fd<sub>red</sub>）。全篇論文就從這 86 mV 的落差講起。</p>
+
+  <p><strong>兩種反應中心（reaction center，RC）。</strong>反應中心是葉綠素和蛋白質組成的複合體，吸光後把一個電子從供體推給受體。兩型的結構相似，但胺基酸序列已經比不出同源關係：</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>第一型（RC1）</th><th>第二型（RC2）</th></tr></thead>
+      <tbody>
+        <tr><td><strong>電子的終點</strong></td><td>鐵硫簇，可以直接還原 Fd</td><td>醌（quinone）</td></tr>
+        <tr><td><strong>不產氧細菌裡的主要用途</strong></td><td>多半是線性電子流：H₂S 或有機物 → Fd（綠硫菌拿去固碳；日光桿菌、酸桿菌不固碳）</td><td>循環電子流：建立離子梯度做 ATP；或靠逆向電子傳遞做 NAD(P)H</td></tr>
+        <tr><td><strong>誰在用</strong></td><td>綠硫菌、日光桿菌、酸桿菌（同二聚體）；藍綠菌的光系統 I（PSI，異二聚體）</td><td>紫細菌、綠彎菌、芽單胞菌；藍綠菌的光系統 II（PSII；兩者都是異二聚體）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">RC2 菌也能做出還原態 Fd：例如紫細菌固氮時，靠 Rnf 複合體做逆向電子傳遞；但電子來自有機酸、還要消耗 ATP，不增加淨初級生產。</p>
+  <p>藍綠菌（還有植物的葉綠體）兩型都有，而且串聯使用：PSII 拆水，PSI 還原 Fd，這就是<strong>產氧光合作用</strong>。其他光合細菌都只有一型，不放氧，稱為<strong>不產氧光合作用</strong>。</p>
+
+  <details>
+    <summary>名詞小抄（點開）</summary>
+    <div class="inner">
+      <dl class="gloss">
+        <dt>蛇紋岩化（serpentinization）</dt><dd>海水滲進富含 Fe²⁺ 的超基性岩，Fe²⁺ 被氧化成含 Fe³⁺ 的礦物（例如同時含二價與三價鐵的磁鐵礦），同時把水還原成 H₂。這是超基性岩熱液噴口 H₂ 的主要來源。</dd>
+        <dt>黃素電子分岔（flavin-based electron bifurcation）</dt><dd>FAD 接下一對電子後把它們拆開：一個往上坡送去還原 Fd，另一個往下坡送給較正的受體，用下坡賺到的能量付上坡的帳。</dd>
+        <dt>四吡咯、紫質（porphyrin）</dt><dd>四個吡咯環圍成的大環分子家族：血基質是紫質（中心是 Fe），葉綠素是二氫紫質（chlorin，中心是 Mg），鈷胺素（即維生素 B₁₂）是咕啉環（中心是 Co）。原紫質 IX（protoporphyrin IX，PPIX）是葉綠素和「經典途徑」血基質共同的前驅物；有些細菌與古菌（包括硫酸鹽還原菌）合成血基質不經過 PPIX。</dd>
+        <dt>單重態、三重態</dt><dd>分子吸光後先進入單重激發態，只活幾奈秒，葉綠素做光化學用的就是它；其中一部分會經「系間跨越」轉成三重態，三重態可以活到毫秒級。</dd>
+        <dt>固碳途徑</dt><dd>乙醯輔酶 A 途徑（Wood–Ljungdahl）、逆向三羧酸循環（rTCA）、二羧酸／4-羥丁酸循環，這三條都有關鍵的還原步驟要靠 Fd（逆向 TCA 也用 NAD(P)H）；3-羥丙酸雙循環和卡爾文循環（CBB）只靠 NADPH。已知固碳途徑共六條，另一條是古菌的 3-羥丙酸／4-羥丁酸循環（論文沒有展開）。</dd>
+        <dt>光合硫營養（photothiotrophy）、光合鐵營養（photoferrotrophy）</dt><dd>以硫化物（H₂S）或 Fe²⁺ 當電子來源的光營養。</dd>
+        <dt>綠小體（chlorosome）</dt><dd>細菌葉綠素自己組裝成的巨大天線，只需要少數幾種蛋白，非常省、非常適合弱光。</dd>
+        <dt>whiffs（氧化劑的「氣息」）</dt><dd>GOE 以前沉積、卻帶有水中已有氧化劑痕跡的岩層；那個氧化劑是不是 O₂，正是爭論所在（§9）。</dd>
+        <dt>大氧化事件（GOE）、MIF、BIF</dt><dd>GOE：約 24 億年前大氣 O₂ 開始累積。MIF：硫同位素的非質量相依分餾，只有在大氣幾乎無氧（低於現今大氣含量的 10⁻⁵）時才保存得下來，是 GOE 以前無氧的指標。BIF：帶狀鐵礦層，GOE 以前大量沉積。</dd>
+        <dt>放氧複合體（OEC）</dt><dd>PSII 上的 Mn₄CaO₅ 簇，負責把水拆成 O₂、質子和電子。</dd>
+        <dt>水平基因轉移（HGT）</dt><dd>基因在不同譜系之間橫向移動，不經過親代遺傳。</dd>
+      </dl>
+    </div>
+  </details>
+</section>
+
+<!-- ─────────── §2 ─────────── -->
+<section id="problem">
+  <h2><span class="num">§2</span>謎題：七個門、四種反應中心、配對一團亂</h2>
+  <p class="sec-sub">論文表 1：現存的葉綠素光營養細菌，以及它們各自的生理</p>
+
+  <p>到 2017 年為止，會用葉綠素行光營養的細菌分布在<strong>七個門</strong>。兩型反應中心可以再細分成四種：同二聚體的 RC1（綠硫菌、日光桿菌、酸桿菌）、異二聚體的 RC1（藍綠菌的 PSI），以及兩種都是異二聚體的 RC2（變形菌、綠彎菌、芽單胞菌用的一種；藍綠菌的 PSII 另一種）。這些 RC 搭配的固碳途徑，是六條已知途徑裡的三條。另外有三個門根本不固碳，三個門有綠小體，六個門有能在有氧環境生長的成員。</p>
+
+  <div class="tablewrap">
+    <table class="tight">
+      <thead><tr><th>RC</th><th>類群</th><th>光合生長的氧耐受</th><th>好氧異營</th><th>固碳途徑</th><th>綠小體</th><th>光合自營時的電子供體</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>厚壁菌門</strong>：日光桿菌 <i>Heliobacterium</i></td><td>厭氧</td><td>否</td><td>無</td><td>–</td><td>無（不自營）</td></tr>
+        <tr><td>1</td><td><strong>酸桿菌門</strong>：<i>Chloracidobacterium</i></td><td>微好氧</td><td>是</td><td>無</td><td>＋</td><td>無（不自營）</td></tr>
+        <tr><td>1</td><td><strong>綠菌門</strong>：<i>Chlorobium</i>（綠硫菌）</td><td>厭氧</td><td>否</td><td>rTCA</td><td>＋</td><td>H₂S、S⁰、S₂O₃²⁻</td></tr>
+        <tr><td>1</td><td>　<i>C. ferrooxidans</i></td><td>厭氧</td><td>否</td><td>rTCA</td><td>＋</td><td>Fe²⁺</td></tr>
+        <tr><td>2</td><td><strong>綠彎菌門</strong>：<i>Chloroflexus</i></td><td>厭氧</td><td>是</td><td>3-羥丙酸雙循環</td><td>＋</td><td>H₂ 或 H₂S</td></tr>
+        <tr><td>2</td><td>　<i>Oscillochloris</i></td><td>厭氧</td><td>不明</td><td>卡爾文</td><td>＋</td><td>H₂ 或 H₂S</td></tr>
+        <tr><td>2</td><td><strong>變形菌門</strong>：紫硫菌</td><td>厭氧</td><td>是</td><td>卡爾文</td><td>–</td><td>H₂S、S⁰、S₂O₃²⁻</td></tr>
+        <tr><td>2</td><td>　紫色非硫菌</td><td>厭氧</td><td>是</td><td>卡爾文</td><td>–</td><td>H₂、H₂S、S₂O₃²⁻</td></tr>
+        <tr><td>2</td><td>　<i>Rps. palustris</i> TIE1</td><td>厭氧</td><td>是</td><td>卡爾文</td><td>–</td><td>Fe²⁺</td></tr>
+        <tr><td>2</td><td>　好氧不產氧光合菌</td><td>好氧</td><td>是</td><td>無</td><td>–</td><td>無（不自營）</td></tr>
+        <tr><td>2</td><td><strong>芽單胞菌門</strong>：<i>Gemmatimonas</i></td><td>好氧</td><td>是</td><td>無</td><td>–</td><td>無（不自營）</td></tr>
+        <tr class="hl"><td>1＋2</td><td><strong>藍綠菌門</strong></td><td>好氧</td><td>是</td><td>卡爾文</td><td>–</td><td>H₂S 或 H₂O</td></tr>
+        <tr class="hl"><td>1＋2</td><td>　<i>Oscillatoria</i>、<i>Microcoleus</i></td><td>厭氧</td><td>是</td><td>卡爾文</td><td>–</td><td>H₂S 或 H₂O</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">依論文表 1 整理成繁中，省略附註。附註要點：卡爾文循環在不同細菌裡用的酵素差異很大（醛縮酶、磷酸核酮糖激酶、RuBisCO 都有不同類型）；大多數做不產氧光合作用的藍綠菌，會把硫化物定量氧化成硫代硫酸鹽。</p>
+
+  <p>從這張表，論文讀出四件事：</p>
+  <ul>
+    <li><strong>在演化樹上散得很開。</strong>這些類群在任何現代分類方案裡都不是近親。</li>
+    <li><strong>水平轉移有直接證據。</strong>海洋的 Roseobacter 類變形菌帶著約 100 kb 的質體（plasmid，可在細胞間移動的環狀 DNA），上面有反應中心、細菌葉綠素、類胡蘿蔔素合成所需的全部基因，而且能在菌株之間移動。海洋噬菌體帶著有功能的 PSI、PSII 基因。最新發現的光合芽單胞菌，光合基因群明顯是從紫細菌拿來的。</li>
+    <li><strong>兩個規律。</strong>凡是有成員能固碳的光合門，都有成員能用 H₂S 當電子供體行光合自營；只有藍綠菌能拆水。不少藍綠菌也能改用 H₂S 行不產氧光合作用。</li>
+    <li><strong>作者的立場。</strong>既然水平轉移把「生理」和「譜系」拆開了，與其爭論樹上誰先誰後，不如追問每一種生理狀態從哪裡來、對當時的細胞有什麼用。</li>
+  </ul>
+</section>
+
+<!-- ─────────── §3 ─────────── -->
+<section id="h2world">
+  <h2><span class="num">§3</span>光合作用之前：靠 H₂ 吃飯的世界</h2>
+  <p class="sec-sub">固碳要 −500 mV 的 Fd；唯一夠負的天然電子來源，是熱液噴口冒出的 H₂</p>
+
+  <p><strong>唯一的電子來源。</strong>光合作用出現以前，能大量供應初級生產的電子來源只有一個：地質作用產生的 H₂。從太空掉下來的有機物種類太雜、濃度太低（每種異構物只有十億分之幾），養不起生態系，所以生命的碳只能從 CO₂ 來。</p>
+
+  <p><strong>H₂ 從哪來：蛇紋岩化。</strong>海水在熱液系統裡循環，碰到地殼中含 Fe²⁺ 的礦物。Fe²⁺ 把電子交給水，自己變成含 Fe³⁺ 的礦物（例如磁鐵礦 Fe₃O₄），水則被還原成 H₂。現代蛇紋岩化系統的噴口流體常含 10–20 mM 的 H₂（玄武岩型的黑煙囪通常少得多）；從 42 億年前地球有液態水開始，這個反應就沒停過。蛇紋岩化還會順便把 CO₂ 還原成甲烷、乙酸這類小分子，跟最原始的厭氧菌（產乙酸菌、產甲烷古菌）的核心代謝非常相似。</p>
+
+  <p><strong>最早的細胞。</strong>比較基因體學推測，最早的細胞很像產乙酸菌和產甲烷古菌，用乙醯輔酶 A 途徑固碳。這是六條已知固碳途徑裡唯一<em>本身會放能</em>的一條，固碳的同時就能建立質子梯度、做 ATP；其他途徑都得先花 ATP。</p>
+
+  <p><strong>難關：86 mV 的上坡。</strong>這條途徑的酵素需要約 −500 mV 的還原態 Fd，H₂ 卻只有 −414 mV，電子得往上坡走。細胞的解法是 2008 年才被發現的<strong>黃素電子分岔</strong>：FAD 接下 H₂ 的一對電子，一個往上坡送去還原 Fd，另一個往下坡送給較正的受體（產乙酸菌是 NAD⁺，−320 mV；產甲烷古菌是異二硫化物 CoM-S-S-CoB，−140 mV），用下坡賺到的能量付上坡的帳。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 400" role="img" aria-labelledby="B-t B-d">
+<title id="B-t">把電子推上 Fd 的兩種辦法：電子分岔 vs 光</title>
+<desc id="B-d">縱軸是中點電位，越上面越負。產乙酸菌與產甲烷古菌把 H₂ 的一對電子拆開，一個上坡到 Fd，一個下坡到較正的受體；光合作用則用光把 H₂S 的電子直接推上 Fd。</desc>
+<defs><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<line x1="70" x2="880" y1="111.6" y2="111.6" stroke="#30363d" stroke-dasharray="2 4"/><text x="60" y="115.6" text-anchor="end" class="tk">−500</text>
+<line x1="70" x2="880" y1="167.6" y2="167.6" stroke="#30363d" stroke-dasharray="2 4"/><text x="60" y="171.6" text-anchor="end" class="tk">−400</text>
+<line x1="70" x2="880" y1="223.6" y2="223.6" stroke="#30363d" stroke-dasharray="2 4"/><text x="60" y="227.6" text-anchor="end" class="tk">−300</text>
+<line x1="70" x2="880" y1="279.6" y2="279.6" stroke="#30363d" stroke-dasharray="2 4"/><text x="60" y="283.6" text-anchor="end" class="tk">−200</text>
+<line x1="70" x2="880" y1="335.6" y2="335.6" stroke="#30363d" stroke-dasharray="2 4"/><text x="60" y="339.6" text-anchor="end" class="tk">−100</text>
+<text x="18" y="206.8" transform="rotate(-90 18 206.8)" text-anchor="middle" class="tk">mV（越上越負）</text>
+<text x="180" y="36" text-anchor="middle" class="hd">產乙酸菌：電子分岔</text>
+<circle cx="96" cy="159.8" r="6" fill="#8b949e"/><text x="108" y="163.8" text-anchor="start" class="lab"></text>
+<text x="96" y="183.8" text-anchor="middle" class="lab">H₂ −414</text>
+<rect x="146" y="146.8" width="40" height="26" rx="6" fill="#1c2330" stroke="#8b949e"/><text x="166" y="163.8" text-anchor="middle" class="tk">FAD</text>
+<line x1="104" y1="159.8" x2="144" y2="159.8" stroke="#8b949e" stroke-width="2" marker-end="url(#aB)"/>
+<line x1="188" y1="156.4" x2="250" y2="113.3" stroke="#d95f2b" stroke-width="2" marker-end="url(#aB)"/>
+<circle cx="256" cy="111.6" r="6" fill="#d95f2b"/><text x="268" y="115.6" text-anchor="start" class="lab">Fd⁻ −500</text>
+<text x="190" y="128.4" text-anchor="end" class="ann">上坡 86 mV</text>
+<line x1="188" y1="163.1" x2="250" y2="209.0" stroke="#3987e5" stroke-width="2" marker-end="url(#aB)"/>
+<circle cx="256" cy="212.4" r="6" fill="#3987e5"/><text x="268" y="216.4" text-anchor="start" class="lab">NAD⁺ −320</text>
+<text x="210" y="204.1" text-anchor="end" class="ann">下坡 94 mV</text>
+<text x="180" y="352" text-anchor="middle" class="val">餘裕約 8 mV：勉強下坡</text>
+<text x="450" y="36" text-anchor="middle" class="hd">產甲烷古菌：電子分岔</text>
+<circle cx="366" cy="159.8" r="6" fill="#8b949e"/><text x="378" y="163.8" text-anchor="start" class="lab"></text>
+<text x="366" y="183.8" text-anchor="middle" class="lab">H₂ −414</text>
+<rect x="416" y="146.8" width="40" height="26" rx="6" fill="#1c2330" stroke="#8b949e"/><text x="436" y="163.8" text-anchor="middle" class="tk">FAD</text>
+<line x1="374" y1="159.8" x2="414" y2="159.8" stroke="#8b949e" stroke-width="2" marker-end="url(#aB)"/>
+<line x1="458" y1="156.4" x2="520" y2="113.3" stroke="#d95f2b" stroke-width="2" marker-end="url(#aB)"/>
+<circle cx="526" cy="111.6" r="6" fill="#d95f2b"/><text x="538" y="115.6" text-anchor="start" class="lab">Fd⁻ −500</text>
+<text x="460" y="128.4" text-anchor="end" class="ann">上坡 86 mV</text>
+<line x1="458" y1="163.1" x2="520" y2="309.8" stroke="#3987e5" stroke-width="2" marker-end="url(#aB)"/>
+<circle cx="526" cy="313.2" r="6" fill="#3987e5"/><text x="538" y="317.2" text-anchor="start" class="lab">CoM-S-S-CoB −140</text>
+<text x="480" y="254.5" text-anchor="end" class="ann">下坡 274 mV</text>
+<text x="450" y="352" text-anchor="middle" class="val">餘裕約 188 mV：標準狀態下明顯下坡</text>
+<text x="760" y="36" text-anchor="middle" class="hd">光合作用：用光付上坡帳</text>
+<circle cx="680" cy="240.4" r="6" fill="#7ee787"/><text x="692" y="244.4" text-anchor="start" class="lab"></text>
+<text x="680" y="264.4" text-anchor="middle" class="lab">H₂S −270</text>
+<rect x="730" y="206.8" width="56" height="44.8" rx="8" fill="#1c2330" stroke="#7ee787"/><text x="758" y="231.4" text-anchor="middle" class="lab">RC1</text>
+<line x1="688" y1="240.4" x2="728" y2="240.4" stroke="#8b949e" stroke-width="2" marker-end="url(#aB)"/>
+<path d="M710,128.4 q6,-8 12,0 t12,0 t12,0 t12,0" fill="none" stroke="#e3b341" stroke-width="2"/><line x1="758" y1="130.6" x2="758" y2="203.4" stroke="#e3b341" stroke-width="1.6" marker-end="url(#aB)"/><text x="680" y="118.3" class="ann2">光子 hν</text>
+<line x1="788" y1="206.8" x2="826" y2="113.8" stroke="#d95f2b" stroke-width="2" marker-end="url(#aB)"/>
+<circle cx="832" cy="111.6" r="6" fill="#d95f2b"/><text x="844" y="115.6" text-anchor="start" class="lab">Fd⁻</text>
+<text x="818" y="156.4" class="ann">上坡 230 mV</text>
+<text x="760" y="352" text-anchor="middle" class="val">不必把另一半電子分給較正的受體，也不必有 H₂</text>
+<text x="450" y="388" text-anchor="middle" class="ann2">以標準中點電位逐電子粗算（本站計算）；細胞內實際電位隨濃度與 H₂ 分壓而變</text>
+</svg></div>
+    <figcaption><b>自繪圖 B</b>左、中：電子分岔把一對電子拆成「一上一下」，下坡那顆賺的能量要夠付上坡那顆的帳。產乙酸菌只有 8 mV 的餘裕，產甲烷古菌有 188 mV（本站以標準中點電位逐電子粗算）。右：論文的核心論點。有了葉綠素和 RC1，細胞可以直接用光把 H₂S（−270 mV）的電子推上 Fd，不必把另一半電子分給較正的受體，也不必非有 H₂ 不可。</figcaption>
+  </figure>
+
+  <p><strong>分岔出現以前怎麼辦？</strong>論文推測，在電子分岔演化出來以前，熱液環境中富含 FeS 的礦物，以及天然存在的零價金屬（例如蛇紋岩化系統常見的 awaruite，Ni₃Fe），能代替 Fd 去還原 CO₂。最早的化能自營生物，靠的是岩石、水、金屬與 H₂ 之間的交互作用。</p>
+
+  <p><strong>作者自己補的但書。</strong>理論上，只要環境裡有電位夠正的受體（例如 O₂），電子分岔也能用 H₂S 這類較正的供體來還原 Fd。但沒有證據顯示早期地球有足量、電位接近 O₂（+810 mV）的受體，撐得起一個生態系。所以作者的說法是「就目前所知」，H₂ 是唯一的路。</p>
+
+  <p><strong>H₂ 夠不夠？</strong>夠。噴口的 10–20 mM H₂，比沒有細胞色素的產甲烷古菌持續生長所需的 H₂ 分壓（約 10 Pa）高出好幾個數量級。問題不在量，而在<strong>生產被綁在 H₂ 冒出來的地方</strong>。</p>
+
+  <p><strong>異營生物跟著出現。</strong>生物量累積之後，就有了吃屍體維生的異營生物。細胞約 50–60% 是蛋白質、20% 是 RNA、10% 是脂質、5–10% 是醣類；在 H₂ 分壓低的環境，發酵這些分子是划算的。光合作用就誕生在這樣的生態系裡：化能自營者負責生產，異營者吃前者的細胞。</p>
+
+  <h3>插曲：RuBisCO 原本可能不是拿來固碳的</h3>
+  <p>談光合作用起源，大家常想到卡爾文循環的固碳酵素 RuBisCO。但近年的研究顯示，靠 Fd 的厭氧固碳途徑（乙醯輔酶 A 途徑、逆向 TCA）比卡爾文循環古老。卡爾文循環完全靠 NADPH，沒有任何一步用到 Fd。</p>
+  <p>RuBisCO 很可能起源於異營代謝。古菌 <i>Thermococcus kodakarensis</i> 有一條分解 RNA 的短途徑：核苷單磷酸先被切掉鹼基，變成核糖-1,5-二磷酸；再異構成核酮糖-1,5-二磷酸；最後由 RuBisCO 加上一個 CO₂，切成兩分子 3-磷酸甘油酸，拿去做碳與能量代謝。對靠死細胞（20% 是 RNA）維生的早期異營生物來說，這是很好用的一條路。芽孢桿菌的類 RuBisCO 蛋白，用在甲硫胺酸回收這條異營途徑；產甲烷古菌的類 RuBisCO 蛋白位在 RuBisCO 演化樹的根部，在代謝中提供 RuBP 羧化活性，但這些古菌固碳靠的是乙醯輔酶 A 途徑。</p>
+
+  <h3>誰發明了光合作用？</h3>
+  <p>生合成途徑的先後次序，可能反映演化的先後（Granick 假說）。葉綠素要從血基質的前驅物做起，血基質又出現在會做鈷胺素的細胞之後。論文的表 2 把這個次序排成五個生理階段：</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>相對年代</th><th>四吡咯</th><th>生理</th><th>現代代表</th><th>電子來源</th></tr></thead>
+      <tbody>
+        <tr><td>現代</td><td>葉綠素</td><td>RC1＋RC2 光營養</td><td>藍綠菌</td><td>H₂S、H₂O</td></tr>
+        <tr><td>較進階</td><td>葉綠素</td><td>只有 RC1 的光營養</td><td>藍綠菌、綠硫菌</td><td>H₂S</td></tr>
+        <tr><td>中間 2</td><td>紫質</td><td>混合營養</td><td>沒有現存代表</td><td>H₂S</td></tr>
+        <tr><td>中間 1</td><td>血基質</td><td>無氧呼吸</td><td>硫還原菌、自營的 ε-變形菌</td><td>有機物、H₂</td></tr>
+        <tr><td>原始</td><td>鈷胺素</td><td>化能無機自營</td><td>產乙酸菌、產甲烷古菌</td><td>H₂</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>所有不產氧光合作用的電子鏈都有細胞色素和醌，所以發明光合作用的細胞，原本就得會某種用細胞色素和醌的<strong>呼吸作用</strong>。那時還沒有 O₂，終端受體只能是別的東西。候選者之一是亞硫酸鹽：火山噴出的 SO₂ 溶進海裡就是 SO₃²⁻，而硫酸鹽還原中真正產能的那一段，本來就從亞硫酸鹽開始。作者因此說，在古地球上，「硫酸鹽還原」不如叫「亞硫酸鹽還原」。</p>
+  <p>作者想像中的宿主，是能化能自營、也能化能異營的厭氧呼吸菌，生理上類似用乙醯輔酶 A 途徑的硫酸鹽還原菌，或是用逆向 TCA 固碳、用多硫化物還原酶還原 S⁰ 的 ε-變形菌。他們偏好後者：逆向 TCA 要消耗 ATP，碳代謝和能量代謝是分開的兩套。在這種細胞裡，用光還原 Fd 可以直接加快固碳，卻不會打亂原本的能量代謝。這兩類菌在現代熱液環境都很常見。</p>
+</section>
+
+<!-- ─────────── §4 ─────────── -->
+<section id="zinc">
+  <h2><span class="num">§4</span>第一道光：鋅原紫質</h2>
+  <p class="sec-sub">鋅不能傳電子，卻能讓一顆紫質把光「存」上好幾毫秒</p>
+
+  <p>要利用光，得先有兩樣東西：光源（留到 §6），以及具備葉綠素那種光化學性質的分子。論文提出，第一個做光化學的分子可能不是葉綠素，而是<strong>鋅原紫質（Zn-PPIX）</strong>。</p>
+
+  <p><strong>鋅會自己跑進去。</strong>鋅離子可以自發插入原紫質 IX，血基質途徑的亞鐵螯合酶也會順手催化。現代就有實例：紅桿菌 <i>Rhodobacter sphaeroides</i> 的 bchD 突變株缺少 Mg-螯合酶（現代葉綠素合成的第一個專屬步驟），亞鐵螯合酶就把 Zn²⁺ 插進原紫質，一路做出 Zn-細菌葉綠素 a。</p>
+
+  <p><strong>鋅不能傳電子，但能存光。</strong>鋅只有 +2 一種價態，在生物裡不參與氧化還原，所以 Zn-PPIX 沒辦法像血基質的鐵那樣在細胞色素裡傳電子。（嚴格說，光化學裡被拿走電子的是紫質環本身，不是中心金屬；葉綠素的鎂同樣不參與氧化還原。）但假如 Zn-PPIX 被塞進一個現成的可溶性血基質結合蛋白（例如還沒裝上血基質的細胞色素 b），這個蛋白就多了一個感光頭：</p>
+  <ul>
+    <li>吸光（約 410、540、580 nm）後，約 90% 進入<strong>三重激發態</strong>；</li>
+    <li>三重態的壽命長達 <strong>7–15 ms</strong>；</li>
+    <li>電位約 <strong>−1.6 V</strong>（Zn-細胞色素 c 的三重態實測為 −1.7 V），是很強的還原劑，實驗上能還原質體藍素和細胞色素 b₅。本站註：依常用換算（基態氧化電位約 +0.8 V 減三重態能量約 1.7 eV），三重態當還原劑約 −0.9 V，內文「900／800 mV」那句也指向這個量級；不論哪個，都遠比 Fd 的 −500 mV 負。</li>
+  </ul>
+
+  <p><strong>壽命為什麼重要？</strong>葉綠素做光化學用的單重激發態只活幾奈秒，電子受體必須事先就排在旁邊，否則激發態在電子交出去之前就衰減回基態。毫秒級的三重態則有足夠時間靠擴散去「找」受體。厭氧菌細胞質裡的 Fd 又非常多，約 80–400 μM。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 330" role="img" aria-labelledby="C-t C-d">
+<title id="C-t">激發態壽命 vs 與 Fd 相遇所需時間（對數時間軸）</title>
+<desc id="C-d">葉綠素單重態只活幾奈秒，Zn-PPIX 三重態可活 7 到 15 毫秒；以常見蛋白結合速率與細胞內 Fd 濃度推算，平均相遇時間約 25 微秒到 12.5 毫秒，與三重態壽命重疊。</desc>
+<line x1="210.0" x2="210.0" y1="40" y2="236" stroke="#30363d"/><text x="210.0" y="254" text-anchor="middle" class="tk">100 ps</text>
+<line x1="283.3" x2="283.3" y1="40" y2="236" stroke="#30363d"/><text x="283.3" y="254" text-anchor="middle" class="tk">1 ns</text>
+<line x1="356.7" x2="356.7" y1="40" y2="236" stroke="#30363d"/><text x="356.7" y="254" text-anchor="middle" class="tk">10 ns</text>
+<line x1="430.0" x2="430.0" y1="40" y2="236" stroke="#30363d"/><text x="430.0" y="254" text-anchor="middle" class="tk">100 ns</text>
+<line x1="503.3" x2="503.3" y1="40" y2="236" stroke="#30363d"/><text x="503.3" y="254" text-anchor="middle" class="tk">1 µs</text>
+<line x1="576.7" x2="576.7" y1="40" y2="236" stroke="#30363d"/><text x="576.7" y="254" text-anchor="middle" class="tk">10 µs</text>
+<line x1="650.0" x2="650.0" y1="40" y2="236" stroke="#30363d"/><text x="650.0" y="254" text-anchor="middle" class="tk">100 µs</text>
+<line x1="723.3" x2="723.3" y1="40" y2="236" stroke="#30363d"/><text x="723.3" y="254" text-anchor="middle" class="tk">1 ms</text>
+<line x1="796.7" x2="796.7" y1="40" y2="236" stroke="#30363d"/><text x="796.7" y="254" text-anchor="middle" class="tk">10 ms</text>
+<line x1="870.0" x2="870.0" y1="40" y2="236" stroke="#30363d"/><text x="870.0" y="254" text-anchor="middle" class="tk">100 ms</text>
+<text x="14" y="68" class="lab">葉綠素單重態激發態</text><text x="14" y="86" class="tk2">壽命：數奈秒</text>
+<rect x="283.3" y="55" width="51.3" height="22" rx="4" fill="#3987e5" opacity=".9"><title>葉綠素單重態激發態：壽命：數奈秒</title></rect>
+<text x="14" y="130" class="lab">Zn-PPIX 三重態</text><text x="14" y="148" class="tk2">壽命：7–15 ms</text>
+<rect x="785.3" y="117" width="24.3" height="22" rx="4" fill="#d95f2b" opacity=".9"><title>Zn-PPIX 三重態：壽命：7–15 ms</title></rect>
+<text x="14" y="192" class="lab">與 Fd 擴散相遇</text><text x="14" y="210" class="tk2">平均等待（本站推算）</text>
+<rect x="605.8" y="179" width="197.9" height="22" rx="4" fill="#8b949e" opacity=".9"><title>與 Fd 擴散相遇：平均等待（本站推算）</title></rect>
+<text x="599.8" y="194" text-anchor="end" class="ann2">25 µs</text><text x="809.8" y="194" class="ann2">12.5 ms</text>
+<line x1="338.6" x2="781.3" y1="95" y2="95" stroke="#8b949e" stroke-dasharray="4 3"/><text x="559.9" y="89" text-anchor="middle" class="ann">約 10⁶ 倍</text>
+<text x="14" y="288" class="val">衰減前碰上 Fd 的機率（本站推算）：三重態 36%–99.8%　單重態 ≤0.02%</text>
+<text x="14" y="312" class="ann2">假設：蛋白結合速率常數 10⁶–10⁸ M⁻¹s⁻¹、細胞質 Fd 80–400 µM（論文數值）、P = k[Fd] / (k[Fd] + 1/τ)</text>
+</svg></div>
+    <figcaption><b>自繪圖 C</b>對數時間軸上的三段區間。灰色是本站推算的「與 Fd 平均相遇時間」：取常見的蛋白結合速率常數 10⁶–10⁸ M⁻¹s⁻¹，乘上論文給的 Fd 濃度 80–400 μM 得到相遇速率，取倒數得 25 μs 到 12.5 ms。三重態壽命和這段區間重疊，衰減前碰上 Fd 的機率估計有 36%–99.8%。單重態要靠擴散碰上 Fd 則幾乎不可能（≤0.02%）。速率常數是假設值；80–400 μM 也是 Fd 總量，若細胞裡的 Fd 多半已被還原，可接電子的會少很多，下限機率可能降到幾 %。所以結論只看數量級：三重態可行，單重態不行。</figcaption>
+  </figure>
+
+  <p>被氧化的 Zn-PPIX⁺ 再由細胞既有的呼吸鏈補回電子，形成一個迴路（原圖 2 的虛線）。這套裝置可以取代依賴 H₂ 的電子分岔，也為後來的葉綠素合成鋪了路。</p>
+
+  <figure class="mid">
+    <img src="figs/fig2.jpg" alt="原圖 2：原紫質 IX 一路做成血基質與細胞色素；旁支產生 Zn-原紫質 IX，結合在蛋白上吸收熱液微光，進入三重態後還原 Fd" loading="lazy" width="768" height="369">
+    <figcaption><b>原圖 2</b>論文對葉綠素光營養起源的提案。上排是既有的路：原紫質 IX → 血基質 → 細胞色素 → 呼吸鏈。灰色箭頭是旁支：亞鐵螯合酶的副反應（或自發）產生 Zn-原紫質 IX，結合到一個大量存在的可溶性血基質結合蛋白上。它吸收熱液噴口極弱的熱（可見）光（黑底小圖）後，進入半衰期 7–15 ms、電位約 −1600 mV（圖中標 E⁰）的三重態，把電子交給 Fd；氧化態的 Zn-原紫質 IX⁺ 由呼吸鏈補回電子。</figcaption>
+  </figure>
+
+  <p><strong>現代還找得到鋅。</strong>嗜酸菌 <i>Acidiphilium rubrum</i> 的 RC2 用 Zn-細菌葉綠素 a；<i>Chloracidobacterium thermophilum</i> 的 RC1，「特殊對」看來是 Zn-細菌葉綠素 a′。人工光合作用研究也常拿合成的鋅紫質、或接在細胞色素上的鋅紫質做光驅動的氧化還原反應。</p>
+
+  <p><strong>鋅換成鎂，可能是後來的事。</strong>論文的說法是：換成 Mg 之後，激發態的化學從三重態轉向單重態。（Mg-葉綠素其實也會形成三重態，只是產率較低；有效的光化學改由只活幾奈秒的單重態在反應中心內完成。）這時必須先有一個排好電子受體鏈的蛋白，讓電荷分離後的狀態撐得比電荷再結合（逆反應）久，否則光能會白白浪費。作者因此認為鋅換鎂可能發生在起源的後期，這也許就是某些 RC 至今仍用 Zn-細菌葉綠素的原因。</p>
+</section>
+
+<!-- ─────────── §5 ─────────── -->
+<section id="pigment">
+  <h2><span class="num">§5</span>從血基質到葉綠素：借來的酵素</h2>
+  <p class="sec-sub">每一步都能在細胞現有的工具箱裡找到祖先；唯一找不到的，是 RC 蛋白本身</p>
+
+  <p><strong>為什麼要繼續改造？</strong>Zn-PPIX 對 423 nm 藍光吸收很強，在 550、600 nm 附近只有微弱吸收。熱液噴口的光偏紅、缺藍光，把吸收往紅光和近紅外推，能多吸收很多光子。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 470" role="img" aria-labelledby="D-t D-d">
+<title id="D-t">400°C 黑體光的光子分布 vs 葉綠素前驅物的吸收峰</title>
+<desc id="D-d">對數縱軸：以 664 nm 為 1 的相對光子數。黑體光往紅外急遽增加；色素吸收峰從 Zn-PPIX 的 423 nm 一路往紅移到 664 nm，綠硫菌活體細菌葉綠素 c 到 750 nm。</desc>
+<rect x="200.0" y="46" width="335.0" height="190" fill="#3987e5" opacity=".07"/>
+<text x="211.2" y="79" class="ann2">400–700 nm：只佔 400–1100 nm 光子的 0.0035%</text>
+<line x1="200" x2="870" y1="222.4" y2="222.4" stroke="#30363d"/><text x="192" y="226.4" text-anchor="end" class="tk">10⁻⁸</text>
+<line x1="200" x2="870" y1="195.3" y2="195.3" stroke="#30363d"/><text x="192" y="199.3" text-anchor="end" class="tk">10⁻⁶</text>
+<line x1="200" x2="870" y1="168.1" y2="168.1" stroke="#30363d"/><text x="192" y="172.1" text-anchor="end" class="tk">10⁻⁴</text>
+<line x1="200" x2="870" y1="141.0" y2="141.0" stroke="#30363d"/><text x="192" y="145.0" text-anchor="end" class="tk">10⁻²</text>
+<line x1="200" x2="870" y1="113.9" y2="113.9" stroke="#30363d"/><text x="192" y="117.9" text-anchor="end" class="tk">1</text>
+<line x1="200" x2="870" y1="86.7" y2="86.7" stroke="#30363d"/><text x="192" y="90.7" text-anchor="end" class="tk">10²</text>
+<line x1="200" x2="870" y1="59.6" y2="59.6" stroke="#30363d"/><text x="192" y="63.6" text-anchor="end" class="tk">10⁴</text>
+<text x="200.0" y="254" text-anchor="middle" class="tk">400</text>
+<text x="311.7" y="254" text-anchor="middle" class="tk">500</text>
+<text x="423.3" y="254" text-anchor="middle" class="tk">600</text>
+<text x="535.0" y="254" text-anchor="middle" class="tk">700</text>
+<text x="646.7" y="254" text-anchor="middle" class="tk">800</text>
+<text x="758.3" y="254" text-anchor="middle" class="tk">900</text>
+<text x="870.0" y="254" text-anchor="middle" class="tk">1000</text>
+<text x="870" y="270" text-anchor="end" class="tk2">波長 nm</text>
+<text x="14" y="133.0" class="tk">相對光子數</text><text x="14" y="151.0" class="tk2">（664 nm＝1）</text>
+<path d="M200.0,227.1 L204.5,224.2 L208.9,221.4 L213.4,218.6 L217.9,215.9 L222.3,213.3 L226.8,210.7 L231.3,208.1 L235.7,205.6 L240.2,203.2 L244.7,200.7 L249.1,198.4 L253.6,196.1 L258.1,193.8 L262.5,191.5 L267.0,189.3 L271.5,187.2 L275.9,185.1 L280.4,183.0 L284.9,180.9 L289.3,178.9 L293.8,177.0 L298.3,175.0 L302.7,173.1 L307.2,171.2 L311.7,169.4 L316.1,167.6 L320.6,165.8 L325.1,164.1 L329.5,162.3 L334.0,160.6 L338.5,159.0 L342.9,157.3 L347.4,155.7 L351.9,154.1 L356.3,152.5 L360.8,151.0 L365.3,149.5 L369.7,148.0 L374.2,146.5 L378.7,145.1 L383.1,143.6 L387.6,142.2 L392.1,140.9 L396.5,139.5 L401.0,138.1 L405.5,136.8 L409.9,135.5 L414.4,134.2 L418.9,133.0 L423.3,131.7 L427.8,130.5 L432.3,129.3 L436.7,128.1 L441.2,126.9 L445.7,125.7 L450.1,124.6 L454.6,123.4 L459.1,122.3 L463.5,121.2 L468.0,120.1 L472.5,119.0 L476.9,118.0 L481.4,116.9 L485.9,115.9 L490.3,114.9 L494.8,113.9 L499.3,112.9 L503.7,111.9 L508.2,110.9 L512.7,110.0 L517.1,109.0 L521.6,108.1 L526.1,107.2 L530.5,106.2 L535.0,105.3 L539.5,104.5 L543.9,103.6 L548.4,102.7 L552.9,101.9 L557.3,101.0 L561.8,100.2 L566.3,99.3 L570.7,98.5 L575.2,97.7 L579.7,96.9 L584.1,96.1 L588.6,95.4 L593.1,94.6 L597.5,93.8 L602.0,93.1 L606.5,92.3 L610.9,91.6 L615.4,90.9 L619.9,90.1 L624.3,89.4 L628.8,88.7 L633.3,88.0 L637.7,87.4 L642.2,86.7 L646.7,86.0 L651.1,85.3 L655.6,84.7 L660.1,84.0 L664.5,83.4 L669.0,82.7 L673.5,82.1 L677.9,81.5 L682.4,80.9 L686.9,80.3 L691.3,79.6 L695.8,79.0 L700.3,78.5 L704.7,77.9 L709.2,77.3 L713.7,76.7 L718.1,76.1 L722.6,75.6 L727.1,75.0 L731.5,74.5 L736.0,73.9 L740.5,73.4 L744.9,72.9 L749.4,72.3 L753.9,71.8 L758.3,71.3 L762.8,70.8 L767.3,70.3 L771.7,69.7 L776.2,69.2 L780.7,68.8 L785.1,68.3 L789.6,67.8 L794.1,67.3 L798.5,66.8 L803.0,66.3 L807.5,65.9 L811.9,65.4 L816.4,65.0 L820.9,64.5 L825.3,64.1 L829.8,63.6 L834.3,63.2 L838.7,62.7 L843.2,62.3 L847.7,61.9 L852.1,61.4 L856.6,61.0 L861.1,60.6 L865.5,60.2 L870.0,59.8" fill="none" stroke="#d95f2b" stroke-width="2.4"/>
+<text x="763.9" y="58.6" text-anchor="end" class="lab">400°C 黑體</text>
+<circle cx="225.7" cy="211.3" r="5" fill="#d95f2b" stroke="#161b22" stroke-width="2"/>
+<circle cx="494.8" cy="113.9" r="5" fill="#d95f2b" stroke="#161b22" stroke-width="2"/>
+<circle cx="590.8" cy="95.0" r="5" fill="#d95f2b" stroke="#161b22" stroke-width="2"/>
+<text x="237.7" y="215.3" class="val">423 nm：664 nm 的 1/1.5×10⁷</text>
+<text x="597.5" y="113.0" class="val">750 nm：再多 25 倍</text>
+<text x="14" y="304" class="lab">Zn-PPIX</text><line x1="200" x2="870" y1="300" y2="300" stroke="#30363d"/>
+<circle cx="225.7" cy="300" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>Zn-PPIX 423 nm</title></circle><text x="225.7" y="289" text-anchor="middle" class="tk2">423</text>
+<circle cx="367.5" cy="300" r="4" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"><title>Zn-PPIX 550 nm</title></circle><text x="367.5" y="289" text-anchor="middle" class="tk2">550</text>
+<circle cx="423.3" cy="300" r="4" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"><title>Zn-PPIX 600 nm</title></circle><text x="423.3" y="289" text-anchor="middle" class="tk2">600</text>
+<text x="14" y="338" class="lab">Zn-二乙烯原葉綠酸酯</text><line x1="200" x2="870" y1="334" y2="334" stroke="#30363d"/>
+<circle cx="242.4" cy="334" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>Zn-二乙烯原葉綠酸酯 438 nm</title></circle><text x="242.4" y="323" text-anchor="middle" class="tk2">438</text>
+<circle cx="395.4" cy="334" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>Zn-二乙烯原葉綠酸酯 575 nm</title></circle><text x="395.4" y="323" text-anchor="middle" class="tk2">575</text>
+<circle cx="450.1" cy="334" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>Zn-二乙烯原葉綠酸酯 624 nm</title></circle><text x="450.1" y="323" text-anchor="middle" class="tk2">624</text>
+<text x="14" y="372" class="lab">8-乙烯 Zn-葉綠酸酯 a</text><line x1="200" x2="870" y1="368" y2="368" stroke="#30363d"/>
+<circle cx="494.8" cy="368" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>8-乙烯 Zn-葉綠酸酯 a 664 nm</title></circle><text x="494.8" y="357" text-anchor="middle" class="tk2">664</text>
+<text x="14" y="406" class="lab">細菌葉綠素 c（GSB1 活體）</text><line x1="200" x2="870" y1="402" y2="402" stroke="#30363d"/>
+<line x1="590.8" x2="702.5" y1="402" y2="402" stroke="#7ee787" stroke-width="3" opacity=".5"/>
+<circle cx="590.8" cy="402" r="7" fill="#7ee787" stroke="#7ee787" stroke-width="1.6"><title>細菌葉綠素 c（GSB1 活體） 750 nm</title></circle><text x="590.8" y="391" text-anchor="middle" class="tk2">750</text>
+<text x="14" y="442" class="ann2">實心＝論文列出的吸收峰，空心＝論文指明的弱吸收；綠色橫條＝活體吸收拖到約 850 nm。實測噴口可見光高於純黑體（來源未明），此圖只示意形狀（本站計算）</text>
+</svg></div>
+    <figcaption><b>自繪圖 D</b>上：400°C 黑體輻射的相對光子數（本站以 Planck 公式計算，664 nm＝1，對數縱軸）。下：論文提到的各中間產物的吸收峰。只比最強吸收峰的話，423 nm 和 664 nm 的黑體光子數相差約七個數量級；但 Zn-PPIX 在 550、600 nm 還有弱吸收，那裡的光子只比 664 nm 少約 20–370 倍，所以實際可吸收光子的增幅遠小於七個數量級。把整條吸收光譜一起粗算（假設文獻常見的吸收係數與 15–25 nm 峰寬），紅移到 664 nm 的增益約 130–250 倍，約兩個數量級（本站粗估），仍是很大的好處；比例也隨溫度而變。綠硫菌 GSB1 活體細菌葉綠素 c 的 750 nm，光子又比 664 nm 多約 25 倍。實際噴口的可見光高於純黑體（§6），所以這張圖只說明方向，不是定量預測。</figcaption>
+  </figure>
+
+  <p>論文逐一追查，從 Zn-PPIX 走到葉綠酸酯 a 需要哪些酵素，以及這些酵素可能從哪裡借來：</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>步驟</th><th>酵素</th><th>可能借自</th><th>結果</th></tr></thead>
+      <tbody>
+        <tr><td>插入金屬</td><td>先是亞鐵螯合酶的副反應；後來由 Mg-螯合酶（BchHDI）接手</td><td>Mg-螯合酶和鈷胺素合成的鈷螯合酶（CobNST）同源，只需基因複製再分化</td><td>下游酵素對 Zn 或 Mg 程度不一地都能接受，關鍵是「環中央要有金屬」</td></tr>
+        <tr><td>保護 C-13 丙酸側鏈</td><td>BchM／ChlM（甲基轉移酶）</td><td>普通的 O-甲基轉移酶，rRNA 修飾也用，古老</td><td>讓下一步做成環化，而不是脫羧</td></tr>
+        <tr><td>做出第五個環（E 環）</td><td>BchE（不需氧的環化酶）</td><td>自由基 SAM 家族，非常古老；和血基質途徑的 HemN 有些相似</td><td>Zn-二乙烯原葉綠酸酯：吸收峰 438／575／624 nm</td></tr>
+        <tr><td>還原 8-乙烯基（可省略）</td><td>BciA 或 BciB（兩者互不相關）</td><td>BciA：NADPH 短鏈去氫酶家族；BciB：與產甲烷古菌的 F₄₂₀ 還原性氫化酶相關</td><td>吸收差異很小；<i>Prochlorococcus</i> 至今仍用二乙烯葉綠素 a</td></tr>
+        <tr><td>還原 D 環，成為二氫紫質（chlorin）</td><td>BchNBL／ChlNBL</td><td>結構與鉬固氮酶相關</td><td>8-乙烯 Zn-葉綠酸酯 a：664 nm 強烈吸收紅光，和葉綠素 a 一樣</td></tr>
+        <tr><td>接上葉綠醇尾巴</td><td>ChlG（葉綠素合酶）</td><td>—</td><td>色素能進入細胞膜，接上既有的細胞色素和醌，把氧化還原和離子梯度耦合起來</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="mid">
+    <img src="figs/fig3.jpg" alt="原圖 3：原紫質 IX 的結構，左邊插鋅成為 Zn-原紫質 IX，右邊經過一連串酵素變成葉綠酸酯 a，每個酵素旁標著它可能的祖先家族" loading="lazy" width="661" height="448">
+    <figcaption><b>原圖 3</b>（改自 Bryant 與 Liu 2013）把原紫質 IX（中）變成葉綠酸酯 a（右，Chlide <i>a</i>）所需的結構改變與酵素；左邊是插鋅產生的 Zn-原紫質 IX。虛線箭頭從可能的祖先家族指向對應的酵素：鈷胺素合成的 CobNST → Mg-螯合酶 BchHDI；O-甲基轉移酶 → BchM；自由基 SAM 家族 → BchE；短鏈去氫酶 → BciA；氫化酶 → BciB；固氮酶 → BchNBL。</figcaption>
+  </figure>
+
+  <p><strong>結論：葉綠素合成幾乎全部是「借零件」組出來的。</strong>從血基質途徑自然產生的 Zn-PPIX 出發，所需酵素都可能從細胞既有的途徑借來。唯一還找不到祖先的是 <strong>RC1 蛋白本身</strong>：它大概是一個跨膜的 α-螺旋蛋白，也許原本就能綁紫質（例如血基質）或醌。Xiong 與 Bauer 提過細胞色素 b 這個候選。</p>
+  <p class="note">本站註：論文內文先說 BciA 屬於 NADPH 短鏈去氫酶家族，接著寫「while BciA is related to F420-reducing hydrogenases」。第二個 BciA 應為 BciB（與原圖 3 一致）。</p>
+</section>
+
+<!-- ─────────── §6 ─────────── -->
+<section id="ventlight">
+  <h2><span class="num">§6</span>深海微光，比陽光更適合起步</h2>
+  <p class="sec-sub">噴口會發光：大部分是紅外熱輻射，另外有來源不明的可見光；暗，但沒有紫外線</p>
+
+  <p><strong>熱光。</strong>超過 400°C 的黑煙囪會發出黑體輻射，主要在 900 nm 以上，少量延伸到約 750 nm，正好是綠小體（如果當時已經有的話）吸收得到的範圍；400–700 nm 的「光合有效輻射」幾乎沒有。早在 1995 年，Nisbet 等就提出：通往不產氧光合作用的路，起初可能是讓會游動的原核生物感知熱與光、藉此游向化學能來源的機制。</p>
+
+  <p><strong>可見光。</strong>噴口還有超出熱輻射的可見光，成因至今未明；候選機制有聲致發光（小氣泡塌縮時發光）和摩擦發光（光活性小晶體發光）。最早的線索來自一種住在漆黑噴口旁、擁有特殊感光器官的蝦（van Dover 等 1989；即 <i>Rimicaris exoculata</i>，本站補充）。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 330" role="img" aria-labelledby="E-t E-d">
+<title id="E-t">光子通量對照（對數）：陽光、黑海綠硫菌、熱液噴口</title>
+<desc id="E-d">海面陽光約 1.2×10¹⁷ photons cm⁻² s⁻¹；黑海化學躍層 1.8×10¹¹；熱液池邊 2 公分處約 10¹¹；噴口環境光 10⁹ 到 10⁶。</desc>
+<line x1="371.5" x2="371.5" y1="36" y2="248" stroke="#30363d"/><text x="371.5" y="266" text-anchor="middle" class="tk">10⁶</text>
+<line x1="454.6" x2="454.6" y1="36" y2="248" stroke="#30363d"/><text x="454.6" y="266" text-anchor="middle" class="tk">10⁸</text>
+<line x1="537.7" x2="537.7" y1="36" y2="248" stroke="#30363d"/><text x="537.7" y="266" text-anchor="middle" class="tk">10¹⁰</text>
+<line x1="620.8" x2="620.8" y1="36" y2="248" stroke="#30363d"/><text x="620.8" y="266" text-anchor="middle" class="tk">10¹²</text>
+<line x1="703.8" x2="703.8" y1="36" y2="248" stroke="#30363d"/><text x="703.8" y="266" text-anchor="middle" class="tk">10¹⁴</text>
+<line x1="786.9" x2="786.9" y1="36" y2="248" stroke="#30363d"/><text x="786.9" y="266" text-anchor="middle" class="tk">10¹⁶</text>
+<line x1="870.0" x2="870.0" y1="36" y2="248" stroke="#30363d"/><text x="870.0" y="266" text-anchor="middle" class="tk">10¹⁸</text>
+<text x="870" y="284" text-anchor="end" class="tk2">photons cm⁻² s⁻¹（對數）</text>
+<text x="14" y="56" class="lab">海面正午陽光</text><text x="14" y="73" class="tk2">PAR 約 2,000 µmol m⁻² s⁻¹（本站換算）</text>
+<circle cx="831.8" cy="61" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>海面正午陽光：1.2×10¹⁷</title></circle><text x="817.8" y="66" text-anchor="end" class="val">1.2×10¹⁷</text>
+<text x="14" y="100" class="lab">黑海化學躍層（約 100 m 深）</text><text x="14" y="117" class="tk2">綠硫菌 BS1 族群在此，倍增 ≥2.8 年</text>
+<circle cx="589.8" cy="105" r="7" fill="#3987e5" stroke="#161b22" stroke-width="2"><title>黑海化學躍層（約 100 m 深）：1.8×10¹¹</title></circle><text x="575.8" y="110" text-anchor="end" class="val">1.8×10¹¹</text>
+<text x="14" y="144" class="lab">熱液池邊 2 cm 處</text><text x="14" y="161" class="tk2">600–1000 nm（White 2002b）</text>
+<circle cx="579.2" cy="149" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>熱液池邊 2 cm 處：10¹¹</title></circle><text x="565.2" y="154" text-anchor="end" class="val">10¹¹</text>
+<text x="14" y="188" class="lab">噴口環境光</text><text x="14" y="205" class="tk2">700–800 nm（White 2002b）</text>
+<circle cx="496.2" cy="193" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>噴口環境光：10⁹</title></circle><text x="482.2" y="198" text-anchor="end" class="val">10⁹</text>
+<text x="14" y="232" class="lab">噴口環境光</text><text x="14" y="249" class="tk2">600–700 nm（White 2002a）</text>
+<circle cx="371.5" cy="237" r="7" fill="#d95f2b" stroke="#161b22" stroke-width="2"><title>噴口環境光：10⁶</title></circle><text x="357.5" y="242" text-anchor="end" class="val">10⁶</text>
+<path d="M843.8,61 H849.8 V149 H843.8" fill="none" stroke="#8b949e"/>
+<text x="839.8" y="123.0" text-anchor="end" class="ann">差約 10⁶ 倍</text>
+<text x="14" y="312" class="ann2">藍點＝陽光（含照到黑海深處的），橘點＝熱液噴口量測值。光通量隨與光源距離的平方遞減，混濁還會再降</text>
+</svg></div>
+    <figcaption><b>自繪圖 E</b>光子通量（對數）。噴口的三個數值與黑海數值取自論文；海面陽光以晴天正午約 2,000 μmol m⁻² s⁻¹ 換算（本站換算）。噴口量測值橫跨五個數量級：600–700 nm 的環境光（10⁶）被報告為太弱、不足以支持光合生命，700–800 nm 另有 10⁹ 的報告；離熱液池 2 公分處則和黑海化學躍層同一級。論文說「比海面陽光低約六個數量級」，本站換算為 1.2×10⁶ 倍，吻合。</figcaption>
+  </figure>
+
+  <p><strong>有沒有菌可能靠這點光過活？</strong>Beatty 等（2005；Beatty 就是本文作者之一）從深海熱液噴口的樣本裡，分離並培養出一株嚴格光合自營、靠 H₂S 生長的綠硫菌 <strong>GSB1</strong>（菌株名取自 Beatty 等 2005，本站補充）。論文的措辭很謹慎：這株菌「提高了」噴口光足以支持光合作用的可能性。原地是否真的靠熱光生長，並沒有直接證據。它用細菌葉綠素 c 和綠菌烯（chlorobactene），活體吸收峰在 750 nm、一直拖到約 850 nm，適合吸收黑體光。對照組是黑海約 100–110 m 深處的綠硫菌 BS1：它用細菌葉綠素 e 和異海綿烯（isorenieratene），吸收那個深度剩下的 450–550 nm 藍綠色陽光，族群穩定，估計原位倍增時間 ≥2.8 年。</p>
+
+  <div class="cards">
+    <div class="kcard">
+      <div class="big">≥2.8<small> 年</small></div>
+      <div class="lbl">黑海綠硫菌 BS1 的估計原位倍增時間；它可用的光量（1.8×10¹¹ photons cm⁻² s⁻¹，約 3 nmol m⁻² s⁻¹）和熱液池邊 2 公分處同一級</div>
+    </div>
+    <div class="kcard">
+      <div class="big">1,000<small> 年以上</small></div>
+      <div class="lbl">現代低能量環境裡，微生物的碳週轉時間（不是倍增時間）。和這比起來，倍增 3 年已經算快兩、三個數量級</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">≈400<small> 年</small></div>
+      <div class="lbl">論文說：倍增 3 年的 1 μm³ 細菌，受質無限時只要 500 年就能長出比地球還重的生物量。本站驗算：1 μm³ 細胞約 10⁻¹⁵ kg，到地球質量要約 132 次倍增，×3 年約 400 年</div>
+    </div>
+  </div>
+
+  <h3>為什麼陽光反而危險</h3>
+  <ol class="steps">
+    <li><strong>紫外線會造出最強的氧化劑。</strong>論文認為 UV 能把葉綠素激發到第二激發態甚至更高，產生氧化態葉綠素，那是生物學已知最強的氧化劑之一。（本站註：藍光本身就會把葉綠素激發到第二激發態再迅速回落；UV 對早期細胞更直接的威脅，是傷害 DNA 與蛋白質。）現代細胞有一整套保護機制；第一批含葉綠素的細胞沒有，因為它們從沒碰過這麼強的氧化劑。</li>
+    <li><strong>當時的危險主要是 UV，不是強光本身。</strong>現代的強光傷害大多和 O₂ 有關，而葉綠素合成出現時還沒有 O₂。沒有 O₂ 時，葉綠素三重態頂多降低效率，對細胞傷害不大，甚至可能有用（§4）。真正的威脅是 UV：當時沒有臭氧層，水裡也沒有細胞和有色有機物幫忙擋 UV。（作者也提到，有研究認為太古代臭氧以外的氣體可能擋掉一部分 UV；淺水的光量確實比噴口多，但同時帶著 UV。）</li>
+    <li><strong>海面也沒有東西可吃。</strong>生產被綁在 H₂ 冒出的噴口，海面既沒有 H₂，也沒有高濃度的 H₂S，養不活發明光合作用的那群細胞。</li>
+  </ol>
+  <p>作者承認，淺水熱泉也能同時提供受質和光；但他們認為深海熱光讓細胞在沒有 UV 風險的條件下學會用光，可能性比較高。</p>
+
+  <div class="callout green">
+    <span class="tag">論文列出的三個前提</span>
+    在高度還原、低電位的熱液環境裡，光合作用的演化剛好具備三個條件：（1）有一個<strong>現成的還原劑 H₂</strong>，讓細胞在演化出葉綠素合成的期間活得下去；（2）有一個<strong>新還原劑 H₂S</strong>，要靠光能才能拿來還原 Fd，但它的中點電位夠低（HS⁻/S⁰，−270 mV）；（3）有<strong>持續、微弱、不含紫外線的光</strong>，讓剛開始累積葉綠素的細胞有機會適應它，而不是被 UV 產生的氧化態葉綠素傷害。（為什麼新還原劑是 H₂S，而不是 Fe²⁺ 或 H₂，見 §7。）
+  </div>
+</section>
+
+<!-- ─────────── §7 ─────────── -->
+<section id="rc1first">
+  <h2><span class="num">§7</span>先有 RC1、先用 H₂S</h2>
+  <p class="sec-sub">新功能要帶來新好處；「RC2 先」或「H₂ 先」都說不出細胞多拿到什麼</p>
+
+  <p><strong>如果 RC2 先出現。</strong>那麼光營養最初的功能是做 ATP，再靠逆向電子傳遞做 NAD(P)H，就像光合鐵營養菌 <i>Rps. palustris</i> TIE1 那樣。但用琥珀酸這類有機物當供體，並不會增加淨初級生產。這等於說，自營生物先靠電子分岔做 Fd，接著繞道去做 NAD(P)H，等 RC1 出現後再回頭做 Fd。作者認為這不太可能。</p>
+
+  <p><strong>如果 RC1 先出現。</strong>第一型 RC 走線性電子流、直接還原 Fd，正好補上 H₂ 世界缺的那一塊。傳統上解釋產氧光合作用的出現，理由是「讓細胞拿到一種新的還原劑：水」。作者把同樣的邏輯往前推一步：第一個光合作用讓細胞拿到 H₂ 以外的還原劑，也就是 H₂S。H₂S 和 H₂ 一樣，在熱液流體裡很豐富。</p>
+
+  <p><strong>H₂ 當第一個光合供體？沒有好處。</strong>有人（Tice 與 Lowe 2006）提過 H₂ 可能是第一個光合電子供體，作者認為不太可能。細胞本來就能不靠光使用 H₂；花大成本做葉綠素和反應中心，最後只是多一條使用 H₂ 的路，還額外依賴光。反應中心既不會提高氫化酶對 H₂ 的親和力，也不會提高固碳酵素對受質的親和力。用 H₂ 自營本來就不需要光；作者認為，這也許解釋了為什麼現存光營養菌都不搭配乙醯輔酶 A 途徑。</p>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 392" role="img" aria-labelledby="F-t F-d">
+<title id="F-t">從 H₂ 換到其他電子供體，電位要「跳」多遠</title>
+<desc id="F-d">以 H₂（−414 mV）為起點：換成 H₂S 只差 144 mV，換成 Fe²⁺ 差 564 mV，Mn²⁺ 差 804 mV，水差 1,224 mV。</desc>
+<line x1="257.4" x2="257.4" y1="58" y2="276" stroke="#30363d"/><text x="257.4" y="294" text-anchor="middle" class="tk">−500</text>
+<line x1="371.5" x2="371.5" y1="58" y2="276" stroke="#30363d"/><text x="371.5" y="294" text-anchor="middle" class="tk">−250</text>
+<line x1="485.5" x2="485.5" y1="58" y2="276" stroke="#30363d"/><text x="485.5" y="294" text-anchor="middle" class="tk">0</text>
+<line x1="599.6" x2="599.6" y1="58" y2="276" stroke="#30363d"/><text x="599.6" y="294" text-anchor="middle" class="tk">+250</text>
+<line x1="713.7" x2="713.7" y1="58" y2="276" stroke="#30363d"/><text x="713.7" y="294" text-anchor="middle" class="tk">+500</text>
+<line x1="827.8" x2="827.8" y1="58" y2="276" stroke="#30363d"/><text x="827.8" y="294" text-anchor="middle" class="tk">+750</text>
+<text x="878" y="310" text-anchor="end" class="tk2">中點電位 mV（pH 7）</text>
+<line x1="257.4" x2="257.4" y1="40" y2="276" stroke="#d95f2b" stroke-width="1.6" stroke-dasharray="5 3"/>
+<line x1="296.6" x2="296.6" y1="40" y2="276" stroke="#8b949e" stroke-width="1.6" stroke-dasharray="0"/>
+<text x="253.4" y="34" text-anchor="end" class="tk">Fd −500</text><text x="300.6" y="34" class="tk">H₂ −414</text>
+<text x="14" y="82" class="row">H₂S</text><text x="70" y="82" class="tk">HS⁻/S⁰　−270 mV</text><text x="14" y="102" class="tk2">論文：第一個供體</text>
+<rect x="296.6" y="70" width="65.7" height="18" rx="4" fill="#3987e5" opacity="1.0"><title>H₂S：比 H₂ 正 144 mV；推到 Fd 要爬 230 mV</title></rect>
+<text x="370.3" y="84" text-anchor="start" class="val">+144 mV</text>
+<text x="14" y="136" class="row">Fe²⁺</text><text x="70" y="136" class="tk">FeOOH/Fe²⁺　+150 mV</text><text x="14" y="156" class="tk2">論文：現存光合鐵營養像是後來接上</text>
+<rect x="296.6" y="124" width="257.4" height="18" rx="4" fill="#3987e5" opacity="0.5"><title>Fe²⁺：比 H₂ 正 564 mV；推到 Fd 要爬 650 mV</title></rect>
+<text x="562.0" y="138" text-anchor="start" class="val">+564 mV</text>
+<text x="14" y="190" class="row">Mn²⁺</text><text x="70" y="190" class="tk">MnO₂/Mn²⁺　+390 mV</text><text x="14" y="210" class="tk2">論文：走向拆水的中間站</text>
+<rect x="296.6" y="178" width="366.9" height="18" rx="4" fill="#3987e5" opacity="0.5"><title>Mn²⁺：比 H₂ 正 804 mV；推到 Fd 要爬 890 mV</title></rect>
+<text x="671.5" y="192" text-anchor="start" class="val">+804 mV</text>
+<text x="14" y="244" class="row">H₂O</text><text x="70" y="244" class="tk">O₂/H₂O　+810 mV</text><text x="14" y="264" class="tk2">放氧複合體</text>
+<rect x="296.6" y="232" width="558.6" height="18" rx="4" fill="#3987e5" opacity="0.5"><title>H₂O：比 H₂ 正 1224 mV；推到 Fd 要爬 1310 mV</title></rect>
+<text x="847.2" y="246" text-anchor="end" class="val">+1,224 mV</text>
+<text x="14" y="334" class="ann2">推到 Fd 要爬：H₂S 230、Fe²⁺ 650、Mn²⁺ 890、H₂O 1,310 mV（本站計算）。一個 664 nm 光子約 1.87 eV，</text>
+<text x="14" y="354" class="ann2">但天然反應中心只存得下約一半，所以水 → Fd 要兩個光系統串聯。各供體的差別主要在供體端：</text>
+<text x="14" y="374" class="ann2">電位越正，越需要強氧化性的 P⁺ 與高電位載體；Fe²⁺ 比醌（+60 mV）還正，進不了醌池（本站觀察）。</text>
+</svg></div>
+    <figcaption><b>自繪圖 F</b>以 H₂（−414 mV）為起點，換成其他電子供體時電位要「跳」多遠（本站依原圖 1 的數值計算）。H₂S 只差 144 mV，Fe²⁺ 差 564 mV。Fe(III)/Fe(II) 的電位隨鐵礦種類與濃度可差數百 mV，+150 mV 只是論文取的代表值。H₂S 之後，原圖 5A 的箭頭依序經過 Fe²⁺、Mn²⁺，最後到水；但作者認為現存的光合鐵營養是後來才接上高電位細胞色素，不代表最初的機制。底部三行提醒：光子能量不是限制，真正的門檻在供體端（§12 有更多討論）。</figcaption>
+  </figure>
+
+  <p><strong>H₂S 對 Fe²⁺：除了電位，還有機制。</strong>作者的說法是：一個嚴格厭氧、正在合成葉綠素，又得避免這件事變成「自殺」的細胞，比較可能去用 HS⁻/S⁰（−270 mV），而不是正得多的 Fe²⁺（約 +150 mV）。而且兩者大概都不是 RC 自己去氧化，得靠酵素或中介輔因子（例如細胞色素）。再看機制：現存的光合鐵營養菌接收 Fe²⁺ 電子時，用的都是高電位的細胞色素與高電位鐵硫蛋白（HiPIP）：</p>
+  <ul>
+    <li><i>Rps. palustris</i> TIE1（RC2）的 PioA（十血基質細胞色素）與 PioC（HiPIP）：+385 至 +450 mV；</li>
+    <li><i>Rhodobacter</i> sp. SW2 的 FoxE（雙血基質細胞色素）：+201 至 +300 mV（pH 7 至 6）；</li>
+    <li>Cyc2 類細胞色素：約 +560 mV。這和好氧鐵氧化菌（以 O₂ 為終端受體）用的是同一類蛋白，綠硫菌 <i>Chlorobium phaeoferrooxidans</i>（RC1）也在用。</li>
+  </ul>
+  <p>這些看起來像是後來從好氧鐵氧化菌水平轉移來的「外掛」。另一個不對稱是：H₂S／S⁰ 這一對，細胞原本就有還原 S⁰ 的酵素，可以倒過來用；Fe³⁺ 在大氧化事件以前幾乎不存在，也就沒有現成的 Fe³⁺ 還原酶可以倒轉。</p>
+  <p class="note">本站註：這個前提要保留。大氧化事件以前並非沒有 Fe³⁺：帶狀鐵礦本身含大量 Fe³⁺，蛇紋岩化留下磁鐵礦，紫外光也能氧化 Fe²⁺；異化 Fe(III) 還原也常被視為古老的代謝（例如 Vargas 等 1998）。比較站得住的說法只是：現存光合鐵營養菌用的高電位細胞色素，看起來像是後來才接上的。</p>
+
+  <p><strong>硫化物氧化酶並不稀缺。</strong>至少有三種互不相關的酵素能氧化 H₂S：硫化物：醌氧化還原酶（SQR）、黃素細胞色素 c（FccAB）和類硫氰酸酶蛋白 SoxL；另外還有好幾種酵素能把 S⁰ 還原成 H₂S（例如 Nsr、Psr）。所以瓶頸不在「氧化 H₂S 的酵素」，而在「用葉綠素和光去氧化」。</p>
+
+  <p><strong>作者沒有否認的事。</strong>他們不否認光合鐵營養本身很古老，也不否認它可能促成了帶狀鐵礦（BIF）。他們只說，<em>現存</em>的光合鐵營養，從生理、電子流、輔因子各方面看都不古老，遠不如綠硫菌依賴 H₂S 的光營養。他們也引用 Crowe 等（2014）的看法：弱光下，綠硫菌的光合鐵營養對 BIF 的貢獻可能不大。至於藍綠菌行光合鐵營養，只有一篇孤立的報告（Cohen 1984）。作者也承認，O₂ 出現以前可能有不靠高電位細胞色素、還沒被發現的光合鐵營養；現存的光合鐵營養菌，也未必是當年沉積帶狀鐵礦的譜系；鐵氧化和終端氧化酶的基因同樣會水平轉移，讓轉移的方向和時間更難判定。另一條支持硫的旁證是：38–27 億年前岩石的硫同位素顯示，當時的硫循環已大致和今天相同（Grassineau 等 2006）。</p>
+
+  <div class="callout purple">
+    <span class="tag">論文的中場整理（Intermezzo）</span>
+    葉綠素合成（從血基質前驅物 PPIX 開始）是光合作用演化的第一步，Zn-四吡咯可能是中間產物。葉綠素出現在一個有鈷胺素、細胞色素和醌的厭氧菌裡，這個菌是異營或兼性異營，住在熱液噴口附近，因為那裡是依賴電子分岔的初級生產所在。第一個反應中心大概像綠硫菌的 RC1，把光驅動的 H₂S 氧化接到 Fd 的還原上，取代了電子分岔。這一步讓生產變多，也讓生產擺脫了「只能在 H₂ 源頭」的束縛。<br><br>
+    接下來，光會和還原劑一樣成為限制，天擇因此偏好更會收弱光的細胞。綠小體構造簡單、收光效率無與倫比，又比蛋白質天線便宜，可能最接近光收集的原始狀態；不過綠小體分布零散，可以搭配 RC1 也可以搭配 RC2，本身也可能經水平轉移。現代熱液噴口的綠硫菌，或許保留了起源時那種弱光光營養；但因為水平轉移，它們不一定就是最古老的光營養譜系。
+  </div>
+</section>
+
+<!-- ─────────── §8 ─────────── -->
+<section id="tworc">
+  <h2><span class="num">§8</span>第二個反應中心：同一個 H₂S，兩個入口</h2>
+  <p class="sec-sub">RC1 複製一份，改造成醌還原型；細胞從此能調整每個 H₂S 進來幾個電子</p>
+
+  <p><strong>「怎麼來」比「為什麼」好回答。</strong>兩型 RC 的來源有兩種說法。一是同一個生物體內的基因複製再分化；二是兩個譜系各自演化出一種 RC，再經水平轉移湊進藍綠菌的祖先（合併假說）。作者用葉綠素合成途徑來判斷：兩型 RC 少了葉綠素都撐不久，會變成偽基因而丟失。如果是合併說，應該看得到兩條很早就分化的葉綠素合成途徑，各自跟著一型 RC；實際上只有一條。血基質的合成反而有好幾種變體，對比明顯。有些葉綠素合成酵素有需氧的替代版本（例如 AcsF），但那是有了 O₂ 以後才出現的。論文據此認為比較可能是第一種：同一個基因體裡的複製（推論細節見 §10 的自繪圖 G，限制見 §12）。</p>
+
+  <p><strong>「為什麼」要多一套。</strong>作者的模型叫<strong>雙入口硫化物氧化中間型</strong>（dual sulfide-oxidizing intermediate，DSO），主角是<strong>原藍綠菌</strong>（protocyanobacteria：通往藍綠菌的譜系在放氧複合體出現以前、靠光合硫營養生活的成員）。原圖 4 要<strong>由下往上讀</strong>：</p>
+
+  <figure class="mid">
+    <img src="figs/fig4.jpg" alt="原圖 4：四層膜示意圖，由下而上為 RC1 起源、RC1 複製、再次複製出 ChlF、放氧複合體起源" loading="lazy" width="787" height="1239">
+    <figcaption><b>原圖 4</b>光合硫營養與兩個光系統的演化，由下往上四個階段。黃色帶是細胞膜，上方是細胞質，下方是周質。SQR：硫化物：醌氧化還原酶；CIII：類似複合體 III 的細胞色素複合體；Q：醌；qRC1d：還原醌的 RC1 複本；X：產生亞硫酸鹽的未知蛋白；Cyt x：假想的電子載體（大概是細胞色素）。最底層的黑底小圖是熱液光，第二層起換成陽光。第二層兩個框標出兩條路每個 H₂S 送進的電子數（6 e⁻ 對 2 e⁻）；最底下的起點是「有鈷胺素與血基質的厭氧呼吸菌」；前三層的固碳產物畫成乙醯輔酶 A，最上層畫成 [CH₂O]。</figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li><strong>RC1 起源（熱液微光）。</strong>SQR 把 H₂S 氧化成 S⁰，電子經醌、CIII、細胞色素交給 RC1；RC1 還原 Fd，Fd 拿去固碳。</li>
+    <li><strong>RC1 複製（陽光，H₂S 氧化）。</strong>複本 RC1d 起初和 RC1 一模一樣，後來失去鐵硫簇、換成醌結合口袋，變成 qRC1d。它接收另一種細胞色素（Cyt x）的電子，Cyt x 的電子則來自未知蛋白 X，X 把 H₂S 氧化成亞硫酸鹽。走這條路，每個 H₂S 送進 6 個電子；走 SQR 那條只有 2 個。</li>
+    <li><strong>再一次複製（ChlF；也許開始氧化溶解的金屬離子）。</strong>出現 ChlF（PsbA4），它用光把葉綠素 a 改造成葉綠素 f。qRC1d 的周質側也許開始能氧化 Fe²⁺、Mn²⁺（圖上打了問號）。</li>
+    <li><strong>放氧複合體起源。</strong>PSII 帶著 Mn₄CaO₅ 拆水，電子一路送到 RC1（PSI）去還原 Fd。到這裡，H₂S 只在特殊環境才派得上用場。</li>
+  </ol>
+
+  <p><strong>兩個入口有什麼好處？</strong>兩型 RC 讓細胞同時擁有線性與循環電子流，可以依需要調高或調低其中一型，偏重做 ATP 或偏重還原 Fd，不論光照和 H₂S 是穩定還是在變動。另外，只要調整兩型 RC 的基因表現量，就能在同樣的光照和 H₂S 濃度下，調整醌池（膜中可自由移動的醌分子）的還原程度。H₂S 變少，或細胞需要更多電子（例如固氮）時，6 e⁻ 那條路特別划算。這和 Allen（2005）的「氧化還原開關」假說幾乎一樣，差在起點。Allen 的中間型叫 HAP（heteronuclear anoxygenic phototroph）：兩型 RC 原本「擇一表現」（OR），後來調控失靈，變成「同時表現」（AND）。本文的 DSO 則強調硫化物有兩個入口。兩條假說的終點相同：都演化出拆水。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>反應</th><th>每個 H₂S 送進電子鏈幾個電子</th><th>E₀′（原圖 1）</th></tr></thead>
+      <tbody>
+        <tr><td>H₂S → S⁰（SQR → RC1 這一路）</td><td class="num">2</td><td class="num">−270 mV（S⁰/HS⁻）</td></tr>
+        <tr><td>H₂S → 亞硫酸鹽（X → qRC1d 這一路）</td><td class="num">6</td><td class="num">−116 mV（HSO₃⁻/HS⁻）</td></tr>
+        <tr><td>2 H₂S → 硫代硫酸鹽</td><td class="num">平均 4（本站計算）</td><td class="num">−193 mV（S₂O₃²⁻/2HS⁻）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">本站註：論文的 6 e⁻ 指 H₂S → 亞硫酸鹽這一步（S：−2 → +4）；硫代硫酸鹽再由亞硫酸鹽和硫化物結合生成，另外放出 2 e⁻（原圖 1 的 S₂O₃²⁻/HS⁻＋HSO₃⁻，−402 mV）。只是內文把「六電子」配上 S₂O₃²⁻/2HS⁻ 的電位（−193 mV），寫法不夠精確。</p>
+
+  <h3>證據是什麼</h3>
+  <ul>
+    <li><strong>很多藍綠菌會在光下把 H₂S 氧化成硫代硫酸鹽</strong>，而不是 S⁰，表示不是 SQR 做的（de Wit 與 van Gemerden 1987；Rabenstein 等 1995 證實）。</li>
+    <li><strong>這個反應對 DCMU（阻斷 PSII 還原醌的抑制劑）敏不敏感，兩篇研究結果相反</strong>：同一種藍綠菌 <i>Microcoleus chthonoplastes</i>，1987 年報告不敏感，1995 年報告會被抑制。</li>
+    <li><strong>很多藍綠菌的基因體有高度分化的 psbA 複本</strong>，缺少結合 Mn₄CaO₅ 的關鍵胺基酸。其中一個已證實是 <strong>ChlF</strong>：用光把葉綠素 a（或葉綠酸酯 a）做四電子氧化成葉綠素 f；它是同二聚體、對 DCMU 敏感，在 psbA 家族樹上很早就分出來，保留了 PSII 反應中心蛋白 PsbA 的大部分特徵，只是不能結合 Mn₄CaO₅。論文把它看作一次早期複製可能留下的遺跡。（本站註：ChlF 屬於 D1 家族，分出應晚於 D1／D2 分家，最多反映 RC2 內部的早期階段；§11 有後續研究。）</li>
+    <li><strong>PSII 本身不太可能負責氧化 H₂S。</strong>它高度特化，已知只用水或 H₂O₂，而且會被硫化物抑制（不同藍綠菌菌株的耐受度差很多）。</li>
+  </ul>
+  <p>這也和 Klatt 等（2015）的模型不同：Klatt 等主張硫化物只從 SQR 一個入口進電子鏈。另一個線索是 Grim 與 Dick（2016）的觀察：包括 <i>Geitlerinema</i> 在內的一些藍綠菌多一份 SQR，有時就位在分化 psbA 複本的附近。</p>
+  <p><strong>X 是什麼？</strong>不知道。藍綠菌怎麼經由亞硫酸鹽把硫化物氧化成硫代硫酸鹽，生化上還是空白，產生亞硫酸鹽或硫代硫酸鹽的酵素都還沒找到。H₂S 氧化的第一步通常是兩電子反應，所以 X 可能也是。硫代硫酸鹽也許是亞硫酸鹽中間物和硫化物（自發或經酵素）反應的產物。</p>
+
+  <h3>往拆水的路</h3>
+  <p>qRC1d 的周質側再改造，就能氧化溶解的 Mn²⁺（也許還有 Fe²⁺），成為通往拆水的中間站。有地化證據顯示，大氧化事件前不久，海洋中可能已有可溶 Mn²⁺ 被氧化（Johnson 等 2013）。論文說放氧複合體的出現標記了兩件事：</p>
+  <ul>
+    <li><strong>海洋初級生產不再受還原劑限制</strong>（前提是太古代的光合硫營養在量上比光合鐵營養重要）；</li>
+    <li><strong>推論走到終點</strong>：一個兩套光系統串聯的產氧細菌，PSII 拆水，把電子送進線性電子鏈交給 RC1（PSI），還原 Fd。</li>
+  </ul>
+  <p>此外，有了產氧光合作用，能量變得充裕，昂貴又低效的卡爾文循環終於「負擔得起」，可以取代逆向 TCA。</p>
+  <p>論文對這個拆水祖先只要求兩個條件：拆水要發生在大氧化事件（約 24 億年前）<em>之前</em>，以及藍綠菌譜系出現光合硫營養<em>之後</em>。至於它在現代藍綠菌樹上是在根部還是在內部，論文說不重要。</p>
+  <p><strong>為什麼現代藍綠菌還留著用 H₂S 的能力？</strong>H₂S 濃度高時 PSII 會被抑制，這時能用 H₂S 就變成「條件性必需」。所以一些泛用型的藍綠菌，保留了兩種電子產量不同的硫化物氧化方式。</p>
+</section>
+
+<!-- ─────────── §9 ─────────── -->
+<section id="earth">
+  <h2><span class="num">§9</span>光合硫營養：被地球史低估的主角</h2>
+  <p class="sec-sub">大氧化事件之前，淺海的生產可能主要靠 H₂S，也被 H₂S 卡住</p>
+
+  <p>地球化學談光合作用時，常看三個指標：</p>
+  <ul>
+    <li><strong>MIF</strong>：硫同位素的非質量相依分餾，在大氣 O₂ 低於現今的 10⁻⁵ 時才保存得下來。它在約 24 億年前和其他含氧指標同時消失，標示大氣出現了強氧化劑，幾乎可以確定是 O₂。</li>
+    <li><strong>BIF</strong>：帶狀鐵礦層，GOE 以前很多、以後很少，成因仍未定。</li>
+    <li><strong>whiffs（氧化劑的「氣息」）</strong>：GOE 以前就沉積、卻帶有海水中存在氧化劑痕跡的岩層。</li>
+  </ul>
+  <p>作者指出，除了 Allen（2005）等少數例外，地化文獻很少認真考慮 GOE 以前光合硫營養可能扮演的大角色。</p>
+
+  <figure class="mid">
+    <img src="figs/fig5.jpg" alt="原圖 5：上圖為不同電子供體的電位對時間，標出 H2 依賴的化能自營、光合硫營養、光合鐵營養、Mn 氧化光營養、產氧光合作用，以及 MIF、BIF、whiffs、GOE；下圖為太古代海洋的光合硫營養硫循環" loading="lazy" width="663" height="991">
+    <figcaption><b>原圖 5</b>（A）初級生產所用還原劑的中點電位（縱軸）對時間（橫軸，十億年前）。灰色是依賴 H₂ 與電子分岔的化能自營；黃色是光合硫營養；接著是光合鐵營養（虛線帶）、Mn 氧化光營養（粉紅）、產氧光合作用（藍）。也標出 MIF（黑）、BIF（褐）與 GOE 前的 whiffs。黑色箭頭是論文提議的順序：光合硫營養先於光合鐵營養與拆水。（B）GOE 以前太古代海洋可能的光合硫營養硫循環：透光層中，光合硫營養菌把 H₂S＋CO₂ 變成氧化態硫＋生物量（快）；硫酸鹽還原菌再把它們還原回 H₂S（慢）。灰色細線是 Fe²⁺ 與 H₂S 生成黃鐵礦、沉入沉積物的支路；作者認為光氧化比 H₂S 再生快，所以這條路帶走的硫很少。</figcaption>
+  </figure>
+
+  <p><strong>作者的情境（原圖 5B）。</strong>透光層裡，原藍綠菌用光把 H₂S 氧化成 S⁰、亞硫酸鹽、硫代硫酸鹽，速度快；硫還原菌、亞硫酸鹽還原菌與硫酸鹽還原菌再把這些氧化態硫還原回 H₂S，速度慢。硫就像環境裡的一種「輔因子」反覆循環。因為光氧化比 H₂S 再生快，透光層的 H₂S 一直很低，也就不會被鐵以黃鐵礦（FeS₂）的形式帶走。論文假設光與 CO₂ 都不缺，限制生產的是還原劑：繼 H₂ 之後，這一次輪到 H₂S。作者也說，這樣的海洋在氧化還原上會分層，原因不是海水不混合，而是細菌在利用陽光；RC1 複製之後的細菌，在光線充足的水域對 H₂S 和其他還原態硫有很高的親和力。</p>
+
+  <p><strong>可以檢驗的推論。</strong></p>
+  <ul>
+    <li>硫供應的起伏，會在 GOE 以前造成<strong>質量相依</strong>的硫同位素分餾。這確實有觀測到。</li>
+    <li>拆水出現後，MIF 照傳統的理由消失（大氣 O₂ 累積）；同時硫不再是生產的瓶頸，GOE 前後的硫同位素訊號應該有變化。</li>
+    <li>光合硫營養菌的硫同位素分餾，實驗室量到的通常不大，但還沒有人在藍綠菌身上量過。特別值得比較的是：氧化成 S⁰（或多硫化物）的藍綠菌，和產生硫代硫酸鹽的藍綠菌，同位素訊號有沒有差別。</li>
+  </ul>
+
+  <p><strong>其他人怎麼看。</strong>Lyons 等（2014）認為 GOE 以前就已經有以水為電子來源的生產（也就是產氧光合作用）。Fischer 等（2016）指出，用水以外的無機電子供體（不排除硫）行不產氧光合作用，也能解釋同樣的觀測（富含有機質的頁岩、高初級生產）。Johnston 等（2009）看重藍綠菌的光合硫營養，但把它放在 GOE 很久之後。也有人認為光合硫營養在量上太小，影響不到地質紀錄。本文站在 Allen 這一邊：Allen（2016）提出太古代的疊層石，是由在 RC1 氧化 H₂S 的原藍綠菌建造的。</p>
+
+  <p><strong>主流觀點的挑戰（本站補充）。</strong>地化主流認為太古代海洋大多是「鐵質」的：Fe²⁺ 豐富、硫化物稀少，硫酸鹽也極低（Habicht 等 2002 估計低於 200 μM；Crowe 等 2014 在 <i>Science</i> 估計低於 2.5 μM）。在這種海洋裡，H₂S 再生得慢，又容易被鐵沉成黃鐵礦，這是「光合硫營養為主力」的一大挑戰；論文的情境需要局部的硫供應夠快，例如在火山或熱液附近。§11 的 Ward 等（2019）有量化估算。</p>
+
+  <p><strong>直接證據很少。</strong>Westall 等描述過一個 33 億年前、曝露在空氣中的微生物膜，可能在做不產氧光合作用，也可能含有硫酸鹽還原菌。Arndt 與 Nisbet（2012）認為，最簡單的解讀是不產氧光合作用；作者再進一步說，很可能是光合硫營養：在現存光營養菌用的電子供體裡，H₂S 最常見，也可能最古老。</p>
+
+  <h3>重讀 whiffs</h3>
+  <p>GOE 以前的氧化劑訊號，不一定就是 O₂。光氧化的葉綠素（P⁺）和 PSII 裡的酪胺酸自由基（TyrZ）都是極強的氧化劑，TyrZ 就是負責去氧化放氧複合體的那一顆。在放氧複合體演化完成以前，如果透光層裡到處是帶著 RC2 祖先的原藍綠菌，它們可能已經能氧化溶解的 Mn²⁺（工程改造過的紫細菌 RC2 就做得到）、甚至 Fe²⁺。藍綠菌在組裝 OEC 時本來就會氧化 Mn²⁺。所以作者提出：whiffs 可能反映一種廣泛存在的<strong>生物氧化劑</strong>，而不是 O₂ 本身。</p>
+  <p class="note">本站註：這個解讀對錳氧化一類的訊號說得通；但鉬、錸富集這類 whiffs，一般被解讀為陸地硫化物的氧化風化，需要地表或大氣中的氧化劑，細胞裡的 P⁺ 或 TyrZ 很難直接解釋。</p>
+
+  <p><strong>光合鐵營養還是光合硫營養：還原劑是不是瓶頸？</strong>如果 GOE 以前的主力是光合鐵營養，Fe²⁺ 很多，還原劑不會是瓶頸（生物量可能會是）；如果主力是光合硫營養，H₂S 會一直是瓶頸，直到拆水出現。今天海洋生產的瓶頸則是鐵之類的營養鹽。作者建議，用數學模型擬合地化資料，再加上藍綠菌光合硫營養的硫同位素分餾實測，或許能區分這兩種情境。</p>
+</section>
+
+<!-- ─────────── §10 ─────────── -->
+<section id="export">
+  <h2><span class="num">§10</span>誰把反應中心給了誰：輸出假說</h2>
+  <p class="sec-sub">與其問誰有 RC，不如問誰沒有；作者主張所有 RC 都源自原藍綠菌</p>
+
+  <p>現代談 RC 演化，一定躲不開水平基因轉移，問題只剩「轉了多少、往哪個方向」。作者提醒，關鍵不在<em>哪些</em>譜系有 RC，而在<em>哪些</em>沒有。他們的主張是：RC1 和 RC2 都產生在通往藍綠菌的那個譜系裡（統稱<strong>原藍綠菌</strong>），從葉綠素合成出現以來就在這個譜系裡垂直遺傳。這會帶出五個推論：</p>
+
+  <ol class="steps">
+    <li><strong>光營養起源在藍綠菌譜系，而且是在它和其他細菌分家之後。</strong>這和 Soo 等（2017）的合併假說正面衝突。Soo 等用核糖體蛋白建樹，發現藍綠菌的近親 Melainabacteria、Sericytochromatia 都不行光合作用，於是推論兩型 RC 是後來才轉進一個不光合的祖先。作者的回應有四點：（a）沒有任何緊鄰藍綠菌、只有一型 RC 或有「原始」光合作用的譜系；（b）把這些新譜系也叫做「藍綠菌」證據不足；（c）Soo 等自己的分析顯示，腸道 Melainabacteria 的祖先後來大量丟失基因；作者據此指出，沒有證據能排除它們的原藍綠菌祖先在 GOE 之前或當時就丟掉了光合作用；（d）核糖體樹是核糖體的歷史，葉綠素和 RC 會水平轉移，兩者不必同步。</li>
+    <li><strong>葉綠素 a 是祖先型。</strong>藍綠菌主要用葉綠素 a，它也是合成路線最短的產物（葉綠酸酯 a 只要加一條尾巴）。這正符合 Granick「生合成途徑會重演演化歷程」的看法。</li>
+    <li><strong>藍綠菌很古老，但不原始。</strong>它是第一個有光營養的譜系，不代表它是最早的細菌。這和 Olson 與 Pierson（1987）近三十年前的看法很接近，差在他們讓日光桿菌在 RC 複製前先分出去。日光桿菌在梭菌類裡是唯一的光營養者，用「水平取得」解釋比「其他所有厚壁菌都丟了」簡單，也符合日光桿菌不會固碳。只要轉移發生得夠早，也不會和它 RC 結構裡保留的古老特徵衝突。</li>
+    <li><strong>外銷（export）。</strong>沒有任何不產氧光合類群是從藍綠菌內部分出來的，所以（如果 RC 起源於原藍綠菌）它們都是經由水平轉移拿到 RC，有時還經過中間人（芽單胞菌是從紫細菌拿到的）。這是 Blankenship（2017）合併假說的反面，可以一次解釋好幾個現象：
+      <ul>
+        <li>各種葉綠素變體都從葉綠酸酯 a 分出來；</li>
+        <li>RC 搭配五花八門的固碳途徑：有時只轉 RC 和葉綠素操縱組，有時連卡爾文循環的操縱組一起轉，而且各菌卡爾文循環的酵素類型還不一樣；</li>
+        <li>在無數細菌譜系裡，光營養的很少，而且多半出現在演化樹的末梢，而不是靠近各類群的根部；</li>
+        <li>有些光營養菌是嚴格好氧的異營菌；Roseobacter 的質體可以整包搬運光合基因。</li>
+      </ul>
+      只轉 RC、不轉葉綠素合成，是留不住光營養的；RC 加上葉綠素合成一起轉，就能造出光異營菌。至於跟氧有關的性狀（某幾個葉綠素合成酵素、終端氧化酶、鐵氧化），則是 GOE 之後再轉進來的。
+    </li>
+    <li><strong>可能的簡化演化（reductive evolution）。</strong>光營養一旦在自由生活的細菌裡生根，就很少丟掉：自由生活、次生失去光合作用的藍綠菌，總體基因體裡幾乎找不到。原因是 GOE 之後，失去光合作用的突變株得擠進一個早已被演化得更完善的異營菌佔走的生態區位，機會很小。已知的例外只有兩個近親：UCYN-A（<i>Candidatus</i> Atelocyanobacterium thalassa）的兩個變種，和定鞭藻共生，丟掉了 PSII 和 RuBisCO，卻保留 PSI 和固氮酶。綠硫菌、日光桿菌的同二聚體 RC1，傳統上被當成 RC 的古老型；照輸出假說，它們可能是很早一次轉移留下的「分子化石」。作者認為這比「由藍綠菌的 PSI 簡化而來」更可能。</li>
+  </ol>
+
+  <figure class="mid">
+    <img src="figs/fig6.jpg" alt="原圖 6：輸出假說示意，灰色為各細菌門的核糖體譜系，綠色箭頭表示反應中心從藍綠菌轉移到日光桿菌、綠菌、酸桿菌（RC1）與變形菌、芽單胞菌、綠彎菌（RC2），以及質體" loading="lazy" width="661" height="489">
+    <figcaption><b>原圖 6</b>輸出假說。灰色線是各細菌門的核糖體譜系，綠色箭頭是 RC 轉入受體譜系。藍綠菌譜系（黃色起、綠色終）裡依序出現 RC1、RC1＋RC2（光合硫營養）、OEC 之後的 PSI＋PSII（產氧光合作用）。RC1 外銷給日光桿菌、綠菌（綠硫菌）、酸桿菌；RC2 外銷給變形菌（再轉給芽單胞菌）與綠彎菌。寬箭頭是葉綠體（色素體，plastid）的起源：藍綠菌把 RC1、RC2 和固碳基因一起交給了真核生物。左側小圖：熱液光（RC1 起源）、陽光（RC2 起源）。論文刻意不畫任何核糖體譜系的分支順序（質體除外），也不替這些轉移定年。</figcaption>
+  </figure>
+
+  <figure class="dark">
+    <div class="svgwrap"><svg viewBox="0 0 900 520" role="img" aria-labelledby="G-t G-d">
+<title id="G-t">合併假說 vs 輸出假說：兩者對葉綠素合成途徑的預測</title>
+<desc id="G-d">論文推論：若是合併，葉綠素合成應分化成兩套；輸出假說認為兩種反應中心在原藍綠菌體內複製而來，再水平轉移給其他門，只需一條途徑。現存生物只有一條。</desc>
+<defs><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<text x="225" y="30" text-anchor="middle" class="hd">合併假說（merger）</text>
+<text x="225" y="48" text-anchor="middle" class="ann2">Blankenship 2017、Soo 等 2017</text>
+<rect x="20" y="70" width="190" height="64" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/><text x="30" y="90" class="sm">譜系 X：帶著 RC1</text><text x="30" y="109" class="sm">各自演化很久</text>
+<rect x="240" y="70" width="190" height="64" rx="8" fill="#1c2330" stroke="#3987e5" stroke-width="1.4"/><text x="250" y="90" class="sm">譜系 Y：帶著 RC2</text><text x="250" y="109" class="sm">各自演化很久</text>
+<line x1="115" y1="136" x2="200" y2="186" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aG)"/><line x1="335" y1="136" x2="250" y2="186" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aG)"/>
+<rect x="110" y="190" width="230" height="46" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.4"/><text x="120" y="210" class="sm">藍綠菌祖先：RC1＋RC2 合體</text>
+<rect x="20" y="268" width="410" height="64" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/><text x="30" y="288" class="sm">論文的推論：葉綠素合成應分化成兩套，</text><text x="30" y="307" class="sm">至少酵素樹會依 RC 類型分成兩群</text>
+<text x="225" y="362" text-anchor="middle" class="val">觀察：只有一條，酵素樹也不依 RC 分群 ✗</text>
+<text x="675" y="30" text-anchor="middle" class="hd">輸出假說（export，本文）</text>
+<text x="675" y="48" text-anchor="middle" class="ann2">Martin、Bryant、Beatty 2018</text>
+<rect x="470" y="70" width="410" height="46" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.4"/><text x="480" y="90" class="sm">原藍綠菌：葉綠素 → RC1 → 複製出 RC2 → 放氧</text>
+<line x1="500" y1="117" x2="500" y2="235" stroke="#8b949e" stroke-width="1.6"/>
+<line x1="500" y1="155" x2="528" y2="155" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aG)"/>
+<rect x="530" y="140" width="350" height="30" rx="6" fill="#1c2330" stroke="#d95f2b"/><text x="542" y="160" class="sm">綠硫菌、日光桿菌、酸桿菌：RC1</text>
+<line x1="500" y1="195" x2="528" y2="195" stroke="#3987e5" stroke-width="1.6" marker-end="url(#aG)"/>
+<rect x="530" y="180" width="350" height="30" rx="6" fill="#1c2330" stroke="#3987e5"/><text x="542" y="200" class="sm">變形菌（→芽單胞菌）、綠彎菌：RC2</text>
+<line x1="500" y1="235" x2="528" y2="235" stroke="#7ee787" stroke-width="1.6" marker-end="url(#aG)"/>
+<rect x="530" y="220" width="350" height="30" rx="6" fill="#1c2330" stroke="#7ee787"/><text x="542" y="240" class="sm">真核生物（葉綠體）：RC1＋RC2</text>
+<rect x="470" y="268" width="410" height="64" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/><text x="480" y="288" class="sm">預測：葉綠素途徑只有一條；光合類群散在</text><text x="480" y="307" class="sm">演化樹末梢；RC 搭配各式各樣的固碳途徑</text>
+<text x="675" y="362" text-anchor="middle" class="val">觀察：符合 ✓（論文的論證）</text>
+<line x1="20" x2="880" y1="392" y2="392" stroke="#30363d"/>
+<text x="20" y="420" class="ann2">注意：「只有一條葉綠素途徑」支持兩種 RC 是在同一個基因體裡複製出來的，但單靠這點決定不了是哪個譜系。</text>
+<text x="20" y="442" class="ann2">把起點放在藍綠菌，論文的依據是：只有藍綠菌同時有兩型 RC，而且至今保留兩種硫化物氧化方式與 ChlF 這類 psbA 複本；</text>
+<text x="20" y="464" class="ann2">外銷又能一併解釋光合類群稀疏、多在樹梢、RC 搭配各式固碳途徑。「葉綠素 a 是祖先型」則是推論，不是證據（本站整理）。</text>
+<text x="20" y="494" class="ann2">箭頭＝反應中心（連同葉綠素合成基因）的水平轉移；論文不替這些轉移定年。</text>
+</svg></div>
+    <figcaption><b>自繪圖 G</b>兩種假說對葉綠素合成途徑的預測（本站依論文論證整理）。「只有一條途徑」是兩邊最直接的分歧點。底下前三行是本站的提醒，最後一行是圖例：這個證據只支持「同一個基因體內複製」，要把起點放在藍綠菌，還需要其他理由。</figcaption>
+  </figure>
+
+  <p><strong>另一種可能：兩種 RC2 各自複製而來。</strong>Bryant 與 Liu（2013）的（細菌）葉綠素合成樹，分出三支幾乎一樣深的譜系：綠菌－綠彎菌、日光桿菌－藍綠菌、酸桿菌－變形菌，每一支都有帶 RC1 或 RC2 的成員。作者因此提到，藍綠菌的異二聚體 PSII 和紫細菌型的 RC2（PufLM），可能是兩次獨立的複製，各自出自一個已經會合成（細菌）葉綠素的 RC1 型祖先。</p>
+
+  <p><strong>最有名的一次「外銷」。</strong>藍綠菌把 RC1、RC2 和固碳基因整包交給真核生物，成了葉綠體。輸出假說把它看成藍綠菌多次外銷中最著名的一次；論文刻意不替它和其他轉移排先後。</p>
+</section>
+
+<!-- ─────────── §11 ─────────── -->
+<section id="after">
+  <h2><span class="num">§11</span>2017 年之後：這些主張後來怎麼了</h2>
+  <p class="sec-sub">論文發表八年後再看六個主張：哪些站得住、哪些被修正、哪些還沒人檢驗（2026-10-29 查）</p>
+  <p><strong>怎麼查的。</strong>由一個研究 agent 搜尋 2018–2026 年的後續文獻。下面引用的每篇論文，我們都用 Crossref 確認 DOI、作者、年份、期刊；關鍵結論另外對過摘要，Ward 等（2019）的數字則對過全文。到 2026-10-29，這篇論文的被引次數是 Crossref 143、OpenAlex 148。我們沒有找到專門反駁它的評論文章。後來的研究多半把它歸入「原藍綠菌／先有不產氧光合作用」這一家族的模型。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>論文主張</th><th>2026 年的狀態</th><th>關鍵後續證據</th></tr></thead>
+      <tbody>
+        <tr><td>兩型 RC 在同一個譜系裡出現，不是合併而來（§8、§10）</td><td class="up">比 2017 年更多人接受</td><td>Nishihara 等（2024）比對超過一萬個基因體，發現反應中心、葉綠素合酶、Mg-螯合酶、卡爾文循環酵素都指向同一個祖先。這個「最後的光營養共同祖先」（LPCA）已經同時有一個現代型的 RC1 和一個原始的 RC2，後來產氧的那一支是垂直繼承了兩型 RC。</td></tr>
+        <tr><td>起點是原藍綠菌；其他門的 RC 全是從藍綠菌外銷出去的（§10）</td><td class="down">大幅修正</td><td>Nishihara 等（2024）把 LPCA 放在 Terrabacteria（地細菌類群）裡一個<strong>不產氧</strong>的成員身上，而且光營養在 LPCA 之前就已出現；Terrabacteria 內部（包括藍綠菌）多半是垂直遺傳，產氧光合作用要到大氧化事件附近才在其中一支出現。Tsuji 等（2024）培養出一株用 <strong>RC1</strong> 的綠彎菌門細菌，證據顯示它和用 RC2 的綠彎菌是從同一個光營養祖先繼承來的。這和「綠彎菌的 RC 是從藍綠菌轉來」不符。</td></tr>
+        <tr><td>先有不產氧光合作用，水氧化在後（§8）</td><td>兩派對立</td><td>Cardona（2019）逐條質疑三個常見假設：不產氧 RC 比較原始、水平取得比丟失容易、不產氧先於產氧，認為它們缺乏觀測支持。Cardona 等（2019）主張 PSII 起源於太古代早期，Fournier 等（2021）也把產氧光合作用放在太古代。另一邊，Soo 等（2019）仍認為產氧光合作用不是藍綠菌的祖先性狀；Martin 團隊後續的論文（Mrnjavac 等 2024；Trost 等 2026，標題即主張「氧還原酶起源於大氧化事件之後」）也維持 GOE 前幾乎無氧的立場。</td></tr>
+        <tr><td>太古代的海洋生產以光合硫營養為主（§9）</td><td class="down">受量化估計挑戰</td><td>Ward 等（2019）依地質的電子供體通量估算：在水被當作電子來源以前，生產受電子供體限制，比今天低好幾個數量級，主要靠 H₂。硫化物在含鐵的海洋裡很快被鐵消耗，硫最多只能支撐每年約 4×10¹⁰ mol 的固碳，不到 H₂ 估計值的 2%。Thompson 等（2019）的實驗與模型則支持光合鐵營養菌沉積了帶狀鐵礦。</td></tr>
+        <tr><td>藍綠菌用 H₂S 是祖先性狀（§8）</td><td>證據互相矛盾</td><td>Tan 等（2024）：早分支的藍綠菌 Thermostichales、Gloeomargaritales 雖能做硫化物驅動的不產氧光合作用，但關鍵基因 <i>sqr</i> 是從較晚的藍綠菌水平轉移來的。Hambücken 等（2026）：最早分支的 Gloeobacterales 有一個位在藍綠菌樹根部的 SQR，看起來早於那些水平轉移。</td></tr>
+        <tr><td>ChlF 是 RC1 → RC2 複製的遺跡（§8）</td><td class="down">轉弱</td><td>Trinugroho 等（2020）：ChlF 可以取代 PSII 的 D1，組成會做葉綠素 f 的改造型 PSII；只改 D1 的兩個胺基酸，就能把會放氧的 PSII 變成葉綠素 f 合成酶。作者指出「ChlF 同二聚體是演化缺環」這個想法，還沒有明確的生化證據。Bryant 實驗室的 Shen 等（2019）則以交聯實驗認為 ChlF 會形成同二聚體。</td></tr>
+        <tr><td>whiffs 可能是 RC2 祖先氧化 Mn²⁺ 的訊號，而不是 O₂（§9）</td><td class="up">機制獲支持，證據本身有爭議</td><td>Daye 等（2019）：不產氧光合微生物群落在沒有 O₂、也沒有高電位反應中心的情況下，也能造出錳氧化物，而這種訊號和過去用來推定產氧光合作用年代的訊號一樣。Chernev 等（2020）：拿掉錳簇的 PSII 能把溶解的 Mn²⁺ 氧化成錳氧化物顆粒，支持「拆水之前先氧化錳」的演化階段。至於 25 億年前那次 whiff 本身，Slotznick 等（2022）認為訊號是沉積後才形成的，Anbar 等（2023）發表技術評論反駁，Ostrander 等（2019）則主張當時陸棚水體曾經完全含氧，尚無定論。</td></tr>
+        <tr><td>深海熱液微光是起點（§6）</td><td>仍是推測</td><td>沒有人重新分離或否定 GSB1。Mullineaux 與 Duffy（2025）接受綠硫菌能靠噴口的紅外熱輻射生長，但認為噴口光遠不足以支持<em>產氧</em>光合作用，反駁 Li 等（2025）「硫化物礦物把紅外倍頻成可見光」的說法。Chen 等（2022）在西南印度洋脊熱液樣本的總體基因體裡找到完整的葉綠素合成途徑，但有基因不等於有光合生長。</td></tr>
+        <tr><td>鋅原紫質是第一個光化學色素（§4）</td><td>沒人檢驗</td><td>沒有找到專門檢驗這個想法的實驗或系統發生研究；Nishihara 等（2024）也說，最早的色素是哪一種仍待研究。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><strong>光營養的門從七個變成至少九個。</strong>新增的是 Eremiobacterota（舊名 WPS-2）：Ward 等（2019）在它的基因體裡找到一個新的 RC2 家族，與已知光營養菌的 RC2 在系統發生和結構上都不同；Yabe 等（2022）從南極的噴氣孔冰洞培養出第一個代表 <i>Vulcanimicrobium alpinus</i>。另一個是 Myxococcota：Li 等（2023）在全球分布的總體基因體裡找到光合基因群。再加上 Tsuji 等（2024）那株用 RC1 的綠彎菌，這些新成員的 RC 都不像是最近才從藍綠菌拿到的。輸出假說要解釋它們，只能假設外銷發生得非常早。</p>
+
+  <div class="callout blue">
+    <span class="tag">一段話總結（本站整理）</span>
+    八年後，<strong>「兩型 RC 在同一個譜系裡出現、不是兩個譜系合併」</strong>這一點得到更大型的系統發生分析支持（Nishihara 等 2024）；這正是本文用「葉綠素途徑只有一條」所推出的結論。但<strong>「起點就是藍綠菌、其他門都是外銷」</strong>被大幅修正：共同祖先更可能是一個不產氧的 Terrabacteria 成員，綠彎菌、日光桿菌比較像垂直繼承。<strong>「太古代以光合硫營養為主」</strong>則被定量估算挑戰。水氧化發生在太古代早期還是接近大氧化事件，至今兩派對立；鋅原紫質與深海熱光兩個最有想像力的提案，還沒有人正面檢驗。
+  </div>
+
+  <details>
+    <summary>本節引用的後續文獻（點開，含 DOI）</summary>
+    <div class="inner">
+      <ul>
+        <li>Nishihara A 等 2024. Illuminating the coevolution of photosynthesis and Bacteria. <i>PNAS</i> 121:e2322120121. <a href="https://doi.org/10.1073/pnas.2322120121">doi</a></li>
+        <li>Tsuji JM 等 2024. Anoxygenic phototroph of the Chloroflexota uses a type I reaction centre. <i>Nature</i> 627:915–922. <a href="https://doi.org/10.1038/s41586-024-07180-y">doi</a></li>
+        <li>Cardona T 2019. Thinking twice about the evolution of photosynthesis. <i>Open Biology</i> 9:180246. <a href="https://doi.org/10.1098/rsob.180246">doi</a></li>
+        <li>Cardona T 等 2019. Early Archean origin of Photosystem II. <i>Geobiology</i> 17:127–150. <a href="https://doi.org/10.1111/gbi.12322">doi</a></li>
+        <li>Fournier GP 等 2021. The Archean origin of oxygenic photosynthesis and extant cyanobacterial lineages. <i>Proc R Soc B</i> 288:20210675. <a href="https://doi.org/10.1098/rspb.2021.0675">doi</a></li>
+        <li>Soo RM、Hemp J、Hugenholtz P 2019. Evolution of photosynthesis and aerobic respiration in the cyanobacteria. <i>Free Radic Biol Med</i> 140:200–205. <a href="https://doi.org/10.1016/j.freeradbiomed.2019.03.029">doi</a></li>
+        <li>Mrnjavac N 等 2024. Three enzymes governed the rise of O₂ on Earth. <i>BBA – Bioenergetics</i> 1865:149495. <a href="https://doi.org/10.1016/j.bbabio.2024.149495">doi</a></li>
+        <li>Trost K 等 2026. Oxygen reductase origin followed the great oxidation event and terminated the Lomagundi excursion. <i>BBA – Bioenergetics</i> 1867:149575. <a href="https://doi.org/10.1016/j.bbabio.2025.149575">doi</a></li>
+        <li>Ward LM、Rasmussen B、Fischer WW 2019. Primary productivity was limited by electron donors prior to the advent of oxygenic photosynthesis. <i>JGR Biogeosciences</i> 124:211–226. <a href="https://doi.org/10.1029/2018JG004679">doi</a></li>
+        <li>Thompson KJ 等 2019. Photoferrotrophy, deposition of banded iron formations, and methane production in Archean oceans. <i>Science Advances</i> 5:eaav2869. <a href="https://doi.org/10.1126/sciadv.aav2869">doi</a></li>
+        <li>Tan S 等 2024. Exploring the origins and evolution of oxygenic and anoxygenic photosynthesis in deeply branched Cyanobacteriota. <i>Mol Biol Evol</i> 41:msae151. <a href="https://doi.org/10.1093/molbev/msae151">doi</a></li>
+        <li>Hambücken L 等 2026. An early diverging SQR enzyme in Antarctic Gloeobacterales… <i>Microbiology Spectrum</i> 14:e00423-26. <a href="https://doi.org/10.1128/spectrum.00423-26">doi</a></li>
+        <li>Trinugroho JP 等 2020. Chlorophyll f synthesis by a super-rogue photosystem II complex. <i>Nature Plants</i> 6:238–244. <a href="https://doi.org/10.1038/s41477-020-0616-4">doi</a></li>
+        <li>Shen G 等 2019. Characterization of chlorophyll f synthase heterologously produced in <i>Synechococcus</i> sp. PCC 7002. <i>Photosynth Res</i> 140:77–92. <a href="https://doi.org/10.1007/s11120-018-00610-9">doi</a></li>
+        <li>Daye M 等 2019. Light-driven anaerobic microbial oxidation of manganese. <i>Nature</i> 576:311–314. <a href="https://doi.org/10.1038/s41586-019-1804-0">doi</a></li>
+        <li>Chernev P 等 2020. Light-driven formation of manganese oxide by today’s photosystem II… <i>Nat Commun</i> 11:6110. <a href="https://doi.org/10.1038/s41467-020-19852-0">doi</a></li>
+        <li>Slotznick SP 等 2022. Reexamination of 2.5-Ga “whiff” of oxygen interval points to anoxic ocean before GOE. <i>Science Advances</i> 8:eabj7190. <a href="https://doi.org/10.1126/sciadv.abj7190">doi</a>；Anbar AD 等 2023 技術評論 <a href="https://doi.org/10.1126/sciadv.abq3736">doi</a></li>
+        <li>Ostrander CM 等 2019. Fully oxygenated water columns over continental shelves before the Great Oxidation Event. <i>Nat Geosci</i> 12:186–191. <a href="https://doi.org/10.1038/s41561-019-0309-7">doi</a></li>
+        <li>Mullineaux CW、Duffy CDP 2025. Non-linear frequency doubling up-conversion of geothermal radiation cannot provide sufficient light… <i>Natl Sci Rev</i> 12:nwaf291. <a href="https://doi.org/10.1093/nsr/nwaf291">doi</a>；Li Y 等 2025 原文 <a href="https://doi.org/10.1093/nsr/nwaf219">doi</a></li>
+        <li>Chen H 等 2022. Metagenomic analysis reveals wide distribution of phototrophic bacteria in hydrothermal vents on the ultraslow-spreading Southwest Indian Ridge. <i>Mar Life Sci Technol</i> 4:255–267. <a href="https://doi.org/10.1007/s42995-021-00121-y">doi</a></li>
+        <li>Ward LM、Cardona T、Holland-Moritz H 2019. Evolutionary implications of anoxygenic phototrophy in the bacterial phylum <i>Candidatus</i> Eremiobacterota (WPS-2). <i>Front Microbiol</i> 10:1658. <a href="https://doi.org/10.3389/fmicb.2019.01658">doi</a></li>
+        <li>Yabe S 等 2022. <i>Vulcanimicrobium alpinus</i> gen. nov. sp. nov., the first cultivated representative of the candidate phylum “Eremiobacterota”… <i>ISME Commun</i> 2:120. <a href="https://doi.org/10.1038/s43705-022-00201-9">doi</a></li>
+        <li>Li L 等 2023. Globally distributed Myxococcota with photosynthesis gene clusters… <i>Nat Commun</i> 14:6450. <a href="https://doi.org/10.1038/s41467-023-42193-7">doi</a></li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- ─────────── §12 ─────────── -->
+<section id="limits">
+  <h2><span class="num">§12</span>查證筆記與限制</h2>
+  <p class="sec-sub">論文自己的但書、我們對回原文找到的小問題，以及論證上的弱點</p>
+
+  <p class="note">另外，論文說倍增 3 年的細菌「500 年」就能長出比地球還重的生物量；照同樣條件約 400 年就超過（§6），論文的說法是寬鬆上限，本身沒錯。</p>
+
+  <p><strong>本頁怎麼查。</strong>內文數字逐一對回 PMC 全文（JATS XML）。自繪圖的換算（電位差、相遇機率、黑體光譜、光子通量、倍增次數）由腳本計算，假設寫在各圖說明裡。</p>
+
+  <p><strong>論文自己的但書：</strong></p>
+  <ul>
+    <li>結論全是條件句；作者寫成直述句只是為了好讀。</li>
+    <li>生理能說明水平轉移的<em>方向</em>，說不出轉移發生在什麼<em>地質年代</em>；論文也沒有替葉綠素的起源定年。</li>
+    <li>RC1 蛋白的祖先、產生亞硫酸鹽的蛋白 X，都還不知道是什麼。</li>
+    <li>不否認光合鐵營養很古老、可能促成 BIF，也不否認 GOE 前的光合 Mn²⁺ 氧化；只說「是哪些生物做的」仍是開放問題。</li>
+  </ul>
+
+  <p><strong>我們對回原文後發現的小問題：</strong></p>
+  <ul>
+    <li><strong>BciA／BciB 筆誤</strong>：內文兩次寫 BciA，第二次應為 BciB（§5）。</li>
+    <li><strong>硫代硫酸鹽的電子數</strong>：內文把「六電子」配上 S₂O₃²⁻/2HS⁻ 的電位；6 e⁻ 其實是 H₂S → 亞硫酸鹽那一步，寫法不夠精確（§8）。</li>
+    <li><strong>Zn-PPIX 三重態的電位</strong>：論文寫約 −1.6 V；依常用換算約 −0.9 V（§4）。差別不影響結論：兩者都足以還原 Fd。</li>
+    <li><strong>Zn-PPIX 吸收峰前後寫法不一</strong>：一處寫約 410、540、580 nm，另一處寫 423 nm 強、約 550 與 600 nm 弱，可能來自不同的量測條件。</li>
+    <li><strong>「半衰期」與「壽命」混用</strong>：7–15 ms 在內文一處稱 lifetime，在原圖 2、內文「10⁶ 倍」那句與結論則稱 half-life；量級不受影響。</li>
+    <li><strong>表 1 的兩種鐵氧化綠硫菌</strong>：表 1 列的是 <i>C. ferrooxidans</i>，附註引用的卻是 <i>C. phaeoferrooxidans</i> 的基因體；兩者是不同的種，內文 §7 提到的 Cyc2 屬於後者。</li>
+    <li><strong>一處疑似引錯</strong>：黑海綠硫菌 BS1 的倍增時間與色素，引用 Overmann 與 Pfennig（1992），但參考文獻列的那篇談的是紫硫菌在低氧下的化能生長；推測應為同年 Overmann 等談黑海綠硫菌的論文（未核對）。</li>
+  </ul>
+
+  <p><strong>論證上的弱點（本站觀察）：</strong></p>
+  <ul>
+    <li><strong>熱液光夠不夠，證據還很薄。</strong>噴口實測通量橫跨五個數量級，最高值只出現在離光源 2 公分以內；靠噴口光生長的直接證據其實很有限：GSB1 證明噴口附近有嚴格光合自營的綠硫菌，但沒有證明它在原地靠熱光生長。論文說得對：慢慢長也算長，但「在那裡起源」和「在那裡活得下去」是兩回事。</li>
+    <li><strong>「H₂ 多」和「會發光」的噴口不是同一種。</strong>H₂ 多的蛇紋岩化噴口（例如 Lost City）只有數十度、不發熱光；會發熱光的高溫黑煙囪多半是玄武岩型，H₂ 少得多。兩者兼具的是 Rainbow 這類超基性岩高溫噴口，論文的情境需要這種地方，但論文沒有討論這一點。</li>
+    <li><strong>H₂S 對 Fe²⁺ 的電位論證，要看對地方。</strong>光子能量不是限制：一個 664 nm 光子約 1.87 eV。但天然反應中心大約只能把一半的光子能量存成電位跨度，所以水 → Fd 要兩個光系統串聯。真正的熱力學門檻在<em>供體端</em>：Fe²⁺（論文取 +150 mV）比醌（+60 mV）還正，進不了醌池，只能直接交給反應中心的供體端；而同二聚體 RC1 的特殊對只有約 +0.2–0.25 V（教科書值），餘裕很小。H₂S 則可以先經 SQR 還原醌池。另一方面，現代綠硫菌裡 H₂S 的電子也是先經醌、細胞色素降到約 +0.2 V 才交給 RC1，所以「只差 144 mV」不等於反應中心實際要爬的坡。論文的第二個論點（S⁰ 還原酶可以倒轉、Fe²⁺ 要靠高電位細胞色素）補上這一塊，但它「GOE 前沒有 Fe³⁺」的前提也有弱點（§7 本站註）。</li>
+    <li><strong>「H₂ 當第一個光合供體沒有好處」可以再想想。</strong>產乙酸菌的電子分岔在標準狀態下只有約 8 mV 的餘裕（自繪圖 B），H₂ 分壓一低就不划算；用光還原 Fd，也許能讓細胞在更低的 H₂ 濃度下繼續固碳。論文的反駁（氫化酶親和力不變）是動力學論點，不是熱力學論點（本站觀察）。</li>
+    <li><strong>「只有一條葉綠素途徑」能推出的有限。</strong>多數版本的合併假說，也假設兩型 RC 來自同一個會合成葉綠素的祖先，所以「只有一套途徑」本身不足以排除合併；比較有區分力的是：葉綠素酵素的演化樹不依 RC 類型分群（論文引 Bryant 與 Liu 2013），但這也可以用葉綠素基因的水平轉移來解釋。而把起點放在藍綠菌，靠的是另一組論證（自繪圖 G 底部）。</li>
+    <li><strong>作者不倚重演化樹，但也引用了樹。</strong>ChlF 在 psbA 家族樹上「很早分出」、葉綠素合成樹上三個譜系「幾乎一樣深」，都是樹的結論。輸出假說自己的前提「沒有不產氧類群從藍綠菌內部分出」，也是核糖體樹的結論。作者自己也說「不完全忽略樹」，讀者只要知道這些論點同樣受建樹誤差影響就好。</li>
+    <li><strong>「光營養很少丟」和「近親丟了光合作用」之間有張力。</strong>論文一方面說光營養一旦生根就很少丟（§10 第 5 點），一方面又用「Melainabacteria 等的祖先丟了光合作用」來回應 Soo 等；作者用時間點（GOE 之前或當時）把兩者分開，但讀者值得注意這一點。</li>
+    <li><strong>生產倍數是別人的估計。</strong>×2,000、×30 來自 Raven（2009），本文沒有重新估算，也沒有附不確定範圍。</li>
+  </ul>
+</section>
+
+<!-- ─────────── §13 ─────────── -->
+<section id="takeaways">
+  <h2><span class="num">§13</span>重點筆記：怎麼讀這類「起源」論文</h2>
+  <p class="sec-sub">本站觀點，非原文</p>
+
+  <div class="verdict">
+    <div class="tag">這篇在做什麼（一段話定位）</div>
+    <p>這篇用「每一步都得對當下的細胞有用」這把尺，把光合作用的起源重排成一部<strong>電子來源的升級史</strong>：H₂ → H₂S → H₂O。每升級一次，生產規模就跳一級；而每一步的新功能，幾乎都是用借來的舊零件組成的：血基質途徑的副產物、鈷胺素的螯合酶、自由基 SAM、固氮酶、硫還原酶倒過來用。最有爭議的是最後一步：所有不產氧光合細菌的 RC 都是從藍綠菌「外銷」出去的。它的價值不在於一定對，而在於它是一個有清楚預測、可以被新發現檢驗的假說。§11 就是一次檢驗：「同一個譜系裡複製」這一半得到更多支持，「從藍綠菌外銷」這一半被大幅修正。</p>
+  </div>
+
+  <ul>
+    <li><strong>追電子，不追樹。</strong>評估一個代謝創新，先問「它讓細胞拿到哪一種電子、能推到多負」。光合作用的兩次大躍升，換成這個問題來看都很直觀：先是 H₂ 以外的電子（H₂S），再是幾乎無限的電子（水）。</li>
+    <li><strong>每個中間型都必須自己活得下去。</strong>演化不會預先設計。Zn-PPIX、只有 RC1 的光合硫營養菌、DSO 這些中間型，論文都替它們找了一個「當下就有用」的理由。這跟工程上的增量交付很像：每一版都要能獨立上線，不能指望下一版來救。</li>
+    <li><strong>「獨一無二」和「到處都是」都是證據。</strong>葉綠素合成只有一條途徑，用來推論兩型 RC 的起源；硫化物氧化酶有三種互不相關的版本，則說明它不是瓶頸。看到一個系統，先數一數它有幾種實作。</li>
+    <li><strong>把起源故事當條件句讀。</strong>作者自己說了，所有結論都是「如果……那麼……」。讀這類論文，可以把每一環列出來，標上證據強度：哪些是實驗觀測（Zn-PPIX 三重態壽命、GSB1、ChlF），哪些是推論（DSO、外銷），哪些是別人的估計（生產倍數）。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">一句話帶走</span>
+    光合作用的歷史，可以讀成<strong>電子來源的升級史</strong>：H₂ → H₂S → H₂O。每一次升級，都讓地球的生產規模跳一級（換成不產氧光合作用約 ×2,000，再換成產氧光合作用約 ×30）；而每一步的發明，靠的幾乎都是細胞手上本來就有的舊零件。
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://doi.org/10.1093/femsre/fux056">A physiological perspective on the origin and evolution of photosynthesis</a> — William F. Martin, Donald A. Bryant, J. Thomas Beatty, FEMS Microbiology Reviews 42(2):205–231, 2018（© FEMS 2017）<br>
+    本頁：繁中解析；論文以 CC BY 4.0 授權，原圖 1–6 取自 Europe PMC 開放取用套件，未修改內容，版權歸原作者；自繪圖 A–G 為本站依論文數值繪製 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>

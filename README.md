@@ -36,6 +36,7 @@
 
 | 分類 | 頁面 | 一句話 |
 |---|---|---|
+| Evolution · Review | [光合作用從哪裡來？從「細胞拿到什麼好處」倒推回去](https://tzchia.github.io/research/photosynthesis-origin/) | Martin × Bryant × Beatty（FEMS Microbiol Rev 2018）：光合作用的第一個好處是多一種電子來源（H₂ → H₂S → H₂O）；鋅原紫質起步、深海熱液微光、RC1 先、H₂S 先、RC1 複製出 RC2；GOE 前以光合硫營養為主；兩型 RC 源自原藍綠菌再水平轉移給其他門（輸出假說）。2017 年後：同譜系複製獲支持、藍綠菌外銷被修正 |
 | Robotics · Paper | [AW-0：讓世界動作模型邊想像未來、邊寫程式](https://tzchia.github.io/research/agentic-wam/) | UC Berkeley × NVIDIA：code、未來影片、動作三流在 MoT 裡聯合去噪，程式預設不執行、只當計畫條件；Gemini＋Claude Code 標註 2,913 h 影片並提煉 50 個技能。真機 8 任務 71.1 vs 46.0、拿掉 code 專家剩 32.9、改文字子目標 63.6；負結果：RoboTwin 隨機化 20.6 輸 π0.5 的 27.7，混合執行在乾淨場景 35/50 任務變差 |
 | Robotics · MIT Essay | [Robot-Use Agents：LLM 把機器人當工具用，新的是擴散速度](https://tzchia.github.io/research/robot-use-agents/) | Isola：Claude 當木偶師、機器人只需暴露 API；本站校準：只在 10 Hz 以上那層（83 Hz vs 0.3 Hz）、入碗 5→40→95% 但拼圖卡 10%、12 腳註逐條查證 |
 | Robotics · Paper | [生成一百個世界，別讓 VLA 在單一場景過擬合](https://tzchia.github.io/research/sim2real-gen3d/) | Horizon Robotics：EmbodiedGen 文字生成 100 個互動 3D 世界＋PPOFlow 平行微調 π0，模擬 9.7→79.8%、真機 21.7→75.0%；場景 1→50 換 OOD +24.7pp；負結果：手工 3 景 96.7%、換生成場景剩 36.0% |
