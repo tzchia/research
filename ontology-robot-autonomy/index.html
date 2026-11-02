@@ -139,6 +139,11 @@
   .fw .ex{color:var(--muted);font-size:13.5px}
   .tag2{display:inline-block;font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 6px;margin:0 4px 0 0;color:var(--muted)}
   .tag2.on{border-color:#3987e5;color:#79c0ff}
+  details.ex{margin:12px 0}
+  details.ex summary .xs{float:right;font-family:var(--mono);font-size:11.5px;color:var(--dim);font-weight:400;margin-left:12px;padding-top:3px}
+  details.ex figure{margin:6px 0 16px}
+  details.ex p{font-size:15px}
+  @media(max-width:560px){details.ex summary .xs{float:none;display:block;margin:2px 0 0 20px}}
   dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:6px 18px;margin:10px 0 0}
   dl.gloss dt{color:#fff;font-weight:700;font-family:var(--mono);font-size:13.5px}
   dl.gloss dd{margin:0;color:var(--muted);font-size:14.5px}
@@ -254,6 +259,410 @@
     <li><strong>可重用</strong>：同一份「什麼是感測器、什麼是夾爪」的知識，可以給不同機器人、不同任務共用。</li>
   </ul>
   <p>和它相對的是一般的<strong>程序式</strong>寫法：把每個行為用程式語言一步步寫死。實務上，成功的系統通常兩者混用：用宣告式知識描述「是什麼」，用程序式程式碼處理「怎麼做得快」<a class="cite" href="#r-Russell2021">Russell 2021</a>。</p>
+
+  <h3>延伸：換五個領域，再走一次這四步</h3>
+  <p>圖 A 的四步不只適用於工廠。下面換五個領域各走一次，每個例子多帶一兩個後面會用到的觀念。例子是本站設計的示意，不是論文中的實驗。每張圖用同一套記號：實線框是寫下的概念，虛線框是放入的個體，灰色箭頭是寫下的關係，藍色是推理器推出的，橘框是決策，紅色是錯誤或故障。</p>
+  <p>也請留意：③ 不一定只靠「是一種」就推得出來。有些步驟要另外寫規則，有些其實是在已知資料裡查詢（封閉世界），圖說會註明。點開看圖。</p>
+
+  <details class="ex">
+    <summary>例 1　廚房炒菜：一個類別可以有兩個父類別<span class="xs">§3 §4 §7 §14</span></summary>
+    <div class="inner">
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 432" role="img" aria-labelledby="A1-t A1-d">
+<title id="A1-t">廚房炒菜：一個類別可以有兩個父類別</title>
+<desc id="A1-d">「炒」同時是「加熱」和「烹調」的子類別。event_42 是一次炒，推理器推出它也是加熱、也是烹調；兩條應用層規則再把結論帶到它的器具和處理對象：炒鍋要監控溫度與安全距離，飯要追蹤熟度。之後新增「烤」也只要寫它是加熱和烹調（SUMO 的 Baking 就是這樣寫）。</desc>
+<defs><marker id="mA1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nA1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<text x="20" y="58" class="sm">SUMO 上層</text><text x="20" y="75" class="tk2">Merge.kif</text>
+<text x="20" y="148" class="sm">SUMO 食物</text><text x="20" y="165" class="tk2">領域檔 Food.kif</text>
+<text x="20" y="250" class="sm">應用層</text><text x="20" y="267" class="tk2">本例規則與這次的個體</text>
+<rect x="145" y="40" width="210" height="46" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="250" y="60" text-anchor="middle" class="sm">加熱 Heating</text>
+<text x="250" y="78" text-anchor="middle" class="tk2">應用層規則：器具監控溫度、安全距離</text>
+<rect x="405" y="40" width="210" height="46" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="510" y="60" text-anchor="middle" class="sm">烹調 Cooking</text>
+<text x="510" y="78" text-anchor="middle" class="tk2">應用層規則：處理對象要追蹤熟度</text>
+<rect x="320" y="130" width="140" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="390" y="150" text-anchor="middle" class="sm">炒 Frying</text>
+<path d="M362,128 L272,89" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA1)"/>
+<path d="M418,128 L488,89" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA1)"/>
+<text x="390" y="112" text-anchor="middle" class="tk2">是一種</text>
+<rect x="320" y="230" width="140" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="390" y="250" text-anchor="middle" class="val">event_42</text>
+<text x="390" y="268" text-anchor="middle" class="tk2">這一次的「炒」</text>
+<path d="M390,228 L390,163" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA1)"/>
+<text x="398" y="204" text-anchor="start" class="tk2 halo" style="fill:#8b949e">是</text>
+<rect x="170" y="320" width="130" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="235" y="340" text-anchor="middle" class="val">wok_01</text>
+<text x="235" y="358" text-anchor="middle" class="tk2">炒鍋</text>
+<rect x="480" y="320" width="130" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="545" y="340" text-anchor="middle" class="val">rice_01</text>
+<text x="545" y="358" text-anchor="middle" class="tk2">一份飯</text>
+<path d="M362,278 L252,317" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA1)"/>
+<text x="322" y="290" text-anchor="end" class="tk2 halo" style="fill:#8b949e">使用器具</text>
+<path d="M418,278 L528,317" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA1)"/>
+<text x="458" y="290" text-anchor="start" class="tk2 halo" style="fill:#8b949e">處理對象</text>
+<path d="M318,252 L250,252 L250,90" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA1)"/>
+<text x="244" y="200" text-anchor="end" class="sm halo" style="fill:#79c0ff">③ 推出：也是加熱</text>
+<path d="M462,252 L510,252 L510,90" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA1)"/>
+<text x="516" y="200" text-anchor="start" class="sm halo" style="fill:#79c0ff">③ 推出：也是烹調</text>
+<text x="235" y="386" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 要監控溫度、安全距離</text>
+<text x="545" y="386" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 要追蹤熟度</text>
+<rect x="640" y="40" width="240" height="352" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="656" y="66" text-anchor="start" class="hd">④ 用在決策</text>
+<text x="656" y="98" text-anchor="start" class="sm">開炒時自動同時啟動：</text><text x="656" y="120" text-anchor="start" class="sm">・溫度與安全距離監控</text><text x="656" y="142" text-anchor="start" class="sm">　（因為「炒」也是加熱）</text><text x="656" y="164" text-anchor="start" class="sm">・熟度追蹤</text><text x="656" y="186" text-anchor="start" class="sm">　（因為「炒」也是烹調）</text><text x="656" y="208" text-anchor="start" class="sm"></text><text x="656" y="230" text-anchor="start" class="sm">沒有人替「炒」單獨寫</text><text x="656" y="252" text-anchor="start" class="sm">這兩條規則。</text><text x="656" y="274" text-anchor="start" class="sm"></text><text x="656" y="296" text-anchor="start" class="sm">之後新增「烤」：只要寫</text><text x="656" y="318" text-anchor="start" class="sm">它也是加熱、也是烹調，</text><text x="656" y="340" text-anchor="start" class="sm">兩條規則自動套用</text><text x="656" y="362" text-anchor="start" class="sm">（SUMO 的 Baking 就這樣寫）。</text>
+<rect x="20" y="411" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/>
+<text x="52" y="422" class="ann2">① 實線框＝寫下的概念</text>
+<rect x="240" y="411" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 2"/>
+<text x="272" y="422" class="ann2">② 虛線框＝放入的個體</text>
+<line x1="460" y1="418" x2="484" y2="418" stroke="#3987e5" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="492" y="422" class="ann2">③ 藍色＝推理器推出的</text>
+<rect x="680" y="411" width="24" height="14" rx="3" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/>
+<text x="712" y="422" class="ann2">④ 橘框＝用在決策</text>
+</svg>
+        </div>
+        <figcaption><b>圖 A-1</b>本站示意。「炒」同時是「加熱」和「烹調」的子類別：SUMO 的食物領域檔真的這樣寫（Frying 是 Cooking 的一種，也是 Heating 的一種；SUMO 的 Frying 泛指用熱油烹調，涵蓋炒、煎、炸，本例取其中的炒）。子類別推理推出 event_42 也是加熱、也是烹調。框裡的兩條規則是本例加上的應用層規則，不是 SUMO 的內容；它們跨過「使用器具」「處理對象」兩條關係，把結論帶到炒鍋和飯上，要寫成 SWRL 這類規則（例如「加熱事件 ∧ 使用器具 → 器具要監控溫度」）。</figcaption>
+      </figure>
+      <p><strong>多學到</strong>：原圖 2 每個類別只有一個父類別（單一繼承）；實際的本體論常有多個父類別（多重繼承）。這個例子也剛好跨了 §3 的三層：加熱、烹調在 SUMO 的上層本體論（Merge.kif），炒在 SUMO 的食物領域檔；框裡那兩條本例規則屬於應用層（掛在加熱、烹調上，所以畫在那兩個框裡），event_42 這些個體則是這次任務放進知識庫的資料。§7、§8 的 PMK、OMRKF 另有一種「三層」（後設本體論、綱要、個體），別和這裡混在一起。</p>
+      <p><strong>後面對應</strong>：<a href="#layers">§3</a> 本體論的三個層次；<a href="#capabilities">§4</a> 的「預測與監控」；<a href="#manipulation">§7</a> KnowRob 也是把寫在類別上的知識套到這一次的動作上：查到「倒」這個動作含有子任務「抓住來源容器」，再查抓取姿態與施力；<a href="#benchmark">§14</a>（本站示範）用 SUMO 的料理類別定義 benchmark。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>例 2　醫院送餐：查不到不等於沒有<span class="xs">§2 §4 §14</span></summary>
+    <div class="inner">
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 450" role="img" aria-labelledby="A2-t A2-d">
+<title id="A2-t">醫院送餐：查不到不等於沒有</title>
+<desc id="A2-d">定義「含花生的餐」，病人王先生對花生過敏。三份餐：meal_A 含花生、meal_B 寫明成分只有白飯和雞肉、meal_C 成分還沒登錄。Prolog 對 meal_C 回答不含花生，OWL 推理器回答不知道。決策層只送推得出不含花生的 meal_B。</desc>
+<defs><marker id="mA2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nA2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<rect x="20" y="36" width="420" height="46" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="230" y="56" text-anchor="middle" class="sm">含花生的餐 ＝ 餐，且至少有一個成分是花生</text>
+<text x="230" y="74" text-anchor="middle" class="tk2">寫成 OWL 的類別定義，推理器會自動歸類</text>
+<rect x="460" y="36" width="420" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="670" y="56" text-anchor="middle" class="sm">王先生 對 花生 過敏</text>
+<text x="670" y="74" text-anchor="middle" class="tk2">病人資料</text>
+<text x="20" y="118" text-anchor="start" class="lab">② 三份餐（個體）</text>
+<text x="320" y="118" text-anchor="start" class="lab">③ Prolog（封閉世界）</text>
+<text x="520" y="118" text-anchor="start" class="lab">③ OWL 推理器（開放世界）</text>
+<text x="720" y="118" text-anchor="start" class="lab">④ 決策：白名單</text>
+<rect x="20" y="130" width="280" height="60" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="160" y="157" text-anchor="middle" class="val">meal_A</text>
+<text x="160" y="175" text-anchor="middle" class="tk2">成分：雞肉、花生（宮保雞丁）</text>
+<rect x="320" y="130" width="180" height="60" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="410" y="157" text-anchor="middle" class="sm">含花生</text>
+<text x="410" y="175" text-anchor="middle" class="tk2">查到花生</text>
+<rect x="520" y="130" width="180" height="60" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="610" y="157" text-anchor="middle" class="sm">含花生</text>
+<text x="610" y="175" text-anchor="middle" class="tk2">自動歸進「含花生的餐」</text>
+<rect x="720" y="130" width="160" height="60" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.5"/>
+<text x="800" y="165" text-anchor="middle" class="lab">✕ 不送</text>
+<rect x="20" y="206" width="280" height="60" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="160" y="233" text-anchor="middle" class="val">meal_B</text>
+<text x="160" y="251" text-anchor="middle" class="tk2">成分只有：白飯、雞肉（已寫明）</text>
+<rect x="320" y="206" width="180" height="60" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="410" y="233" text-anchor="middle" class="sm">不含花生</text>
+<text x="410" y="251" text-anchor="middle" class="tk2">成分裡查不到花生</text>
+<rect x="520" y="206" width="180" height="60" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="610" y="233" text-anchor="middle" class="sm">不含花生</text>
+<text x="610" y="251" text-anchor="middle" class="tk2">因為寫明了「只有這些」</text>
+<rect x="720" y="206" width="160" height="60" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.5"/>
+<text x="800" y="241" text-anchor="middle" class="lab">✓ 送給王先生</text>
+<rect x="20" y="282" width="280" height="60" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="160" y="309" text-anchor="middle" class="val">meal_C</text>
+<text x="160" y="327" text-anchor="middle" class="tk2">成分：還沒登錄</text>
+<rect x="320" y="282" width="180" height="60" rx="7" fill="#2d1b1b" stroke="#ff7b72" stroke-width="1.5"/>
+<text x="410" y="309" text-anchor="middle" class="sm">不含花生</text>
+<text x="410" y="327" text-anchor="middle" class="tk2">！查不到就當沒有</text>
+<rect x="520" y="282" width="180" height="60" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="610" y="309" text-anchor="middle" class="sm">不知道</text>
+<text x="610" y="327" text-anchor="middle" class="tk2">推不出含，也推不出不含</text>
+<rect x="720" y="282" width="160" height="60" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.5"/>
+<text x="800" y="317" text-anchor="middle" class="lab">△ 擋下，請人補成分</text>
+<text x="320" y="372" text-anchor="start" class="sm" style="fill:#ff7b72">若決策層照 Prolog 的答案，meal_C 會被送給王先生</text>
+<text x="20" y="398" text-anchor="start" class="ann2">要讓 OWL 推出「不含」，得寫明「成分只有這些」（封閉公理），並宣告白飯、雞肉都不是花生。</text>
+<text x="20" y="418" text-anchor="start" class="ann2">決策層只送推得出「不含花生」的餐，推不出的一律擋下：這就是圖 A 第 ④ 步的白名單。</text>
+<rect x="20" y="431" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/>
+<text x="52" y="442" class="ann2">① 實線框＝寫下的概念</text>
+<rect x="240" y="431" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 2"/>
+<text x="272" y="442" class="ann2">② 虛線框＝放入的個體</text>
+<line x1="460" y1="438" x2="484" y2="438" stroke="#3987e5" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="492" y="442" class="ann2">③ 藍色＝推理器推出的</text>
+<rect x="680" y="431" width="24" height="14" rx="3" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/>
+<text x="712" y="442" class="ann2">④ 橘框＝用在決策</text>
+</svg>
+        </div>
+        <figcaption><b>圖 A-2</b>本站示意。同一份病人與餐點資料，交給兩種推理方式。meal_C 的成分還沒登錄：Prolog 查不到花生，就回答「不含」；OWL 推理器回答「不知道」。決策層只送推得出「不含花生」的餐。</figcaption>
+      </figure>
+      <p><strong>多學到</strong>：要讓 OWL 推出「不含」，必須寫明「這道菜的成分只有這些」（封閉公理），還要說清楚這些成分都不是花生，比想像中麻煩。開放世界不是缺點：它不會把「沒登錄」當成「沒有」；代價是決策層要自己訂保守規則。</p>
+      <p><strong>後面對應</strong>：<a href="#languages">§2</a> 開放世界與封閉世界；<a href="#capabilities">§4</a> 的「決策與規劃」；圖 A 第 ④ 步的白名單；<a href="#benchmark">§14</a>（本站示範）盛盤驗收的「盤外沒有灑出」要用 SHACL、SPARQL 或程式在封閉世界下檢查，感知也要明確輸出「灑出面積＝0」，不能只是沒有回報。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>例 3　礦坑探勘：機器人描述它自己<span class="xs">§4 §8 §11 §12 §13</span></summary>
+    <div class="inner">
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 472" role="img" aria-labelledby="A3-t A3-d">
+<title id="A3-t">礦坑探勘：機器人描述它自己</title>
+<desc id="A3-d">上排是概念：配置需要元件、配置實現功能、目標要求功能、利害關係人在乎目標，另寫三條通用規則。下排是這台機器人的個體。監控回報光譜儀故障，推理器靠通用規則推出光譜儀配置失效、已知配置只剩相機配置能辨識礦石、準確率目標達不到、要通知地質師。元控制器據此切換配置、放寬目標並通知人。</desc>
+<defs><marker id="mA3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nA3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<rect x="45.0" y="36" width="90" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="90" y="56" text-anchor="middle" class="sm">元件</text>
+<rect x="260.0" y="36" width="90" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="305" y="56" text-anchor="middle" class="sm">配置</text>
+<rect x="465.0" y="36" width="90" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="510" y="56" text-anchor="middle" class="sm">功能</text>
+<rect x="645.0" y="36" width="90" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="690" y="56" text-anchor="middle" class="sm">目標</text>
+<rect x="780.0" y="36" width="100" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="830" y="56" text-anchor="middle" class="sm">利害關係人</text>
+<path d="M260,51 L138,51" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="199" y="45" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">需要</text>
+<path d="M350,51 L462,51" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="406" y="45" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">實現</text>
+<path d="M645,51 L558,51" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="601" y="45" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">要求</text>
+<path d="M780,51 L738,51" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="759" y="45" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">在乎</text>
+<text x="20" y="88" text-anchor="start" class="tk2">① 寫下的概念（取自 TOMASys 元模型，見 §8）　② 下排是這台機器人的個體，每個都屬於正上方那一欄</text>
+<text x="20" y="106" text-anchor="start" class="tk2">① 另寫三條通用規則：元件壞了 → 用到它的配置失效；已知配置都不達標 → 目標達不到；目標達不到 → 通知在乎它的人</text>
+<rect x="20" y="146" width="140" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="90" y="166" text-anchor="middle" class="val">spectrometer_01</text>
+<text x="90" y="184" text-anchor="middle" class="tk2">光譜儀</text>
+<rect x="20" y="246" width="140" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="90" y="266" text-anchor="middle" class="val">camera_02</text>
+<text x="90" y="284" text-anchor="middle" class="tk2">相機</text>
+<rect x="220" y="146" width="170" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="305" y="166" text-anchor="middle" class="val">cfg_spec</text>
+<text x="305" y="184" text-anchor="middle" class="ann2">光譜儀配置｜準確率約 95%</text>
+<rect x="220" y="246" width="170" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="305" y="266" text-anchor="middle" class="val">cfg_cam</text>
+<text x="305" y="284" text-anchor="middle" class="ann2">相機＋分類｜準確率約 80%</text>
+<rect x="450" y="196" width="120" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="510" y="216" text-anchor="middle" class="val">f_ore</text>
+<text x="510" y="234" text-anchor="middle" class="tk2">辨識礦石</text>
+<rect x="630" y="196" width="120" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="690" y="216" text-anchor="middle" class="val">goal_1</text>
+<text x="690" y="234" text-anchor="middle" class="ann2">準確率 ≥ 90%</text>
+<rect x="785" y="196" width="95" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="832" y="216" text-anchor="middle" class="val">geologist_1</text>
+<text x="832" y="234" text-anchor="middle" class="tk2">地質師</text>
+<path d="M220,169 L163,169" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="191" y="162" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">需要</text>
+<path d="M220,269 L163,269" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="191" y="262" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">需要</text>
+<path d="M390,169 L447,206" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<path d="M390,269 L447,232" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="402" y="224" text-anchor="start" class="tk2">實現</text>
+<path d="M630,219 L573,219" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="601" y="212" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">要求</text>
+<path d="M785,219 L753,219" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA3)"/>
+<text x="769" y="212" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">在乎</text>
+<text x="20" y="212" text-anchor="start" class="sm" style="fill:#ff7b72">② 監控回報：✕ 故障</text>
+<text x="305" y="212" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 失效：需要的元件壞了</text>
+<text x="510" y="266" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 已知配置只剩 cfg_cam</text>
+<text x="690" y="266" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 達不到：80% 低於 90%</text>
+<text x="835" y="266" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 要通知</text>
+<path d="M90,312 L835,312" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA3)"/>
+<text x="450" y="332" text-anchor="middle" class="sm" style="fill:#79c0ff">③ 推理器用這三條規則沿著寫下的關係，把一個元件故障一路推到「要通知誰」</text>
+<rect x="20" y="350" width="860" height="84" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="36" y="376" text-anchor="start" class="hd">④ 元控制器（§8）的決策</text>
+<text x="36" y="400" text-anchor="start" class="sm">切換到 cfg_cam → 把目標放寬到 80%（信心分數低的樣本先標記、之後重測）→ 通知地質師。</text><text x="36" y="422" text-anchor="start" class="sm">沒有人替光譜儀單獨寫「壞了要通知地質師」；是三條通用規則沿著關係串出來的，換哪個元件壞都適用。</text>
+<rect x="20" y="451" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/>
+<text x="52" y="462" class="ann2">① 實線框＝寫下的概念</text>
+<rect x="240" y="451" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 2"/>
+<text x="272" y="462" class="ann2">② 虛線框＝放入的個體</text>
+<line x1="460" y1="458" x2="484" y2="458" stroke="#3987e5" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="492" y="462" class="ann2">③ 藍色＝推理器推出的</text>
+<rect x="680" y="451" width="24" height="14" rx="3" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/>
+<text x="712" y="462" class="ann2">④ 橘框＝用在決策</text>
+</svg>
+        </div>
+        <figcaption><b>圖 A-3</b>本站示意。上排的概念取自 TOMASys 元模型（§8）的功能、配置、元件、目標，再加上原圖 3 的利害關係人；機器人用這些概念描述自己，本站簡稱「自我模型」。下排是這台機器人的個體，每個都屬於正上方那一欄。監控回報光譜儀故障後，推理器靠三條通用規則沿著關係一路推到「目標達不到、要通知地質師」；TOMASys 公開的 OWL 檔裡就寫了 11 條這類 SWRL 規則。「只剩」和「80% 低於 90%」這兩步其實是元控制器在已知的配置裡查詢、比較數值，屬封閉世界的處理；OWL 推理器在開放世界下推不出「只剩」，除非寫明 f_ore 只有這兩種配置（見例 2）。元控制器是監看功能是否達成、必要時切換配置的上層控制器（§8）。準確率數字只是示意。</figcaption>
+      </figure>
+      <p><strong>多學到</strong>：本體論不只描述外面的世界，也描述機器人自己的設計：哪個元件支撐哪個功能、還有哪些替代配置、誰在乎結果。作者認為多數框架缺的正是這種知識。</p>
+      <p><strong>後面對應</strong>：<a href="#capabilities">§4</a> 的「互動與設計」「預測與監控」「決策與規劃」「執行」；<a href="#navigation">§8</a> TOMASys、圖 H 與原圖 3；<a href="#recovery">§11</a> 最深的一層應變（改機器人自己的配置、放寬目標）；<a href="#conclusion">§12</a> 作者主張用工程模型支撐監控與協調；<a href="#after">§13</a> 作者群 2025 年的後續論文：採礦機器人上的實作。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>例 4　人機協作桌：機器人替每個人各記一份知識<span class="xs">§4 §9 §13</span></summary>
+    <div class="inner">
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 420" role="img" aria-labelledby="A4-t A4-d">
+<title id="A4-t">人機協作桌：機器人替每個人各記一份知識</title>
+<desc id="A4-d">俯視的桌面上有紅色 bottle_1 和藍色 bottle_2，藍瓶被紙箱擋住，使用者看不到。使用者說「把那個瓶子給我」。機器人替使用者另存一份心智模型，只放使用者看得到的東西；在那份模型裡查「瓶子」只查到 bottle_1，所以遞出 bottle_1。兩個都看得到時，改找最能區分的特徵，問紅的還是藍的。</desc>
+<defs><marker id="mA4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nA4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<text x="20" y="28" text-anchor="start" class="lab">現場（俯視）</text>
+<text x="320" y="24" text-anchor="start" class="tk2">① 寫下的概念：瓶子（類別）、看得到（人→物的關係）、顏色</text>
+<rect x="40" y="60" width="240" height="190" rx="8" fill="#1c2330" stroke="#30363d" stroke-width="1.6"/>
+<rect x="130" y="30" width="60" height="28" rx="6" fill="#1c2330" stroke="#30363d" stroke-width="1.6"/>
+<text x="160" y="49" text-anchor="middle" class="sm">機器人</text>
+<circle cx="110" cy="142" r="13" fill="#ff7b72"/>
+<text x="110" y="120" text-anchor="middle" class="tk2">bottle_1（紅）</text>
+<circle cx="230" cy="112" r="13" fill="#79c0ff"/>
+<text x="230" y="90" text-anchor="middle" class="tk2">bottle_2（藍）</text>
+<rect x="168" y="158" width="84" height="42" rx="4" fill="#2d333b" stroke="#30363d" stroke-width="1.4"/>
+<text x="210" y="184" text-anchor="middle" class="sm">紙箱</text>
+<circle cx="120" cy="292" r="14" fill="none" stroke="#8b949e" stroke-width="1.6"/>
+<text x="120" y="328" text-anchor="middle" class="sm">使用者</text>
+<line x1="119" y1="277" x2="111" y2="158" stroke="#7ee787" stroke-width="1.6"/>
+<text x="100" y="236" text-anchor="end" class="tk2 halo" style="fill:#7ee787">看得到</text>
+<line x1="126" y1="278" x2="170" y2="202" stroke="#ff7b72" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="212" y="222" text-anchor="middle" class="tk2" style="fill:#ff7b72">✕ 被紙箱擋住</text>
+<rect x="150" y="300" width="134" height="30" rx="14" fill="#1c2330" stroke="#30363d" stroke-width="1.6"/>
+<text x="217" y="320" text-anchor="middle" class="sm">「把那個瓶子給我」</text>
+<text x="20" y="360" text-anchor="start" class="tk2">機器人從另一側，兩個都看得到。</text><text x="20" y="377" text-anchor="start" class="tk2">誰看得到什麼，由幾何模組算出、寫進知識庫。</text>
+<rect x="320" y="36" width="300" height="140" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="336" y="60" text-anchor="start" class="hd">② 機器人自己的知識</text>
+<rect x="336" y="72" width="128" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="400" y="92" text-anchor="middle" class="val">bottle_1</text>
+<text x="400" y="110" text-anchor="middle" class="tk2">紅色瓶子</text>
+<rect x="476" y="72" width="128" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="540" y="92" text-anchor="middle" class="val">bottle_2</text>
+<text x="540" y="110" text-anchor="middle" class="tk2">藍色瓶子</text>
+<text x="336" y="144" text-anchor="start" class="tk2">使用者 看得到 bottle_1</text><text x="336" y="161" text-anchor="start" class="tk2">使用者 看不到 bottle_2</text>
+<path d="M470,178 L470,198" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA4)"/>
+<text x="480" y="192" text-anchor="start" class="tk2 halo" style="fill:#8b949e">只放進使用者看得到的</text>
+<rect x="320" y="200" width="300" height="100" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="336" y="224" text-anchor="start" class="hd">使用者的心智模型（另存一份）</text>
+<rect x="336" y="238" width="128" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="400" y="258" text-anchor="middle" class="val">bottle_1</text>
+<text x="400" y="276" text-anchor="middle" class="tk2">紅色瓶子</text>
+<rect x="476" y="238" width="128" height="46" rx="7" fill="none" stroke="#30363d" stroke-width="1.4" stroke-dasharray="2 3"/>
+<text x="540" y="266" text-anchor="middle" class="tk2">（沒有 bottle_2）</text>
+<path d="M470,302 L470,322" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA4)"/>
+<rect x="320" y="324" width="300" height="46" rx="7" fill="#1c2c45" stroke="#3987e5" stroke-width="1.5"/>
+<text x="470" y="344" text-anchor="middle" class="sm">「那個瓶子」＝bottle_1</text>
+<text x="470" y="362" text-anchor="middle" class="tk2">在使用者的模型裡查「瓶子」，只查到 bottle_1</text>
+<rect x="640" y="36" width="240" height="334" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="656" y="62" text-anchor="start" class="hd">④ 用在決策</text>
+<text x="656" y="94" text-anchor="start" class="sm">遞出 bottle_1。</text><text x="656" y="116" text-anchor="start" class="sm"></text><text x="656" y="138" text-anchor="start" class="sm">如果兩個都看得到：</text>
+<text x="656" y="160" text-anchor="start" class="sm" style="fill:#79c0ff">③ 推理器改找最能區分</text>
+<text x="656" y="182" text-anchor="start" class="sm" style="fill:#79c0ff">　兩者的特徵：顏色</text>
+<text x="656" y="204" text-anchor="start" class="sm">改問「紅的還是藍的？」，</text><text x="656" y="226" text-anchor="start" class="sm">而不是只問「哪一個？」。</text><text x="656" y="248" text-anchor="start" class="sm"></text><text x="656" y="270" text-anchor="start" class="sm">機器人同時存「我知道的」</text><text x="656" y="292" text-anchor="start" class="sm">和「你知道的」，兩份</text><text x="656" y="314" text-anchor="start" class="sm">可以互相矛盾。</text>
+<rect x="20" y="393" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/>
+<text x="52" y="404" class="ann2">① 實線框＝寫下的概念</text>
+<rect x="240" y="393" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 2"/>
+<text x="272" y="404" class="ann2">② 虛線框＝放入的個體</text>
+<line x1="460" y1="400" x2="484" y2="400" stroke="#3987e5" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="492" y="404" class="ann2">③ 藍色＝推理器推出的</text>
+<rect x="680" y="393" width="24" height="14" rx="3" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/>
+<text x="712" y="404" class="ann2">④ 橘框＝用在決策</text>
+</svg>
+        </div>
+        <figcaption><b>圖 A-4</b>本站示意。左邊是現場俯視圖（瓶子的紅、藍和視線的紅、綠是現場示意，不是圖例的記號）。誰看得到什麼由幾何模組算出、寫進知識庫；機器人替使用者另存一份心智模型，只放使用者看得到的東西。在那份模型裡查「瓶子」，只查到 bottle_1。「只有一個」是在已知個體裡查詢的結果（封閉世界，見例 2）；OWL 推理器在開放世界下推不出「只有一個」，而且 OWL 不假設不同名字就是不同東西，bottle_1、bottle_2 要另外宣告為不同個體。</figcaption>
+      </figure>
+      <p><strong>多學到</strong>：知識不只一份。機器人要同時存「我知道的」和「你知道的」，兩份可以互相矛盾，推理時要選對是哪一份。</p>
+      <p><strong>後面對應</strong>：<a href="#capabilities">§4</a> 的「溝通與協調」「感知與分類」；<a href="#social">§9</a> ORO（每個人一個心智模型、找最能區分的特徵）與 OCRA（協作中改計畫，並能解釋原因）；<a href="#after">§13</a> OCRA 團隊在綜述之後的對比式解釋。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>例 5　回收產線換工具：能做什麼是推出來的<span class="xs">§3 §4 §10 §12 §14</span></summary>
+    <div class="inner">
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 540" role="img" aria-labelledby="A5-t A5-d">
+<title id="A5-t">回收產線換工具：能做什麼是推出來的</title>
+<desc id="A5-d">吸盤夾爪是一種夾爪，提供吸取技能，吸取適用於表面平滑、無孔的零件。3 號站今天裝上吸盤夾爪 gripper_07，推理器推出 3 號站具備吸取、能處理平滑的 board_12；網狀的 mesh_05 推不出能吸取，照白名單不派給 3 號站，別站也推不出能處理它就交給人。下方說明前提：不同廠商要用同一套詞彙，或有人寫好對應。</desc>
+<defs><marker id="mA5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nA5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<rect x="20" y="36" width="110" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="75" y="56" text-anchor="middle" class="sm">夾爪</text>
+<rect x="20" y="116" width="110" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="75" y="136" text-anchor="middle" class="sm">吸盤夾爪</text>
+<path d="M75,114 L75,69" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="83" y="96" text-anchor="start" class="tk2 halo" style="fill:#8b949e">是一種</text>
+<rect x="220" y="116" width="120" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="280" y="136" text-anchor="middle" class="sm">技能：吸取</text>
+<path d="M130,131 L217,131" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="174" y="124" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">提供</text>
+<rect x="430" y="116" width="190" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="525" y="136" text-anchor="middle" class="sm">表面平滑、無孔的零件</text>
+<path d="M340,131 L427,131" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="384" y="124" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">適用於</text>
+<rect x="20" y="206" width="110" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="75" y="226" text-anchor="middle" class="val">gripper_07</text>
+<text x="75" y="244" text-anchor="middle" class="tk2">今天剛裝上</text>
+<path d="M75,204 L75,149" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="83" y="182" text-anchor="start" class="tk2 halo" style="fill:#8b949e">是</text>
+<rect x="20" y="296" width="110" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="75" y="316" text-anchor="middle" class="val">station_3</text>
+<text x="75" y="334" text-anchor="middle" class="tk2">3 號工作站</text>
+<path d="M75,294 L75,255" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="83" y="280" text-anchor="start" class="tk2 halo" style="fill:#8b949e">裝有</text>
+<rect x="430" y="206" width="110" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="485" y="226" text-anchor="middle" class="val">board_12</text>
+<text x="485" y="244" text-anchor="middle" class="tk2">平滑電路板</text>
+<path d="M485,204 L485,149" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="493" y="182" text-anchor="start" class="tk2 halo" style="fill:#8b949e">是</text>
+<rect x="570" y="206" width="110" height="46" rx="7" fill="#161b22" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="625" y="226" text-anchor="middle" class="val">mesh_05</text>
+<text x="625" y="244" text-anchor="middle" class="tk2">網狀濾網</text>
+<line x1="622" y1="204" x2="602" y2="149" stroke="#8b949e" stroke-width="1.3" stroke-dasharray="2 4"/>
+<text x="626" y="182" text-anchor="start" class="lab" style="fill:#8b949e">？</text>
+<text x="625" y="270" text-anchor="middle" class="tk2">沒登錄為平滑無孔</text>
+<text x="690" y="290" text-anchor="end" class="tk2">推不出能吸取 → 不派給 station_3</text>
+<path d="M130,312 L280,312 L280,149" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA5)"/>
+<text x="288" y="232" text-anchor="start" class="sm halo" style="fill:#79c0ff">③ 推出：具備「吸取」</text>
+<path d="M130,328 L485,328 L485,255" fill="none" stroke="#3987e5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#nA5)"/>
+<text x="300" y="348" text-anchor="start" class="sm halo" style="fill:#79c0ff">③ 推出：能處理 board_12</text>
+<rect x="700" y="36" width="180" height="330" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="716" y="62" text-anchor="start" class="hd">④ 排程</text>
+<text x="716" y="94" text-anchor="start" class="sm">board_12</text><text x="716" y="116" text-anchor="start" class="sm">→ 派給 station_3</text><text x="716" y="138" text-anchor="start" class="sm"></text><text x="716" y="160" text-anchor="start" class="sm">mesh_05</text><text x="716" y="182" text-anchor="start" class="sm">→ 不派給 station_3；</text><text x="716" y="204" text-anchor="start" class="sm">　改查別站推不推得出</text><text x="716" y="226" text-anchor="start" class="sm">　能處理它，都推不出</text><text x="716" y="248" text-anchor="start" class="sm">　就交給人。</text><text x="716" y="270" text-anchor="start" class="sm"></text><text x="716" y="292" text-anchor="start" class="sm">控制程式一行都沒改：</text><text x="716" y="314" text-anchor="start" class="sm">能力是從「裝了什麼」</text><text x="716" y="336" text-anchor="start" class="sm">推出來的。</text>
+<rect x="20" y="382" width="860" height="100" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="36" y="406" text-anchor="start" class="hd">前提：大家要用同一套詞彙</text>
+<rect x="36" y="422" width="230" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="151" y="442" text-anchor="middle" class="sm">A 廠說明書：VacuumGripper</text>
+<rect x="335" y="422" width="200" height="46" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="435" y="442" text-anchor="middle" class="sm">共用的標準詞彙</text>
+<text x="435" y="460" text-anchor="middle" class="tk2">標準，或有人寫好的對應</text>
+<rect x="634" y="422" width="230" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="749" y="442" text-anchor="middle" class="sm">B 廠說明書：SuctionGripper</text>
+<path d="M266,437 L332,437" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="299" y="430" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">對應到</text>
+<path d="M634,437 L538,437" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mA5)"/>
+<text x="586" y="430" text-anchor="middle" class="tk2 halo" style="fill:#8b949e">對應到</text>
+<text x="20" y="504" text-anchor="start" class="ann2">只要有一邊沒對應到共用詞彙，推理器就不知道 VacuumGripper 和 SuctionGripper 是同一種東西，上半的推論就斷了。</text>
+<rect x="20" y="519" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4"/>
+<text x="52" y="530" class="ann2">① 實線框＝寫下的概念</text>
+<rect x="240" y="519" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 2"/>
+<text x="272" y="530" class="ann2">② 虛線框＝放入的個體</text>
+<line x1="460" y1="526" x2="484" y2="526" stroke="#3987e5" stroke-width="1.6" stroke-dasharray="5 4"/>
+<text x="492" y="530" class="ann2">③ 藍色＝推理器推出的</text>
+<rect x="680" y="519" width="24" height="14" rx="3" fill="#1c2330" stroke="#d95f2b" stroke-width="1.4"/>
+<text x="712" y="530" class="ann2">④ 橘框＝用在決策</text>
+</svg>
+        </div>
+        <figcaption><b>圖 A-5</b>本站示意。上半是能力推理：3 號站裝了吸盤夾爪，推理器推出它具備「吸取」技能，能處理平滑的 board_12；網狀的 mesh_05 推不出能吸取，照白名單不派給 3 號站，別站也推不出能處理它，就交給人。這兩步除了子類別，還要另寫兩條規則：「站裝有的工具提供的技能＝站具備的技能」（OWL 2 的屬性鏈，並把「吸盤夾爪提供吸取」寫成類別上的限制）；「站具備某技能、零件屬於該技能適用的那一類 → 站能處理該零件」（要用 SWRL、SPARQL 這類規則）。規則寫一次，換工具時不用改。下半是前提：各廠的設備說明要用同一套詞彙，或有人寫好對應，否則推理器對不起來。</figcaption>
+      </figure>
+      <p><strong>多學到</strong>：能做什麼是從「裝了什麼」推出來的，不是寫死在程式裡。但前提是大家用同一套詞彙：A 廠寫 VacuumGripper、B 廠寫 SuctionGripper，除非有人寫好對應，推理器不知道兩者是同一種東西。</p>
+      <p><strong>後面對應</strong>：<a href="#capabilities">§4</a> 的「互動與設計」（換工具的例子）「決策與規劃」「溝通與協調」；<a href="#industrial">§10</a> ROSETTA（技能）、自適應製造代理（自己推出「我現在能做什麼」），以及研究者提醒的「後設層概念缺乏標準化，整合既有本體論很難」（那是較抽象的一層；本例是同一類問題落在具體的設備名稱上）；<a href="#layers">§3</a> IEEE 標準存在的理由；<a href="#conclusion">§12</a> 作者說重用的前提是概念先統一；<a href="#benchmark">§14</a>（本站示範）用標準語意定義 benchmark 也是同一件事。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>對照表：五個例子對到本頁哪幾節（附往後讀的三個問題）</summary>
+    <div class="inner">
+      <div class="tablewrap"><table>
+        <thead><tr><th>例子</th><th>多學到的觀念</th><th>論文的八種能力（§4）</th><th>後面章節</th></tr></thead>
+        <tbody>
+          <tr><td>1 廚房炒菜</td><td>多重繼承、三層本體論</td><td>預測與監控</td><td><a href="#layers">§3</a> <a href="#manipulation">§7</a> <a href="#benchmark">§14</a></td></tr>
+          <tr><td>2 醫院送餐</td><td>開放／封閉世界、白名單</td><td>決策與規劃</td><td><a href="#languages">§2</a> <a href="#benchmark">§14</a></td></tr>
+          <tr><td>3 礦坑探勘</td><td>自我模型（TOMASys 元模型）、故障時重新配置</td><td>互動與設計、預測與監控、決策與規劃、執行</td><td><a href="#navigation">§8</a> <a href="#recovery">§11</a> <a href="#conclusion">§12</a> <a href="#after">§13</a></td></tr>
+          <tr><td>4 協作桌</td><td>多個心智模型、判斷「那個瓶子」指哪一個</td><td>溝通與協調、感知與分類</td><td><a href="#social">§9</a> <a href="#after">§13</a></td></tr>
+          <tr><td>5 回收產線</td><td>能力靠推理得出、共用詞彙</td><td>互動與設計、決策與規劃、溝通與協調</td><td><a href="#layers">§3</a> <a href="#industrial">§10</a> <a href="#conclusion">§12</a> <a href="#benchmark">§14</a></td></tr>
+        </tbody>
+      </table></div>
+      <p>五個例子都用到推理（論文的 20 個框架也都有，見 <a href="#matrix">§6</a>），表中不另列。§13 是本站補充的後續發展，§14 是本站示範，兩者都不是論文內容。</p>
+      <p>五個例子都沒有用到「學習」。論文的 20 個框架也只有 3 個做這件事（<a href="#matrix">§6</a>），例如 RTPO 把規劃結果存回本體論、KnowRob 把執行紀錄存成 NEEMs。</p>
+      <p>往後讀時，可以一直問自己三件事：推理器推得出什麼、推不出什麼？知識描述的是世界，還是機器人自己？用的是誰的詞彙？</p>
+    </div>
+  </details>
 </section>
 
 <!-- ─────────── §2 ─────────── -->
