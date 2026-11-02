@@ -814,6 +814,446 @@
     <span class="tag">作者對 CORA 的批評</span>
     CORA 要照顧整個社群，所以只寫概念的<strong>必要條件</strong>，不寫充分條件，實際使用時得再針對子領域特化 <a class="cite" href="#r-Fiorini2017">Fiorini 2017</a>。（必要條件：凡是機器人，一定是裝置也是代理人；充分條件：符合哪些條件，就能判定「這是機器人」。只有必要條件時，推理器能檢查已知的機器人，卻不能自動把新東西歸類為機器人。）作者也說它的語言表達力很有限（大致只用到 OWL-Lite），只能做簡單的分類查詢；而且雖然以 SUMO 為基礎，卻重新定義了許多 SUMO 本來就有的詞，也沒有沿用 SUMO 的邏輯公式，等於只重用了分類樹。<br><span class="tk2">本站補充：這段批評比較適用於 CORA 的 OWL 版本；標準本身是用 SUO-KIF 寫的，保留了較多公理，社群的 OWL 移植版也自承是簡化版。</span>
   </div>
+
+  <h3>延伸：SUMO 是什麼？</h3>
+  <p>SUMO 是 Suggested Upper Merged Ontology 的縮寫，可以直譯成「建議的上層合併本體論」。它在本頁出現好幾次：CORA 建立在它上面（圖 C、上方紫框），圖 A-1 的 Frying、Cooking、Heating 和 §14 圖 I 的 CookedDish、PotOrPan 也都是 SUMO 的類別。下面八段點開看：前五段各配一張圖，後三段是和 DOLCE、BFO 的比較、SUMO 在機器人領域的角色，以及實際怎麼查。</p>
+
+  <details class="ex">
+    <summary>來歷：誰做的、合併了什麼、有沒有成為標準<span class="xs">圖 S-1</span></summary>
+    <div class="inner">
+      <p>SUMO 由 Ian Niles 和 Adam Pease 在美國 Teknowledge 公司建立，2001 年在形式本體論研討會 FOIS 發表 <a class="cite" href="#r-Niles2001">Niles 2001</a>。名字裡的三個字各有來歷：</p>
+      <ul>
+        <li><strong>Suggested（建議的）</strong>：它是提給 IEEE「標準上層本體論」工作組（SUO WG，專案編號 P1600.1）的起始稿之一。</li>
+        <li><strong>Upper（上層）</strong>：只定義最一般的概念，例如物件、過程、屬性、關係。</li>
+        <li><strong>Merged（合併）</strong>：它不是從零寫起，而是把當時公開的本體論內容合併成一個結構，來源包括 Ontolingua 伺服器和義大利 ITBM-CNR 的本體論庫、Sowa 以及 Russell 與 Norvig 的上層本體論、Allen 的時間公理、Casati 與 Varzi 的「洞」理論、Barry Smith 的邊界理論、Guarino 的部分–整體拓撲理論，以及 PSL 等計畫與過程的表示法 <a class="cite" href="#r-Niles2001">Niles 2001</a>。合併分兩步：先把各來源翻成同一種語言（語法合併），再把意思對齊（語意合併），後者難得多。</li>
+      </ul>
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 570" role="img" aria-labelledby="S1-t S1-d">
+<title id="S1-t">SUMO 的時間線：自己的版本與標準化的進展</title>
+<desc id="S1-d">左欄是 SUMO 本身：2000 年首次提交、2001 年第一個正式版與 FOIS 論文、2002 年對應整個 WordNet、約 2004 年起由 Articulate Software 維護、2007 年改對 WordNet 3.0、2015 年上 GitHub、2026 年仍在更新。右欄是標準：2000 年 IEEE 核准 P1600.1 專案，2003 年工作組表決開始發展 SUMO（IFF 等起始稿也有同類決議），2004 年專案期限結束且查無出版的標準；2015 年 IEEE 1872 的 CORA 以 SUMO 為基礎；ISO/IEC 21838 收了 BFO、DOLCE、TUpper（UFO 還在草案階段），沒有 SUMO。</desc>
+<defs><marker id="mS1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nS1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<circle cx="126" cy="24" r="5" fill="#3987e5"/>
+<text x="138" y="29" text-anchor="start" class="hd">SUMO 本身</text>
+<circle cx="526" cy="24" r="5" fill="#d95f2b"/>
+<text x="538" y="29" text-anchor="start" class="hd">IEEE／ISO 標準</text>
+<line x1="100" y1="50" x2="100" y2="528" stroke="#30363d" stroke-width="2"/>
+<line x1="20" y1="50" x2="880" y2="50" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="70" text-anchor="start" class="val">2000</text>
+<circle cx="100" cy="66" r="5" fill="#3987e5"/>
+<text x="126" y="70" text-anchor="start" class="sm">12 月：Ian Niles 首次提交合併後的檔案</text>
+<circle cx="510" cy="66" r="5" fill="#d95f2b"/>
+<text x="526" y="70" text-anchor="start" class="sm">5 月：SUO 郵件論壇成立</text><text x="526" y="88" text-anchor="start" class="sm">12 月：IEEE 核准 P1600.1「標準上層本體論」專案</text>
+<line x1="20" y1="100" x2="880" y2="100" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="120" text-anchor="start" class="val">2001</text>
+<circle cx="100" cy="116" r="5" fill="#3987e5"/>
+<text x="126" y="120" text-anchor="start" class="sm">5 月：版本紀錄稱為「第一個正式版」</text><text x="126" y="138" text-anchor="start" class="sm">10 月：FOIS 論文發表（7 月時有 654 個詞、</text><text x="126" y="156" text-anchor="start" class="sm">　2,351 條斷言）</text>
+<circle cx="510" cy="116" r="5" fill="#d95f2b"/>
+<text x="526" y="120" text-anchor="start" class="sm">8 月：工作組先表決開始發展另一份起始稿 IFF</text><text x="526" y="138" text-anchor="start" class="sm">SUMO 也是候選的起始稿之一</text>
+<line x1="20" y1="168" x2="880" y2="168" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="188" text-anchor="start" class="val">2002</text>
+<circle cx="100" cy="184" r="5" fill="#3987e5"/>
+<text x="126" y="188" text-anchor="start" class="sm">12 月：WordNet 1.6 的每個詞義都對應到 SUMO</text>
+<line x1="20" y1="200" x2="880" y2="200" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="220" text-anchor="start" class="val">2003</text>
+<circle cx="510" cy="216" r="5" fill="#d95f2b"/>
+<text x="526" y="220" text-anchor="start" class="sm">6 月：工作組表決開始發展 SUMO v1.52</text><text x="526" y="238" text-anchor="start" class="sm">　（31 票贊成、16 票反對、6 票棄權）</text>
+<line x1="20" y1="250" x2="880" y2="250" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="270" text-anchor="start" class="val">2004</text>
+<circle cx="100" cy="266" r="5" fill="#3987e5"/>
+<text x="126" y="270" text-anchor="start" class="sm">約此時起由 Articulate Software 維護</text>
+<circle cx="510" cy="266" r="5" fill="#d95f2b"/>
+<text x="526" y="270" text-anchor="start" class="sm">12 月：P1600.1 專案期限結束；之後查不到</text><text x="526" y="288" text-anchor="start" class="sm">　任何由它出版的 IEEE 標準</text>
+<line x1="20" y1="300" x2="880" y2="300" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="320" text-anchor="start" class="val">2007</text>
+<circle cx="100" cy="316" r="5" fill="#3987e5"/>
+<text x="126" y="320" text-anchor="start" class="sm">5 月：WordNet 對應改到 3.0 版</text>
+<line x1="20" y1="332" x2="880" y2="332" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="352" text-anchor="start" class="val">2008</text>
+<circle cx="100" cy="348" r="5" fill="#3987e5"/>
+<text x="126" y="352" text-anchor="start" class="sm">SUMO 題目用於定理證明競賽 CASC</text>
+<line x1="20" y1="364" x2="880" y2="364" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="384" text-anchor="start" class="val">2014</text>
+<circle cx="100" cy="380" r="5" fill="#3987e5"/>
+<text x="126" y="384" text-anchor="start" class="sm">編輯與推理工具 Sigma KEE 3.0</text>
+<line x1="20" y1="396" x2="880" y2="396" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="416" text-anchor="start" class="val">2015</text>
+<circle cx="100" cy="412" r="5" fill="#3987e5"/>
+<text x="126" y="416" text-anchor="start" class="sm">9 月：GitHub 儲存庫 ontologyportal/sumo</text>
+<circle cx="510" cy="412" r="5" fill="#d95f2b"/>
+<text x="526" y="416" text-anchor="start" class="sm">IEEE 1872-2015（CORA）以 SUMO 為基礎</text>
+<line x1="20" y1="428" x2="880" y2="428" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="448" text-anchor="start" class="val">2021–23</text>
+<circle cx="510" cy="444" r="5" fill="#d95f2b"/>
+<text x="526" y="448" text-anchor="start" class="sm">ISO/IEC 21838 收錄 BFO（2021）、DOLCE 與</text><text x="526" y="466" text-anchor="start" class="sm">　TUpper（2023），UFO 仍是草案；都沒有 SUMO</text>
+<line x1="20" y1="478" x2="880" y2="478" stroke="#30363d" stroke-width="0.8"/>
+<text x="20" y="498" text-anchor="start" class="val">2025–26</text>
+<circle cx="100" cy="494" r="5" fill="#3987e5"/>
+<text x="126" y="498" text-anchor="start" class="sm">2026-10：最近一次更新，仍持續維護</text>
+<circle cx="510" cy="494" r="5" fill="#d95f2b"/>
+<text x="526" y="498" text-anchor="start" class="sm">2025：P1872 改版專案核准</text><text x="526" y="516" text-anchor="start" class="sm">2026：1872-2015 轉為 Inactive-Reserved</text>
+<text x="20" y="552" text-anchor="start" class="ann2">來源：SUMO 版本紀錄、Niles 與 Pease 2001、IEEE SUO 工作組網頁、IEEE 與 ISO 標準頁；P1600.1 的最終狀態查無官方紀錄。</text>
+</svg>
+        </div>
+        <figcaption><b>圖 S-1</b>本站依 SUMO 的版本紀錄、Niles 與 Pease 2001、IEEE SUO 工作組的封存網頁、IEEE 與 ISO 的標準頁整理。2000 年 12 月是第一次提交，版本紀錄自己把 2001 年 5 月那一版稱為「第一個正式版」；有些文獻寫「2000 年 12 月首次發布」，指的是前者。手機上請往右捲動，看右欄標準化的進展。</figcaption>
+      </figure>
+      <p><strong>有沒有成為標準？沒有。</strong>2003 年工作組表決開始發展 SUMO（31 票贊成、16 票反對、6 票棄權；IFF 等其他起始稿也通過過同類決議，同一天另一案則要以 IFF、OpenCyc、SUMO 為基礎做本體登錄標準），但 P1600.1 專案期限在 2004 年底結束，之後查不到任何由它出版的 IEEE 標準。SUMO 原始檔上的「© 2004 IEEE」是著作權，不是標準身分。今天由 Adam Pease 擔任技術編輯，在 GitHub 上持續更新 <a class="cite" href="#r-SUMOrepo">SUMO GitHub</a>。</p>
+      <p><strong>授權</strong>：SUMO 上層（Merge.kif）採 IEEE 的授權，可以免費複製、散布、改作，但要註明 IEEE 是來源與著作權人；中層 MILO 和多數領域檔採 GNU GPL。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>結構：上層、中層、領域檔<span class="xs">圖 S-2</span></summary>
+    <div class="inner">
+      <p>SUMO 上層（Merge.kif）原則上以約 1,000 個詞為上限（官方說這是刻意訂的任意上限；2026 年版實際約 1,300 個），更細的概念放到中層本體論 MILO 和各領域檔。官方網站說加上所有領域檔，共約 25,000 個詞、80,000 條公理，並自稱是最大的免費形式本體論。這是官方自己的數字，換個工具統計結果就差很多：Sigma 公開瀏覽器 2026 年 6 月的統計是 16,607 個詞、227,508 條公理（載入的檔案和計算方式都可能和官網不同）；2006–07 年的比較研究（經 Pease 確認）記的約 20,000 個詞、60,000 條公理，則是當時的規模 <a class="cite" href="#r-Mascardi2006">Mascardi 2006</a>。</p>
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 420" role="img" aria-labelledby="S2-t S2-d">
+<title id="S2-t">SUMO 的檔案分層：上層、中層、領域檔</title>
+<desc id="S2-d">最上面是 SUMO 上層 Merge.kif，原則上限約一千個詞（現約一千三百），例如 Entity、Process、Object、Food、Device、Making、Cooking、Heating。中間是 MILO 中層本體論，例如 Container、PotOrPan、Stove、Oil、PreparedFood。最下面是約六十個領域檔，例如 Food.kif 的 Frying 和 CookedDish。箭頭顯示子類別跨檔案指向父類別。右邊是三種配套資源：WordNet 對應、多語標籤、給定理證明器的 TPTP 翻譯。</desc>
+<defs><marker id="mS2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nS2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<rect x="20" y="36" width="620" height="108" rx="10" fill="#161b22" stroke="#8b949e" stroke-width="1.6"/>
+<text x="36" y="58" text-anchor="start" class="hd">上層：Merge.kif（SUMO 上層本體論）</text>
+<text x="36" y="76" text-anchor="start" class="tk2">原則上限約 1,000 個詞（現約 1,300）；IEEE 授權（免費使用，須註明 IEEE）</text>
+<text x="36" y="134" text-anchor="start" class="ann2">subclass 838｜=> 公理 1,016</text>
+<rect x="20" y="156" width="620" height="108" rx="10" fill="#161b22" stroke="#d2a8ff" stroke-width="1.6"/>
+<text x="36" y="178" text-anchor="start" class="hd">中層：MILO（Mid-level-ontology.kif）</text>
+<text x="36" y="196" text-anchor="start" class="tk2">連接抽象的上層和細節的領域檔；GPL 授權</text>
+<text x="36" y="254" text-anchor="start" class="ann2">subclass 2,098｜=> 公理 2,063</text>
+<rect x="20" y="276" width="620" height="108" rx="10" fill="#161b22" stroke="#3987e5" stroke-width="1.6"/>
+<text x="36" y="298" text-anchor="start" class="hd">領域檔：約 60 個 .kif（多數 GPL）</text>
+<text x="36" y="316" text-anchor="start" class="tk2">例如 Food、Dining、Medicine、Military</text>
+<text x="36" y="374" text-anchor="start" class="ann2">Food.kif：subclass 334｜=> 公理 232</text>
+<rect x="36" y="86" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="68" y="104" text-anchor="middle" class="val">Entity</text>
+<rect x="108.4" y="86" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="144" y="104" text-anchor="middle" class="val">Process</text>
+<rect x="188.20000000000002" y="86" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="220" y="104" text-anchor="middle" class="val">Object</text>
+<rect x="260.6" y="86" width="49.6" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="285" y="104" text-anchor="middle" class="val">Food</text>
+<rect x="318.20000000000005" y="86" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="350" y="104" text-anchor="middle" class="val">Device</text>
+<rect x="390.6" y="86" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="423" y="104" text-anchor="middle" class="val">Making</text>
+<rect x="463.0" y="86" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="499" y="104" text-anchor="middle" class="val">Cooking</text>
+<rect x="542.8" y="86" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="579" y="104" text-anchor="middle" class="val">Heating</text>
+<rect x="36" y="206" width="86.60000000000001" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="79" y="224" text-anchor="middle" class="val">Container</text>
+<rect x="130.60000000000002" y="206" width="79.2" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="170" y="224" text-anchor="middle" class="val">PotOrPan</text>
+<rect x="217.8" y="206" width="57.0" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="246" y="224" text-anchor="middle" class="val">Stove</text>
+<rect x="282.8" y="206" width="42.2" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="304" y="224" text-anchor="middle" class="val">Oil</text>
+<rect x="333.0" y="206" width="108.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="387" y="224" text-anchor="middle" class="val">PreparedFood</text>
+<rect x="483.0" y="326" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="515" y="344" text-anchor="middle" class="val">Frying</text>
+<rect x="338.4" y="326" width="94.0" height="28" rx="6" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="385" y="344" text-anchor="middle" class="val">CookedDish</text>
+<line x1="515" y1="325" x2="499" y2="117" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS2)"/>
+<line x1="515" y1="325" x2="579" y2="117" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS2)"/>
+<line x1="385" y1="325" x2="387" y2="237" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS2)"/>
+<line x1="387" y1="205" x2="285" y2="117" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS2)"/>
+<text x="20" y="406" text-anchor="start" class="ann2">箭頭＝「是一種」，子類別指向父類別；常常跨檔案引用。每層左下的數字是本站粗算（2026-11-02 版本）。</text>
+<text x="660" y="52" text-anchor="start" class="hd">配套資源</text>
+<rect x="660" y="66" width="220" height="84" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="676" y="92" text-anchor="start" class="sm">WordNet 對應</text>
+<text x="676" y="114" text-anchor="start" class="tk2">WordNet 3.0 的詞義</text><text x="676" y="131" text-anchor="start" class="tk2">連到 SUMO 的詞（圖 S-5）</text>
+<rect x="660" y="170" width="220" height="84" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="676" y="196" text-anchor="start" class="sm">多語標籤</text>
+<text x="676" y="218" text-anchor="start" class="tk2">名稱 termFormat、句型 format，</text><text x="676" y="235" text-anchor="start" class="tk2">涵蓋中文（繁、簡）等語言</text>
+<rect x="660" y="274" width="220" height="84" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="676" y="300" text-anchor="start" class="sm">推理器格式</text>
+<text x="676" y="322" text-anchor="start" class="tk2">TPTP 一階／高階翻譯，</text><text x="676" y="339" text-anchor="start" class="tk2">給定理證明器使用</text>
+</svg>
+        </div>
+        <figcaption><b>圖 S-2</b>本站依 SUMO 的 GitHub 儲存庫（2026-11-02 版本）繪製 <a class="cite" href="#r-SUMOrepo">SUMO GitHub</a>。Frying（用熱油烹調，涵蓋炒、煎、炸；本頁沿用圖 A-1 簡稱「炒」，嚴格說「炒」只是它底下的一種，見圖 S-5）在食物領域檔裡，直接引用上層的 Cooking（烹調）和 Heating（加熱）；CookedDish 掛在中層的 PreparedFood（已備妥的食物）下，再接到上層的 Food（食物）。框色：灰＝Merge.kif，紫＝MILO，藍＝領域檔。每層左下的數字是本站粗算：直接寫的 subclass 陳述數，和以 =&gt; 開頭的條件式公理數，不是公理總數，只供比較規模。</figcaption>
+      </figure>
+      <p>旁邊還有三類配套資源：WordNet 對應（圖 S-5）、多語言的名稱與句型（termFormat、format），以及給定理證明器用的 TPTP 翻譯檔。儲存庫根目錄有 74 個 .kif 檔，扣掉 Merge.kif、MILO、語言格式檔和測試用的小型知識庫，約 60 個是領域檔，例如 Food、Dining、HouseholdAppliances、Transportation、Medicine、Military。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>最上面幾層：世界被怎麼切開<span class="xs">圖 S-3</span></summary>
+    <div class="inner">
+      <p>最上層是 Entity（實體），分成 Physical（物理的：在時空中有位置）與 Abstract（抽象的：像集合、關係這類數學物件，不在特定的時間地點）。Physical 底下最主要的是 Object（物件）和 Process（過程），另有 Collection、PhysicalSystem 等（早期版本把 Physical 嚴格切成這兩類，目前這條公理已被註解掉）。SUMO 對 Process 的說明是「會發生、有時間上的部分或階段的東西」，例如一場球賽或一次閱讀；這正是 §14 把料理階段當成子過程的依據。CORA 的開發者把 SUMO 解讀成持續論（endurantism）：物件在每個時刻都整個存在，有時間階段的是過程 <a class="cite" href="#r-Fiorini2015">Fiorini 2015</a>；不過 SUMO 自己的說明文字也寫了在四維（4D）觀點下，Object 和 Process 該怎麼理解。</p>
+      <p>Abstract 底下有 Attribute（性質，例如顏色、熟度）、Quantity（數量）、Relation（關係）、SetOrClass（集合或類別）、Proposition（命題）等。連 subclass 這個關係本身，也是 Relation 底下的一個個體，所以 SUMO 可以寫「關於關係的公理」，例如一次定義所有遞移關係的共同性質。</p>
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 500" role="img" aria-labelledby="S3-t S3-d">
+<title id="S3-t">SUMO 最上面幾層，以及 Frying 的兩條路</title>
+<desc id="S3-d">Entity 分成 Physical 和 Abstract；Physical 底下有 Object 和 Process（另有 Collection 等）；Abstract 底下有 Attribute、Quantity、Relation、SetOrClass、Proposition、List。往下畫出和料理有關的分支：Food、PreparedFood、CookedDish；Device、Holder、Container、PotOrPan；IntentionalProcess、Making、Cooking；InternalChange、QuantityChange、Increasing、Heating。Frying 同時在 Cooking 和 Heating 之下，兩條路在這裡會合。</desc>
+<defs><marker id="mS3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nS3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<defs><marker id="oS3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d95f2b"/></marker></defs>
+<rect x="417.8" y="16" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="450" y="34" text-anchor="middle" class="val">Entity</text>
+<rect x="210.4" y="72" width="79.2" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="250" y="90" text-anchor="middle" class="val">Physical</text>
+<rect x="660.4" y="72" width="79.2" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="700" y="90" text-anchor="middle" class="val">Abstract</text>
+<line x1="250" y1="71" x2="450" y2="47" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="700" y1="71" x2="450" y2="47" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="107.8" y="128" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="140" y="146" text-anchor="middle" class="val">Object</text>
+<rect x="364.1" y="128" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="400" y="146" text-anchor="middle" class="val">Process</text>
+<line x1="140" y1="127" x2="250" y2="103" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="400" y1="127" x2="250" y2="103" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<text x="298" y="92" text-anchor="start" class="tk2">（另有 Collection 等）</text>
+<rect x="560" y="128" width="320" height="46" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="720" y="147" text-anchor="middle" class="val">Attribute · Quantity · Relation</text>
+<text x="720" y="165" text-anchor="middle" class="val">SetOrClass · Proposition · List</text>
+<line x1="720" y1="127" x2="700" y2="103" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="19.700000000000003" y="184" width="160.6" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="100" y="202" text-anchor="middle" class="val">SelfConnectedObject</text>
+<rect x="210.4" y="184" width="79.2" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="250" y="202" text-anchor="middle" class="val">Artifact</text>
+<rect x="303.4" y="184" width="153.20000000000002" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="380" y="202" text-anchor="middle" class="val">IntentionalProcess</text>
+<rect x="478.2" y="184" width="123.60000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="540" y="202" text-anchor="middle" class="val">InternalChange</text>
+<line x1="100" y1="183" x2="140" y2="159" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="250" y1="183" x2="140" y2="159" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="380" y1="183" x2="400" y2="159" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="540" y1="183" x2="400" y2="159" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="75.2" y="240" width="49.6" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="100" y="258" text-anchor="middle" class="val">Food</text>
+<rect x="217.8" y="240" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="250" y="258" text-anchor="middle" class="val">Device</text>
+<rect x="347.8" y="240" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="380" y="258" text-anchor="middle" class="val">Making</text>
+<rect x="478.2" y="240" width="123.60000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="540" y="258" text-anchor="middle" class="val">QuantityChange</text>
+<line x1="100" y1="239" x2="100" y2="215" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="250" y1="239" x2="250" y2="215" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="380" y1="239" x2="380" y2="215" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="540" y1="239" x2="540" y2="215" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="45.599999999999994" y="296" width="108.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="100" y="314" text-anchor="middle" class="val">PreparedFood</text>
+<rect x="217.8" y="296" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="250" y="314" text-anchor="middle" class="val">Holder</text>
+<rect x="344.1" y="296" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="380" y="314" text-anchor="middle" class="val">Cooking</text>
+<rect x="493.0" y="296" width="94.0" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="540" y="314" text-anchor="middle" class="val">Increasing</text>
+<line x1="100" y1="295" x2="100" y2="271" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="250" y1="295" x2="250" y2="271" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="380" y1="295" x2="380" y2="271" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="540" y1="295" x2="540" y2="271" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="53.0" y="352" width="94.0" height="28" rx="6" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="100" y="370" text-anchor="middle" class="val">CookedDish</text>
+<rect x="206.7" y="352" width="86.60000000000001" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="250" y="370" text-anchor="middle" class="val">Container</text>
+<rect x="504.1" y="352" width="71.80000000000001" height="28" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="540" y="370" text-anchor="middle" class="val">Heating</text>
+<line x1="100" y1="351" x2="100" y2="327" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="250" y1="351" x2="250" y2="327" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="540" y1="351" x2="540" y2="327" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<rect x="210.4" y="408" width="79.2" height="28" rx="6" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="250" y="426" text-anchor="middle" class="val">PotOrPan</text>
+<rect x="427.8" y="408" width="64.4" height="28" rx="6" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="460" y="426" text-anchor="middle" class="val">Frying</text>
+<line x1="250" y1="407" x2="250" y2="383" stroke="#8b949e" stroke-width="1.3" marker-end="url(#mS3)"/>
+<line x1="442" y1="407" x2="380" y2="327" stroke="#d95f2b" stroke-width="2" marker-end="url(#oS3)"/>
+<line x1="478" y1="407" x2="540" y2="383" stroke="#d95f2b" stroke-width="2" marker-end="url(#oS3)"/>
+<rect x="620" y="196" width="260" height="236" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="636" y="222" text-anchor="start" class="hd">橘線：兩條路在 Frying 會合</text>
+<text x="636" y="250" text-anchor="start" class="sm">Cooking 的定義是「做出食物」，</text><text x="636" y="270" text-anchor="start" class="sm">SUMO 明說不一定要加熱，</text><text x="636" y="290" text-anchor="start" class="sm">做沙拉、切水果也算。</text><text x="636" y="310" text-anchor="start" class="sm">所以 Frying 要另外掛在 Heating</text><text x="636" y="330" text-anchor="start" class="sm">下面，推理器才知道它會加熱。</text><text x="636" y="350" text-anchor="start" class="sm"></text><text x="636" y="370" text-anchor="start" class="sm">PreparedFood 同時也是</text><text x="636" y="390" text-anchor="start" class="sm">Mixture（混合物）的一種，</text><text x="636" y="410" text-anchor="start" class="sm">圖中省略。</text>
+<rect x="20" y="466" width="24" height="14" rx="3" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="52" y="477" text-anchor="start" class="ann2">Merge.kif（SUMO 上層）</text>
+<rect x="270" y="466" width="24" height="14" rx="3" fill="#1c2330" stroke="#d2a8ff" stroke-width="1.5"/>
+<text x="302" y="477" text-anchor="start" class="ann2">Mid-level-ontology.kif（MILO）</text>
+<rect x="520" y="466" width="24" height="14" rx="3" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="552" y="477" text-anchor="start" class="ann2">Food.kif（領域檔）</text>
+<text x="780" y="477" text-anchor="middle" class="ann2">箭頭：子類別 → 父類別</text>
+</svg>
+        </div>
+        <figcaption><b>圖 S-3</b>本站依 Merge.kif、Mid-level-ontology.kif、Food.kif 繪製，只畫和料理有關的分支（Object 下另有 AutonomousAgent、Region 等，Process 下另有 Motion 等）。Making 另外經 Creation 接到 InternalChange，圖中省略。橘線標出 Frying 往上的兩條路；框色：灰＝Merge.kif，紫＝MILO，藍＝Food.kif。</figcaption>
+      </figure>
+      <p>這張圖解釋了圖 A-1 為什麼需要多重繼承：SUMO 的 Cooking 定義是「做出食物」，說明文字明講不一定要加熱，做沙拉、切水果也算。所以 Frying 必須同時掛在 Heating 下面，推理器才知道它會加熱。換句話說，<strong>SUMO 的類別名稱和日常用語不一定同義，用之前要讀它的說明文字</strong>。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>SUO-KIF：一條公理怎麼讀<span class="xs">圖 S-4</span></summary>
+    <div class="inner">
+      <p>SUMO 用 SUO-KIF 寫成，這是知識交換格式 KIF 的簡化版。寫法像 Lisp：每個括號裡是「關係名稱＋參數」，問號開頭的是變數，<code>=&gt;</code> 是「如果…就…」，<code>exists</code> 是「存在」。公理裡沒有寫量詞的變數，一律當成「對所有」。</p>
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 420" role="img" aria-labelledby="S4-t S4-d">
+<title id="S4-t">怎麼讀一條 SUO-KIF 公理</title>
+<desc id="S4-d">三個例子。第一，subclass Frying Cooking 與 subclass Frying Heating：炒是一種烹調，也是一種加熱，OWL 寫得出來。第二，每一次 Frying 都有一份油（Oil）是它用到的資源；OWL 可寫成 Frying ⊑ ∃resource.Oil。第三，子過程發生的時段落在整個過程的時段之內，用到 WhenFn 這個函數，OWL 沒有直接寫法。</desc>
+<defs><marker id="mS4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nS4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<text x="20" y="24" text-anchor="start" class="lab">SUO-KIF 原文</text>
+<text x="440" y="24" text-anchor="start" class="lab">白話</text>
+<text x="720" y="24" text-anchor="start" class="lab">OWL 寫得出來嗎？</text>
+<rect x="20" y="36" width="400" height="64" rx="8" fill="#0d1117" stroke="#30363d" stroke-width="1.6"/>
+<text x="410" y="54" text-anchor="end" class="tk2">Food.kif</text>
+<text x="34" y="58" class="val">(subclass Frying Cooking)</text>
+<text x="34" y="76" class="val">(subclass Frying Heating)</text>
+<rect x="440" y="36" width="260" height="64" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="454" y="58" class="sm">Frying 是一種烹調，</text>
+<text x="454" y="76" class="sm">也是一種加熱。</text>
+<rect x="720" y="36" width="160" height="64" rx="8" fill="#161b22" stroke="#7ee787" stroke-width="1.6"/>
+<text x="734" y="58" text-anchor="start" class="sm" style="fill:#7ee787">✓ 可以</text>
+<text x="734" y="78" text-anchor="start" class="val">SubClassOf</text>
+<rect x="20" y="114" width="400" height="132" rx="8" fill="#0d1117" stroke="#30363d" stroke-width="1.6"/>
+<text x="410" y="132" text-anchor="end" class="tk2">Food.kif</text>
+<text x="34" y="136" class="val">(<tspan style="fill:#ffa657">=&gt;</tspan></text>
+<text x="48" y="154" class="val">(instance <tspan style="fill:#79c0ff">?F</tspan> Frying)</text>
+<text x="48" y="172" class="val">(<tspan style="fill:#ffa657">exists</tspan> (<tspan style="fill:#79c0ff">?O</tspan>)</text>
+<text x="63" y="190" class="val">(<tspan style="fill:#ffa657">and</tspan></text>
+<text x="77" y="208" class="val">(instance <tspan style="fill:#79c0ff">?O</tspan> Oil)</text>
+<text x="77" y="226" class="val">(resource <tspan style="fill:#79c0ff">?F</tspan> <tspan style="fill:#79c0ff">?O</tspan>))))</text>
+<rect x="440" y="114" width="260" height="132" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="454" y="136" class="sm">每一次 Frying（<tspan style="fill:#79c0ff">?F</tspan>），</text>
+<text x="454" y="154" class="sm">都存在一份油（<tspan style="fill:#79c0ff">?O</tspan>），</text>
+<text x="454" y="172" class="sm">是這次 Frying 用到的資源。</text>
+<text x="454" y="190" class="sm"></text>
+<text x="454" y="208" class="sm">=&gt; 讀作「如果…就…」，</text>
+<text x="454" y="226" class="sm">exists 讀作「存在」。</text>
+<rect x="720" y="114" width="160" height="132" rx="8" fill="#161b22" stroke="#7ee787" stroke-width="1.6"/>
+<text x="734" y="136" text-anchor="start" class="sm" style="fill:#7ee787">✓ 可以</text>
+<text x="734" y="156" text-anchor="start" class="val">Frying ⊑</text><text x="734" y="174" text-anchor="start" class="val">∃resource.Oil</text>
+<rect x="20" y="260" width="400" height="118" rx="8" fill="#0d1117" stroke="#30363d" stroke-width="1.6"/>
+<text x="410" y="278" text-anchor="end" class="tk2">Merge.kif</text>
+<text x="34" y="282" class="val">(<tspan style="fill:#ffa657">=&gt;</tspan></text>
+<text x="48" y="300" class="val">(subProcess <tspan style="fill:#79c0ff">?SUBPROC</tspan> <tspan style="fill:#79c0ff">?PROC</tspan>)</text>
+<text x="48" y="318" class="val">(temporalPart</text>
+<text x="63" y="336" class="val">(WhenFn <tspan style="fill:#79c0ff">?SUBPROC</tspan>)</text>
+<text x="63" y="354" class="val">(WhenFn <tspan style="fill:#79c0ff">?PROC</tspan>)))</text>
+<rect x="440" y="260" width="260" height="118" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="454" y="282" class="sm">如果 A 是 B 的子過程，</text>
+<text x="454" y="300" class="sm">A 發生的時段就落在</text>
+<text x="454" y="318" class="sm">B 的時段之內。</text>
+<text x="454" y="336" class="sm"></text>
+<text x="454" y="354" class="sm">只保證「在裡面」，不保證</text>
+<text x="454" y="372" class="sm">各階段的先後（§14）。</text>
+<rect x="720" y="260" width="160" height="118" rx="8" fill="#161b22" stroke="#ff7b72" stroke-width="1.6"/>
+<text x="734" y="282" text-anchor="start" class="sm" style="fill:#ff7b72">✗ 不能照抄</text>
+<text x="734" y="302" text-anchor="start" class="sm">WhenFn 是函數，</text><text x="734" y="320" text-anchor="start" class="sm">OWL 沒有函數；</text><text x="734" y="338" text-anchor="start" class="sm">要先改成屬性，</text><text x="734" y="356" text-anchor="start" class="sm">再用屬性鏈改寫</text>
+<text x="20" y="400" text-anchor="start" class="ann2">藍色是變數（問號開頭），橘色是邏輯符號（連接詞與量詞）。出處：SUMO 原始檔 2026-11-02 版本（Merge.kif © IEEE；Food.kif 為 GPL）。</text>
+</svg>
+        </div>
+        <figcaption><b>圖 S-4</b>本站從 SUMO 原始檔摘錄三組公理並逐句解釋。前兩組 OWL 寫得出來（第二組要自己改寫成 Frying ⊑ ∃resource.Oil）；第三組用到函數 WhenFn（「某過程發生的時段」），OWL 沒有函數，只能繞道：先把 WhenFn 改成一個屬性，再用屬性鏈改寫。注意 Sigma 的官方 OWL 匯出只翻 subclass 這類簡單陳述，所有 =&gt; 規則（包括第二、三組）都只留成註解。</figcaption>
+      </figure>
+      <p>SUO-KIF 能表達的比 OWL 多：三個以上參數的關係、函數（這兩種仍在一階邏輯之內，只是 OWL 不支援），還可以把一整句話當成參數，例如 <code>holdsDuring</code>（某句話在某段時間成立）、<code>believes</code>（某人相信某句話），以及「應該」「允許」這類規範語氣。最後這一類超出一階邏輯，SUMO 的作者稱之為高階的部分 <a class="cite" href="#r-Benzmuller2012">Benzmüller &amp; Pease 2012</a>。代價是推理比較難：在 2023 年的一階邏輯匯出檔（SUMO.tptp）裡，來自 Merge.kif 的 4,146 條公式中有 190 條因為是高階而沒有轉換；轉成 OWL 則只能保留一部分，官方 OWL 版停在 2010 年，自稱是暫定、會遺失內容的版本，以 KIF 為準。</p>
+      <p>和 §2 呼應的一點：一階邏輯本身不假設封閉世界，查不到不代表是假。SUMO 近年新增了 <code>ClosedWorldPredicate</code> 這個類別，用來標出「查不到就當成假」的謂詞；目前 Merge.kif 只標了 subclass 一個，推理工具的支援也還在早期。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>和自然語言接起來：WordNet 與中文<span class="xs">圖 S-5</span></summary>
+    <div class="inner">
+      <p>官方說 SUMO 是唯一和整個 WordNet（英文詞彙資料庫）對應過的形式本體論。Niles 和 Pease 在 2002 年底把 WordNet 1.6 的每個詞義都連到至少一個 SUMO 詞 <a class="cite" href="#r-NilesPease2003">Niles &amp; Pease 2003</a>，後來改到 WordNet 3.0（目前的 3.0 對應檔裡，名詞和動詞全部有對應，另有約 1,700 個形容詞、副詞詞義還沒對應）。連法有三種：<code>=</code> 等同、<code>+</code> SUMO 的詞比較廣、<code>@</code> 這個詞義指的是 SUMO 類別的一個個體；另有 <code>:</code>、<code>[</code>、<code>]</code> 表示對到該詞的補集。</p>
+      <figure class="dark">
+        <div class="svgwrap">
+<svg viewBox="0 0 900 372" role="img" aria-labelledby="S5-t S5-d">
+<title id="S5-t">從詞到 SUMO：經過 WordNet 的詞義</title>
+<desc id="S5-d">中研院的中文詞彙網路（CWN）把「炒」對到 WordNet 的 stir_fry 詞義，SUMO 把它歸在 Frying 之下（+）。英文 fry 的主要詞義 cook on a hot surface using fat 等同 Frying（=）。cook 與簡體開放詞網的「烹调」對到 prepare for eating by applying heat，歸在 Cooking 之下（+）。fry 的另一個詞義 kill by electrocution 則歸在 Killing 之下，提醒查詢前要選對詞義。</desc>
+<defs><marker id="mS5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs><defs><marker id="nS5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3987e5"/></marker></defs>
+<text x="20" y="24" text-anchor="start" class="lab">詞（來源）</text>
+<text x="230" y="24" text-anchor="start" class="lab">WordNet 3.0 的詞義（編號、英文說明）</text>
+<text x="700" y="24" text-anchor="start" class="lab">SUMO 的詞</text>
+<rect x="20" y="40" width="180" height="56" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="34" y="64" text-anchor="start" class="sm">炒</text>
+<text x="34" y="84" text-anchor="start" class="tk2">中研院中文詞彙網路 CWN</text>
+<rect x="230" y="40" width="400" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="244" y="64" text-anchor="start" class="val">00326459-v  stir_fry</text>
+<text x="244" y="84" text-anchor="start" class="tk2">fry very quickly over high heat</text>
+<line x1="202" y1="68" x2="226" y2="68" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<rect x="20" y="112" width="180" height="56" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="34" y="136" text-anchor="start" class="sm">fry</text>
+<text x="34" y="156" text-anchor="start" class="tk2">英文，主要詞義</text>
+<rect x="230" y="112" width="400" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="244" y="136" text-anchor="start" class="val">00325328-v  fry</text>
+<text x="244" y="156" text-anchor="start" class="tk2">cook on a hot surface using fat</text>
+<line x1="202" y1="140" x2="226" y2="140" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<rect x="20" y="184" width="180" height="56" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="34" y="208" text-anchor="start" class="sm">cook ／ 烹调</text>
+<text x="34" y="228" text-anchor="start" class="tk2">英文／簡體開放詞網 COW</text>
+<rect x="230" y="184" width="400" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="244" y="208" text-anchor="start" class="val">01664172-v  cook</text>
+<text x="244" y="228" text-anchor="start" class="tk2">prepare for eating by applying heat</text>
+<line x1="202" y1="212" x2="226" y2="212" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<rect x="20" y="256" width="180" height="56" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="34" y="280" text-anchor="start" class="sm">fry</text>
+<text x="34" y="300" text-anchor="start" class="tk2">英文，另一個詞義</text>
+<rect x="230" y="256" width="400" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="244" y="280" text-anchor="start" class="val">02484957-v  fry</text>
+<text x="244" y="300" text-anchor="start" class="tk2">kill by electrocution</text>
+<line x1="202" y1="284" x2="226" y2="284" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<rect x="700" y="40" width="180" height="128" rx="6" fill="#1c2330" stroke="#3987e5" stroke-width="1.5"/>
+<text x="790" y="108" text-anchor="middle" class="val">Frying</text>
+<rect x="700" y="184" width="180" height="56" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="790" y="216" text-anchor="middle" class="val">Cooking</text>
+<rect x="700" y="256" width="180" height="56" rx="6" fill="#1c2330" stroke="#8b949e" stroke-width="1.5"/>
+<text x="790" y="288" text-anchor="middle" class="val">Killing</text>
+<path d="M632,68 L668,68 L696,92" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<text x="650" y="62" text-anchor="middle" class="big">+</text>
+<path d="M632,140 L668,140 L696,128" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<text x="650" y="134" text-anchor="middle" class="big">=</text>
+<path d="M632,212 L668,212 L696,212" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<text x="650" y="206" text-anchor="middle" class="big">+</text>
+<path d="M632,284 L668,284 L696,284" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#mS5)"/>
+<text x="650" y="278" text-anchor="middle" class="big">+</text>
+<text x="20" y="340" text-anchor="start" class="ann2">= 等同　　+ SUMO 的詞比較廣，這個詞義屬於它　　@ 這個詞義指的是 SUMO 類別的一個個體（圖中未出現）</text>
+<text x="20" y="360" text-anchor="start" class="ann2">另有 :、[、] 表示「對到該詞的補集」。最下一列：同一個字的不同詞義，會接到完全不同的 SUMO 詞。</text>
+</svg>
+        </div>
+        <figcaption><b>圖 S-5</b>本站依 SUMO 的 WordNet 3.0 對應檔，以及 Open Multilingual Wordnet 收錄的中文詞網資料繪製 <a class="cite" href="#r-BondFoster2013">Bond &amp; Foster 2013</a>。台灣中央研究院的中文詞彙網路（CWN）把「炒」對到 stir_fry 這個詞義，SUMO 再把它歸在 Frying 之下；簡體的開放詞網（COW）則把「烹调」對到 cook。兩者都靠同一套 WordNet 詞義編號接上 SUMO。框色同圖 S-3：藍＝Food.kif，灰＝Merge.kif。</figcaption>
+      </figure>
+      <p>對應本身是近似的。WordNet 的名詞 cooking（00243918-n，圖中沒畫）說明寫著「用加熱的方式準備食物」，卻用 <code>=</code> 對到 SUMO 的 Cooking，而後者明說不一定加熱；圖中的動詞 cook 用的則是 <code>+</code>。</p>
+      <p>SUMO 也有中文名稱，寫在 termFormat 陳述裡：本站以 2026-11-02 版本粗算，約 9,900 個詞有繁體標籤、約 8,800 個有簡體標籤，多數在 domainEnglishFormat.kif。但覆蓋不完整，也有標錯的情況：Cooking 只有簡體的「烹饪」，Frying 沒有任何中文標籤；有些標成繁體的字串其實是簡體字，例如 Hallway 同時被標上「门厅」和「門廳」。要給台灣團隊用，最穩當的做法是在自己的檔案裡補上繁體中文（ChineseTraditionalLanguage）標籤。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>和 DOLCE、BFO 比一比</summary>
+    <div class="inner">
+      <div class="tablewrap"><table>
+        <thead><tr><th></th><th>SUMO</th><th>DOLCE</th><th>BFO</th></tr></thead>
+        <tbody>
+          <tr><td>出發點</td><td>實用、大而全，合併既有的公開內容</td><td>描述性：捕捉語言和常識背後的範疇 <a class="cite" href="#r-Borgo2022">Borgo 2022</a></td><td>實在論：表示科學所描述的實在 <a class="cite" href="#r-SmithCeusters2010">Smith &amp; Ceusters 2010</a></td></tr>
+          <tr><td>描述的對象</td><td>個體（殊相）和類別（共相）都有，還有屬性與關係的階層</td><td>作者自稱「殊相的本體論」</td><td>共相和殊相都有</td></tr>
+          <tr><td>規模（2006–07 年的比較）</td><td>上層約 1,000 個詞、4,000 條公理；加上領域檔約 20,000 個詞、60,000 條公理</td><td>約 100 個詞</td><td>BFO 1.0 只有 36 個類別</td></tr>
+          <tr><td>語言</td><td>SUO-KIF（另有不完整的 OWL 版）</td><td>一階邏輯、KIF、OWL（ISO 版附 OWL 2 與 Common Logic）</td><td>OWL（ISO 版附 OWL 2 與 Common Logic）</td></tr>
+          <tr><td>和 WordNet 的對應</td><td>全部詞義</td><td>DOLCE-Lite-Plus 約 100 個詞義</td><td>無</td></tr>
+          <tr><td>國際標準</td><td>無（IEEE 工作組起始稿，未成標準）</td><td>ISO/IEC 21838-3:2023</td><td>ISO/IEC 21838-2:2021</td></tr>
+          <tr><td>在機器人領域</td><td>IEEE 1872-2015（CORA）以它為基礎</td><td>DOLCE 本身被自適應製造代理採用；簡化版 DUL 被 KnowRob、OCRA、FailRecOnt 採用（原文表 6）</td><td>主要用在生醫（OBO Foundry）</td></tr>
+        </tbody>
+      </table></div>
+      <p class="tk2">規模、語言（括號內 ISO 版的部分除外）、WordNet 對應三列出自 Mascardi 等人 2006–07 年的比較 <a class="cite" href="#r-Mascardi2006">Mascardi 2006</a>，之後各自都有更新；國際標準一列依 ISO 標準維護入口 <a class="cite" href="#r-ISO21838">ISO/IEC 21838</a>。</p>
+      <p>附帶一提：原文 §2.2 把 DOLCE 說成「共相的本體論」、只有類別沒有關係；但 DOLCE 的作者自稱「殊相的本體論」<a class="cite" href="#r-Mascardi2006">Mascardi 2006</a>，DOLCE 也定義了參與、部分–整體等關係。原文這裡應是誤引：同一段稍後又說 DOLCE 的基本分類是「殊相」的分類，前後矛盾（已列入 §16）。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>SUMO 和這篇論文、和機器人</summary>
+    <div class="inner">
+      <p><strong>CORA 為什麼選 SUMO。</strong>CORA 的開發者說，他們評估後選 SUMO 當上層，理由是它和 IEEE 工作組有淵源（他們寫成「由 IEEE 工作組開發」，其實是 Teknowledge 做好、提給工作組的起始稿，見上方〈來歷〉）、彈性夠，而且已經有代理人、裝置、代理人群體等概念；CORA 的每個概念都是某個 SUMO 概念的特化，例如機器人同時是 SUMO 的 Device 和 Agent <a class="cite" href="#r-Fiorini2015">Fiorini 2015</a>。他們也點出 SUMO 的不足：沒有好的「設計」和「物理環境」概念，性質與量測（attribute、measure）只能用在物理物件上，所以另外做了 CORAX 來補（新增設計、物理環境、互動等概念，以及 designAttribute、designMeasure）；SUMO 也不能把角色當成概念，這一點則在 CORA 裡改用 SUMO 的格位角色（case role）處理，把各種操作模式定義成 robotAgent 的子關係 <a class="cite" href="#r-Fiorini2015">Fiorini 2015</a>。</p>
+      <p><strong>論文作者的批評</strong>（上方紫框）是另一面：CORA 重新定義了許多 SUMO 已有的詞，又因為語言表達力低，只沿用了分類樹，沒有用到 SUMO 的公理。另外，CORA 的 OWL 檔附的是一份舊版 SUMO 快照，只有 38 個 SUMO 類別（檔中共 47 個類別，另 9 個是 OWL 版為了表示函數和多元關係自加的輔助類別），裡面的 Agent 在新版 SUMO 已改名 AutonomousAgent（§14 圖 I）。</p>
+      <p><strong>在這篇綜述裡的實際使用。</strong>20 個框架中沒有一個直接以 SUMO 為上層（原文表 6）：DUL 最常見（KnowRob、FailRecOnt、OCRA），CORA 只出現在汽車線束插銷；表 6 中用 OpenCyc 的是 ISRO。正文另說 KnowRob 早期用 Cyc、後改 DUL，ORO 以 OpenCyc 為基礎（表 6 沒列 ORO，見 §16）。SUMO 在機器人領域主要是透過 IEEE 1872 系列間接使用。</p>
+      <p><strong>另一個常被忽略的用途：測試推理器。</strong>SUMO 被翻成定理證明器的標準格式 TPTP，收進題庫的「常識推理」類，2008 年的定理證明競賽 CASC 就用它出過題。</p>
+    </div>
+  </details>
+
+  <details class="ex">
+    <summary>實際怎麼查、怎麼用<span class="xs">§14</span></summary>
+    <div class="inner">
+      <ol>
+        <li><strong>線上瀏覽</strong>：Sigma 是 SUMO 的編輯與推理工具 <a class="cite" href="#r-PeaseSchulz2014">Pease &amp; Schulz 2014</a>，它的公開瀏覽器（<a href="https://sigma.ontologyportal.org/sigma/Browse.jsp?kb=SUMO&amp;term=Frying">以 Frying 為例</a>）會列出一個詞的父類別、子類別和所有公理，還能把公理改寫成英文句子。網站有時會擋自動化工具，用一般瀏覽器開即可。原始檔在 <a href="https://github.com/ontologyportal/sumo">GitHub</a>。</li>
+        <li><strong>從中文找 SUMO 詞</strong>：先找對應的英文詞義（或透過中文詞網），再到 WordNet 對應檔查它連到哪個 SUMO 詞，最後讀那個詞的說明文字，確認意思和你想的一樣（像 Cooking 不一定加熱）。</li>
+        <li><strong>記下版本</strong>：SUMO 還在持續修改（例如 2026 年 9 月的兩次修正，把 Merge.kif 裡所有雙向的 <code>&lt;=&gt;</code> 改成只剩單向的 <code>=&gt;</code>，有些公理的反方向從此推不出來，例如 lessThanOrEqualTo；領域檔則還保留不少 <code>&lt;=&gt;</code>），引用時記下 GitHub 的 commit 編號。</li>
+        <li><strong>需要 OWL 時</strong>：官方 OWL 版停在 2010 年，沒有食物領域檔（查不到 Frying、CookedDish），名稱也是舊的（Agent，不是 AutonomousAgent），而且所有 <code>=&gt;</code> 規則都只留成註解。比較穩當的做法是從目前的 KIF 取出你需要的分類樹自己轉成 OWL，並記下 commit 編號；像圖 S-4 第二、三組這種公理，要自己改寫成 OWL 的限制或屬性鏈，或用規則實作。§14 的盛盤驗收則是另一回事：它要在封閉世界下檢查「沒有灑出」，所以用 SHACL、SPARQL 或程式（見 §2）。</li>
+        <li><strong>補自己的詞</strong>：在自己的檔案裡定義子類別（例如「翻炒 是一種 Frying」），並加上繁體中文標籤，不要改 SUMO 原檔，之後才能跟著官方版本更新。</li>
+      </ol>
+    </div>
+  </details>
 </section>
 
 <!-- ─────────── §4 ─────────── -->
@@ -1591,7 +2031,7 @@
   <h3>第一步：分清楚 CORA 管什麼、不管什麼</h3>
   <p>CORA 描述的是<strong>機器人這一側</strong>：什麼是機器人、零件、機器人系統、機器人環境，以及位置與方向（POS）。在社群維護的 IEEE1872-owl 移植版中，Robot 是 SUMO 的 Agent 的子類別，也是 Device 的子類別（標準的公理 7.1.1–7.1.2；這只是必要條件，不是完整定義）。§3 說 CORA 的主要概念之一是「機器人零件」；在形式化上，零件是一種<strong>角色</strong>：任何裝置只要透過 robotPart 關係接到機器人上，就是機器人零件，再由 RPARTS 指定它扮演感測、致動、通訊或處理哪一種角色，所以 OWL 檔裡沒有獨立的零件類別。另外，CORA 的 OWL 檔沿用舊版 SUMO 的名稱 Agent，目前的 SUMO 改稱 AutonomousAgent，同樣位於 Object 之下。</p>
   <p>CORA <strong>不描述</strong>食物、烹調過程、熟度這些「世界這一側」的東西。這部分可以找 SUMO 本身（Merge.kif）、它的中層本體論 MILO 和食物領域檔 Food.kif（本站直接查原始檔確認）：Cooking 是一種有意圖的製作過程（Making）；<strong>Frying（炒、炸）是 Cooking 的一種，同時也是 Heating</strong>；盛盤可以視為 Putting（一種 Transfer），下油是 Pouring；鍋是 PotOrPan（一種 Container），盤子是 Dish（一種 Holder）；炒飯可以對應 CookedDish（一種 PreparedFood）；熟度可以用 Food.kif 的 CookedAttribute／RawAttribute，顏色、油光這類質性特徵也是 Attribute。</p>
-  <p class="note">注意有兩個 SUMO：CORA 的 OWL 檔附帶的是一份約 50 個類別的舊版 SUMO 快照，裡面沒有 Cooking、Dish、Food；世界側用的是目前的 SUMO。實作時要記下兩邊各用哪個版本與命名空間，必要時寫對齊公理（例如舊版 Agent 對應新版 AutonomousAgent）。</p>
+  <p class="note">注意有兩個 SUMO：CORA 的 OWL 檔附帶的是一份只有 38 個 SUMO 類別的舊版 SUMO 快照，裡面沒有 Cooking、Dish、Food；世界側用的是目前的 SUMO。實作時要記下兩邊各用哪個版本與命名空間，必要時寫對齊公理（例如舊版 Agent 對應新版 AutonomousAgent）。</p>
 
   <figure class="dark">
     <div class="svgwrap">
@@ -1761,6 +2201,7 @@
     <li><strong>表 6 漏列 ORO 的上層本體論。</strong>正文說 ORO 以 OpenCyc 為基礎，但表 6 中 ORO 的上層本體論欄是「-」；表 6 標了 OpenCyc 的 ISRO，正文則完全沒提它的上層本體論。</li>
     <li><strong>PMK 的上層本體論寫錯版本。</strong>表 6 和原文 §5.1.2 說 PMK（2019 年發表）以 IEEE 1872.2 為基礎，但 1872.2 是 2021 年核准、2022 年發布的標準 <a class="cite" href="#r-IEEE2022">IEEE 1872.2</a>。PMK 原論文的全文說，它依 IEEE 1872 標準（CORA 等）建模，再加上自主機器人架構本體論 ROA <a class="cite" href="#r-Diab2019">Diab 2019</a>（本站讀 PMK 全文確認）。</li>
     <li><strong>兩條參考文獻的 DOI 有問題。</strong>IBM 2005 的自主運算藍圖白皮書，所附的 DOI 實際指向 White 等人 2004 年的另一篇會議論文〈An architectural approach to autonomic computing〉；ISRO（Chang 等 2020）所附的 DOI 在 Crossref 和 doi.org 都查不到（本站核對）。</li>
+    <li><strong>DOLCE 被說成「共相的本體論」。</strong>原文 §2.2 說 DOLCE 是「共相的本體論」，只有類別、沒有關係；但 DOLCE 的作者自稱「殊相（particulars）的本體論」，意思是描述個體而非共相 <a class="cite" href="#r-Mascardi2006">Mascardi 2006</a>，DOLCE 也定義了參與、部分–整體等關係 <a class="cite" href="#r-Borgo2022">Borgo 2022</a>。原文同一段稍後也寫「DOLCE 假設的最基本殊相類別」，自己前後不一致。</li>
     <li><strong>Prolog 的定位寫得不精確。</strong>原文說 Prolog 以一階邏輯的「可判定」子集為基礎，但 Prolog 用的 Horn 子句邏輯並不可判定，Prolog 本身是圖靈完備的；可判定性是描述邏輯（OWL 2 DL）的賣點。本頁 §2 的表格採用較精確的說法。</li>
   </ul>
 </section>
@@ -1801,7 +2242,7 @@
 <!-- ─────────── §18 ─────────── -->
 <section id="refs">
   <h2><span class="num">§18</span>參考文獻</h2>
-  <p class="sec-sub">本頁引用的 87 篇（多數取自原論文的參考文獻表；DOI 經 Crossref 核對）</p>
+  <p class="sec-sub">本頁引用的 96 篇（多數取自原論文的參考文獻表；DOI 經 Crossref 核對）</p>
 <ol class="refs">
 <li id="r-Aguado2021">Aguado E., Milosevic Z., Hernández C., Sanz R., Garzon M., Bozhinoski D., et al. (2021). Functional self-awareness and metacontrol for underwater robot autonomy. Sensors 21, 1210–1228. <a href="https://doi.org/10.3390/s21041210">doi</a></li>
 <li id="r-Aguado2024">Aguado E., Gómez V., Hernando M., Rossi C., Sanz R. (2024). “Category theory for autonomous robots: the marathon 2 use case,” in Robot 2023: sixth iberian robotics conference. Editors Marques L., Santos C., Lima J. L., Tardioli D., Ferre M. (Cham: Springer Nature Switzerland; ), 39–52.</li>
@@ -1818,10 +2259,13 @@
 <li id="r-Beetz2018">Beetz M., Beßler D., Haidu A., Pomarlan M., Bozcuoǧlu A. K., Bartels G. (2018). “Know rob 2.0 — a 2nd generation knowledge processing framework for cognition-enabled robotic agents,” in 2018 IEEE international conference on robotics and automation (ICRA), 512–519. <a href="https://doi.org/10.1109/ICRA.2018.8460964">doi</a></li>
 <li id="r-Beetz2025">Beetz M., Kazhoyan G., Vernon D. (2025). Robot manipulation in everyday activities with the CRAM 2.0 cognitive architecture and generalized action plans. Cogn. Syst. Res. 92, 101375. <a href="https://doi.org/10.1016/j.cogsys.2025.101375">doi</a></li>
 <li id="r-Beetz2026">Beetz M., Kümpel M. (2026). From frames to pouring: the CRAM cognitive architecture for everyday robot manipulation. KI – Künstliche Intelligenz. <a href="https://doi.org/10.1007/s13218-026-00917-z">doi</a></li>
+<li id="r-Benzmuller2012">Benzmüller C., Pease A. (2012). Higher-order aspects and context in SUMO. J. Web Semant. 12–13, 104–117. <a href="https://doi.org/10.1016/j.websem.2011.11.008">doi</a></li>
 <li id="r-BermejoAlonso2010">Bermejo-Alonso J., Sanz R., Rodríguez M., Hernández C. (2010). “An ontology–based approach for autonomous systems’ description and engineering,” in Knowledge-based and intelligent information and engineering systems. Editors Setchi R., Jordanov I., Howlett R. J., Jain L. C. (Berlin, Heidelberg: Springer Berlin Heidelberg; ), 522–531.</li>
 <li id="r-Bernardo2018">Bernardo R., Farinha R., Gonçalves P. J. S. (2018). “Knowledge and tasks representation for an industrial robotic application,” in Robot 2017: third iberian robotics conference. Editors Ollero A., Sanfeliu A., Montano L., Lau N., Cardeira C. (Cham: Springer International Publishing; ), 441–451.</li>
 <li id="r-Bessler2021">Beßler D., Porzel R., Pomarlan M., Vyas A., Höffner S., Beetz M., et al. (2021). “Foundations of the socio-physical model of activities (SOMA) for autonomous robotic agents,” in Formal ontology in information systems (IOS Press), 159–174.</li>
+<li id="r-BondFoster2013">Bond F., Foster R. (2013). Linking and extending an open multilingual Wordnet. Proc. 51st Annual Meeting of the ACL, 1352–1362. <a href="https://aclanthology.org/P13-1133/">連結</a></li>
 <li id="r-Borgo2019">Borgo S., Cesta A., Orlandini A., Umbrico A. (2019). Knowledge-based adaptive agents for manufacturing domains. Eng. Comput. 35, 755–779. <a href="https://doi.org/10.1007/s00366-018-0630-6">doi</a></li>
+<li id="r-Borgo2022">Borgo S., Ferrario R., Gangemi A., Guarino N., Masolo C., Porello D., et al. (2022). DOLCE: a descriptive ontology for linguistic and cognitive engineering. Appl. Ontol. 17, 45–69. <a href="https://doi.org/10.3233/AO-210259">doi</a></li>
 <li id="r-Bozhinoski2022">Bozhinoski D., Oviedo M. G., Garcia N. H., Deshpande H., van der Hoorn G., Tjerngren J., et al. (2022). MROS: runtime adaptation for robot control architectures. Adv. Robot. 36, 502–518. <a href="https://doi.org/10.1080/01691864.2022.2039761">doi</a></li>
 <li id="r-Brachman2002">Brachman R. (2002). Systems that know what they’re doing. IEEE Intell. Syst. 17, 67–71. <a href="https://doi.org/10.1109/MIS.2002.1134363">doi</a></li>
 <li id="r-Burroughes2016">Burroughes G., Gao Y. (2016). Ontology-based self-reconfiguring guidance, navigation, and control for planetary rovers. J. Aerosp. Inf. Syst. 13, 316–328. <a href="https://doi.org/10.2514/1.I010378">doi</a></li>
@@ -1832,6 +2276,7 @@
 <li id="r-Diab2019">Diab M., Akbari A., Ud Din M., Rosell J. (2019). PMK—a knowledge processing framework for autonomous robotics perception and manipulation. Sensors 19, 1166. <a href="https://doi.org/10.3390/s19051166">doi</a></li>
 <li id="r-Diab2020">Diab M., Pomarlan M., Beßler D., Akbari A., Rosell J., Bateman J., et al. (2020). “An ontology for failure interpretation in automated planning and execution,” in Robot 2019: fourth iberian robotics conference. Editors Silva M. F., Luís Lima J., Reis L. P., Sanfeliu A., Tardioli D. (Cham: Springer International Publishing; ), 381–390.</li>
 <li id="r-Diab2021">Diab M., Pomarlan M., Borgo S., Beßler D., Rosell J., Bateman J., et al. (2021). “FailRecOnt – An Ontology-Based Framework for Failure Interpretation and Recovery in Planning and Execution,” in Proceedings of the Joint Ontology Workshops co-located with the Bolzano Summer of Knowledge (BOSK 2021), Virtual &amp;amp; Bozen-Bolzano, Italy, September 13–17, 2021, CEUR-WS.org, 2021.</li>
+<li id="r-Fiorini2015">Fiorini S. R., Carbonera J. L., Gonçalves P., Jorge V. A. M., Rey V. F., Haidegger T., et al. (2015). Extensions to the core ontology for robotics and automation. Robot. Comput.-Integr. Manuf. 33, 3–11. <a href="https://doi.org/10.1016/j.rcim.2014.08.004">doi</a></li>
 <li id="r-Fiorini2017">Fiorini S. R., Bermejo-Alonso J., Gonçalves P., Pignaton de Freitas E., Olivares Alarcos A., Olszewska J. I., et al. (2017). A suite of ontologies for robotics and automation [industrial activities]. IEEE Robotics Automation Mag. 24, 8–11. <a href="https://doi.org/10.1109/MRA.2016.2645444">doi</a></li>
 <li id="r-Gangemi2002">Gangemi A., Guarino N., Masolo C., Oltramari A., Oltramari R., Schneider L. (2002). Sweetening ontologies with DOLCE. In Proceedings of the 13th European conference on knowledge engineering and knowledge management (EKAW), 166–181.</li>
 <li id="r-Gayathri2018">Gayathri R., Uma V. (2018). Ontology based knowledge representation technique, domain modeling languages and planners for robotic path planning: a survey. ICT Express 4, 69–74. <a href="https://doi.org/10.1016/j.icte.2018.04.008">doi</a></li>
@@ -1848,6 +2293,7 @@
 <li id="r-IEEE2022">Ieee S. A. (2022). “IEEE standard for autonomous robotics (AuR) ontology,” in Standard IEEE std 1872 (IEEE; ), 2–2021. <a href="https://doi.org/10.1109/IEEESTD.2022.9774339">doi</a></li>
 <li id="r-IEEEP1872">IEEE SA. P1872 – Draft Standard Ontologies for Robotics and Automation (PAR approved 2025-09-10; supersedes 1872-2015, now Inactive-Reserved). <a href="https://standards.ieee.org/ieee/1872/12250/">連結</a></li>
 <li id="r-IEEEP18723">IEEE SA. P1872.3 – Standard for Ontology Reasoning on Multiple Robots (active PAR; REMAR working group). <a href="https://standards.ieee.org/ieee/1872.3/12592/">連結</a></li>
+<li id="r-ISO21838">ISO/IEC 21838 Information technology — Top-level ontologies (TLO): Part 1 Requirements (2021); Part 2 BFO (2021); Part 3 DOLCE (2023); Part 4 TUpper (2023). ISO Standards Maintenance Portal. <a href="https://standards.iso.org/iso-iec/21838/">連結</a></li>
 <li id="r-Ji2012">Ji Z., Qiu R., Noyvirt A., Soroka A., Packianather M., Setchi R., et al. (2012). “Towards automated task planning for service robots using semantic knowledge representation,” in IEEE 10th international conference on industrial informatics, 1194–1201. <a href="https://doi.org/10.1109/INDIN.2012.6301131">doi</a></li>
 <li id="r-KnowRobV2">KnowRob v2.0.0 release (2024-09-20), GitHub knowrob/knowrob. <a href="https://github.com/knowrob/knowrob/releases">連結</a></li>
 <li id="r-Kumpel2025">Kümpel M. et al. (2025). Everything robots need to know about cooking actions: creating actionable knowledge graphs to support robotic meal preparation. Front. Robot. AI 12, 1682031. <a href="https://doi.org/10.3389/frobt.2025.1682031">doi</a></li>
@@ -1865,10 +2311,12 @@
 <li id="r-Molina2025">Molina V., Ruiz-Celada O., Suarez R., Rosell J., Zaplana I. (2025). Robot situation and task awareness using large language models and ontologies. DSN-W 2025, 96–103. <a href="https://doi.org/10.1109/dsn-w65791.2025.00045">doi</a></li>
 <li id="r-Musen2015">Musen M. A. (2015). The protégé project: a look back and a look forward. AI Matters 1, 4–12. <a href="https://doi.org/10.1145/2757001.2757003">doi</a></li>
 <li id="r-Nakajima2024">Nakajima R., Miura J. (2024). Combining ontological knowledge and large language model for user-friendly service robots. IROS 2024. <a href="https://doi.org/10.1109/iros58592.2024.10802273">doi</a></li>
+<li id="r-NilesPease2003">Niles I., Pease A. (2003). Linking lexicons and ontologies: mapping WordNet to the Suggested Upper Merged Ontology. Proc. IEEE Int. Conf. on Information and Knowledge Engineering (IKE 2003), 412–416. <a href="https://github.com/ontologyportal/sumo/tree/master/WordNetMappings">連結</a></li>
 <li id="r-Niles2001">Niles I., Pease A. (2001). “Toward a standard upper ontology,” in Proceedings of the 2nd international conference on formal ontology in information systems (FOIS-2001). Editors Welty C., Smith B., 2–9.</li>
 <li id="r-OlivaresAlarcos2019">Olivares-Alarcos A., Beßler D., Khamis A., Goncalves P., Habib M., Bermejo-Alonso J., et al. (2019). A review and comparison of ontology-based approaches to robot autonomy. Knowl. Eng. Rev. 34, e29. <a href="https://doi.org/10.1017/S0269888919000237">doi</a></li>
 <li id="r-OlivaresAlarcos2022">Olivares-Alarcos A., Foix S., Borgo S., Alenyà G. (2022). OCRA – an ontology for collaborative robotics and adaptation. Comput. Industry 138, 103627. <a href="https://doi.org/10.1016/j.compind.2022.103627">doi</a></li>
 <li id="r-OlivaresAlarcos2026">Olivares-Alarcos A. et al. (2026). Ontological foundations for contrastive explanatory narration of robot plans. Inf. Sci. 741, 123280. <a href="https://doi.org/10.1016/j.ins.2026.123280">doi</a></li>
+<li id="r-PeaseSchulz2014">Pease A., Schulz S. (2014). Knowledge engineering for large ontologies with Sigma KEE 3.0. IJCAR 2014, LNCS 8562, 519–525. <a href="https://doi.org/10.1007/978-3-319-08587-6_40">doi</a></li>
 <li id="r-Perzylo2015">Perzylo A., Somani N., Rickert M., Knoll A. (2015). “An ontology for cad data and geometric constraints as a link between product models and semantic robot task descriptions,” in 2015 IEEE/RSJ international conference on intelligent robots and systems (IROS), 4197–4203. <a href="https://doi.org/10.1109/IROS.2015.7353971">doi</a></li>
 <li id="r-Prestes2013">Prestes E., Carbonera J. L., Rama FioriniJorge S. M. V. A., Abel M., Madhavan R., et al. (2013). Towards a core ontology for robotics and automation. Robotics Aut. Syst. 61, 1193–1204. <a href="https://doi.org/10.1016/j.robot.2013.04.005">doi</a></li>
 <li id="r-RezendeSilva2025">Rezende Silva G., Päßler J., Tapia Tarifa S. L., Johnsen E. B., Hernández Corbato C. (2025). ROSA: a knowledge-based solution for robot self-adaptation. Front. Robot. AI 12, 1531743. <a href="https://doi.org/10.3389/frobt.2025.1531743">doi</a></li>
@@ -1878,9 +2326,11 @@
 <li id="r-Sanz2021">Sanz R., Bermejo J., Rodríguez M., Aguado E. (2021). The role of knowledge in cyber-physical systems of systems. TASK Q. 25, 355–373.</li>
 <li id="r-SEBoK2023">SEBoK Editorial Board (2023). The guide to the systems engineering body of knowledge (SEBoK), Available at: www.sebokwiki.org. (Accessed August 2023).</li>
 <li id="r-Shapiro2003">Shapiro S. C. (2003) Encyclopedia of cognitive science. Macmillan Publishers Ltd, 671–680. Knowledge Representation.</li>
+<li id="r-SmithCeusters2010">Smith B., Ceusters W. (2010). Ontological realism: a methodology for coordinated evolution of scientific ontologies. Appl. Ontol. 5, 139–188. <a href="https://doi.org/10.3233/AO-2010-0079">doi</a></li>
 <li id="r-Staab2009">Staab S., Studer R. (2009) Handbook on ontologies. 2nd edn. Incorporated: Springer Publishing Company.</li>
 <li id="r-Stenmark2015">Stenmark M., Malec J. (2015). Knowledge-based instruction of manipulation tasks for industrial robotics. Robotics Computer-Integrated Manuf. Special Issue Knowl. Driven Robotics Manuf. 33, 56–67. <a href="https://doi.org/10.1016/j.rcim.2014.07.004">doi</a></li>
 <li id="r-Suh2007">Suh I. H., Lim G. H., Hwang W., Suh H., Choi J.-H., Park Y.-T. (2007). “Ontology-based multi-layered robot knowledge framework (omrkf) for robot intelligence,” in 2007 IEEE/RSJ international conference on intelligent robots and systems, 429–436. <a href="https://doi.org/10.1109/IROS.2007.4399082">doi</a></li>
+<li id="r-SUMOrepo">Pease A., et al. Suggested Upper Merged Ontology (SUMO), GitHub repository ontologyportal/sumo (version of 2026-10-30, commit 8bb7a9c). <a href="https://github.com/ontologyportal/sumo">連結</a></li>
 <li id="r-Sun2019b">Sun X., Zhang Y., Chen J. (2019b). RTPO: a domain knowledge base for robot task planning. Electronics 8, 1105. <a href="https://doi.org/10.3390/electronics8101105">doi</a></li>
 <li id="r-Sun2019a">Sun X., Zhang Y., Chen J. (2019a). High-level smart decision making of a robot based on ontology in a search and rescue scenario. Future Internet 11, 230. <a href="https://doi.org/10.3390/fi11110230">doi</a></li>
 <li id="r-Tenorth2009">Tenorth M., Beetz M. (2009). Knowrob — knowledge processing for autonomous personal robots. in 2009 IEEE/RSJ international conference on intelligent robots and systems, 4261–4266. <a href="https://doi.org/10.1109/IROS.2009.5354602">doi</a></li>
