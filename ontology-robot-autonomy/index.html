@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機器人怎麼「知道」自己在做什麼？本體論與可靠的自主機器人 — Front. Robot. AI 2024 綜述中文圖解</title>
+<meta name="description" content="Aguado 等（Frontiers in Robotics and AI 2024）系統性綜述的繁中圖解：什麼是本體論、Prolog 與 OWL 的封閉／開放世界、從上層到應用的本體論家族、自主機器人的八種能力，以及 20 個用本體論做操作、導航、社交、工業任務的框架逐一解說。附 20×8 能力矩陣、應變模式比較、查證筆記與 2024 年後的發展。">
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2330; --line:#30363d;
+    --fg:#e6edf3; --muted:#8b949e; --dim:#6e7681;
+    --accent:#ffa657; --accent-deep:#bd561d; --green:#7ee787; --blue:#79c0ff;
+    --orange:#ffa657; --red:#ff7b72; --purple:#d2a8ff;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC','PingFang TC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.75;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{background:linear-gradient(160deg,#161b22,#0d1117 65%);border-bottom:1px solid var(--line);padding:60px 0 44px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 78% -12%,rgba(126,231,135,.10),transparent);pointer-events:none}
+  .eyebrow{font-family:var(--mono);color:var(--accent);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+  h1{font-size:clamp(28px,5.4vw,44px);line-height:1.18;font-weight:800;letter-spacing:-.02em}
+  .subtitle{margin-top:14px;font-size:17px;color:var(--muted);max-width:720px}
+  .meta{margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:2}
+
+  main{padding:44px 0 90px}
+  section{margin-bottom:64px;scroll-margin-top:16px}
+  h2{font-size:25px;font-weight:750;letter-spacing:-.01em;margin-bottom:6px;padding-top:8px}
+  h2 .num{font-family:var(--mono);color:var(--accent);font-size:15px;vertical-align:middle;margin-right:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 10px;color:#fff}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px;font-family:var(--mono)}
+  p{margin-bottom:14px}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  ul,ol{margin:0 0 16px 24px}
+  li{margin-bottom:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--green)}
+  .note{font-size:13px;color:var(--dim);margin-top:-14px}
+
+  figure{margin:26px 0 30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{display:block;width:100%;height:auto}
+  figure.dark{background:var(--bg2)}
+  figure.dark svg{display:block;width:100%;height:auto;padding:10px 6px 4px}
+  .svgwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:640px){.svgwrap svg{min-width:640px}}
+  figcaption{background:var(--bg2);border-top:1px solid var(--line);padding:12px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  figcaption b{color:var(--accent);font-family:var(--mono);font-weight:600;margin-right:6px}
+  figure.dark figcaption b{color:var(--green)}
+
+  svg .tk{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .tk2{fill:#6e7681;font-family:var(--mono);font-size:11px}
+  svg .lab{fill:#c9d1d9;font-family:var(--sans);font-size:13px}
+  svg .val{fill:#c9d1d9;font-family:var(--mono);font-size:12px}
+  svg .ret{fill:#e6edf3;font-family:var(--mono);font-size:13px;font-weight:700}
+  svg .ann{fill:#79c0ff;font-family:var(--sans);font-size:13px}
+  svg .ann2{fill:#8b949e;font-family:var(--mono);font-size:12px}
+  svg .hd{fill:#e6edf3;font-family:var(--sans);font-size:14px;font-weight:700}
+  svg .row{fill:#e6edf3;font-family:var(--sans);font-size:15px;font-weight:700}
+  svg .sm{fill:#c9d1d9;font-family:var(--sans);font-size:12.5px}
+  svg .big{fill:#e6edf3;font-family:var(--mono);font-size:22px;font-weight:700}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:26px 0}
+  .kcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 18px 15px;position:relative;overflow:hidden}
+  .kcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-deep))}
+  .kcard.c1::before{background:linear-gradient(90deg,var(--green),#1f6e37)}
+  .kcard.c2::before{background:linear-gradient(90deg,var(--orange),#bd561d)}
+  .kcard.c3::before{background:linear-gradient(90deg,var(--red),#8e2a30)}
+  .kcard .big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);line-height:1.15}
+  .kcard .big small{font-size:14px;color:var(--dim);font-weight:400}
+  .kcard.c1 .big{color:var(--green)}
+  .kcard.c2 .big{color:var(--orange)}
+  .kcard.c3 .big{color:var(--red)}
+  .kcard .lbl{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent-deep);background:var(--bg2);border-radius:0 10px 10px 0;padding:16px 20px;margin:22px 0;font-size:15px}
+  .callout.green{border-left-color:var(--green)}
+  .callout.red{border-left-color:var(--red)}
+  .callout.purple{border-left-color:var(--purple)}
+  .callout.blue{border-left-color:var(--blue)}
+  .callout .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+  .callout.green .tag{color:var(--green)}
+  .callout.red .tag{color:var(--red)}
+  .callout.purple .tag{color:var(--purple)}
+  .callout.blue .tag{color:var(--blue)}
+
+  .tablewrap{overflow-x:auto;margin:22px 0;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  th{background:var(--bg3);font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;font-weight:600;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td.best{color:var(--green);font-weight:700}
+  td.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  td.up{color:var(--green)}
+  td.down{color:var(--red)}
+  tr.hl td{background:rgba(126,231,135,.06)}
+  table.tight th,table.tight td{padding:6px 8px;font-size:12px}
+
+  details{border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin:22px 0}
+  details summary{cursor:pointer;padding:12px 16px;font-size:14.5px;color:var(--fg);font-weight:600;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸";color:var(--accent);margin-right:8px;display:inline-block;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  details .inner{padding:0 14px 14px}
+  details .tablewrap{margin:6px 0 0}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--fg)}
+  th.sortable[aria-sort]::after{content:" ↕";color:var(--dim)}
+  th.sortable[aria-sort="descending"]::after{content:" ↓";color:var(--accent)}
+  th.sortable[aria-sort="ascending"]::after{content:" ↑";color:var(--accent)}
+
+  .verdict{background:linear-gradient(160deg,var(--bg2),var(--bg3));border:1px solid var(--accent-deep);border-radius:14px;padding:24px 26px;margin:30px 0}
+  .verdict .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+
+  footer{padding:36px 0 64px;color:var(--dim);font-size:13px;font-family:var(--mono);border-top:1px solid var(--line)}
+  svg .num-b{fill:#0d1117;font-family:var(--mono);font-size:13px;font-weight:700}
+  svg .tk2{fill:#8b949e}
+  svg .halo{paint-order:stroke;stroke:#161b22;stroke-width:6px;stroke-linejoin:round}
+  figure.mid img{max-width:640px;margin:0 auto}
+  figure.narrow img{max-width:460px;margin:0 auto}
+  figcaption .cr{display:block;margin-top:6px;font-size:11.5px;color:var(--dim);font-family:var(--mono)}
+  a.cite{color:var(--muted);border-bottom:1px dotted var(--dim)}
+  a.cite:hover{color:var(--blue);text-decoration:none}
+  ol.refs{font-size:13px;color:var(--muted);margin-left:22px}
+  ol.refs li{margin-bottom:6px;line-height:1.55}
+  ol.refs li:target{background:rgba(121,192,255,.12)}
+  table.wide{min-width:980px}
+  table.wide td{font-size:11.5px}
+  .tk2{color:var(--dim);font-size:11.5px;font-family:var(--mono)}
+  .fw{border:1px solid var(--line);border-radius:12px;background:var(--bg2);padding:14px 18px;margin:16px 0}
+  .fw h4{font-size:16px;margin-bottom:6px;color:#fff}
+  .fw h4 small{font-family:var(--mono);font-size:11.5px;color:var(--dim);font-weight:400;margin-left:8px}
+  .fw p{font-size:14.5px;margin-bottom:8px}
+  .fw p:last-child{margin-bottom:0}
+  .fw .ex{color:var(--muted);font-size:13.5px}
+  .tag2{display:inline-block;font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 6px;margin:0 4px 0 0;color:var(--muted)}
+  .tag2.on{border-color:#3987e5;color:#79c0ff}
+  dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:6px 18px;margin:10px 0 0}
+  dl.gloss dt{color:#fff;font-weight:700;font-family:var(--mono);font-size:13.5px}
+  dl.gloss dd{margin:0;color:var(--muted);font-size:14.5px}
+  @media(max-width:560px){dl.gloss{grid-template-columns:1fr}dl.gloss dd{margin-bottom:8px}}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Robotics · Front. Robot. AI 2024 · Systematic Review · 繁中圖解</div>
+    <h1>機器人怎麼「知道」自己在做什麼？本體論與可靠的自主機器人</h1>
+    <p class="subtitle">大多數機器人程式是「一步一步寫死」的：遇到程式設計者沒想到的狀況就卡住。這篇綜述探討的是另一條路：把機器人需要的知識（世界裡有什麼、自己有什麼零件和能力、任務要達成什麼）寫成機器讀得懂的「本體論」，讓機器人在執行中自己推理、調整、重新規劃，也能回答「你為什麼這樣做」。作者從 695 篇論文篩出 32 篇、20 個框架，逐一比較它們把本體論用在哪些能力上。</p>
+    <div class="meta">
+      論文：<a href="https://doi.org/10.3389/frobt.2024.1377897">A survey of ontology-enabled processes for dependable robot autonomy</a>（Frontiers in Robotics and AI 11:1377897，2024-07-10；CC BY；<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11266731/">PMC11266731</a>）<br>
+      作者：Esther Aguado、Virgilio Gomez、Miguel Hernando、Claudio Rossi、Ricardo Sanz（西班牙馬德里理工大學自主系統實驗室、自動化與機器人中心）<br>
+      文章類型：系統性綜述（PRISMA 流程），文獻搜尋在 2022 年完成；不評估擴充性與運算成本（作者明說不在範圍內）<br>
+      本頁為繁中解說，不是逐句翻譯：數字對回 Europe PMC 全文；標「本站整理／本站計算／本站觀點」的是我們自己的歸納與意見
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ─────────── §0 ─────────── -->
+<section id="quick">
+  <h2><span class="num">§0</span>30 秒速覽</h2>
+  <p class="sec-sub">五個數字抓骨架：篩選規模、框架數、能力覆蓋的落差、主流語言、公開程度</p>
+
+  <div class="cards">
+    <div class="kcard c1">
+      <div class="big">695<small> → 32 篇</small></div>
+      <div class="lbl">兩個資料庫去重後 695 篇，依年份與引用數、再依內容篩到 26 篇，從相關綜述補 6 篇，共 32 篇深入閱讀（§5）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">20<small> 個框架</small></div>
+      <div class="lbl">歸納成 20 個框架，依應用領域分成操作 4、導航 8、社交 5、工業 3（§7–§10）</div>
+    </div>
+    <div class="kcard c2">
+      <div class="big">20 vs 3</div>
+      <div class="lbl">20 個框架全都用本體論做「推理」，但只有 3 個用來「學習」；「預測與監控」和「互動與設計」也只有各 7 個（本站依表 1–5 整理，§6）</div>
+    </div>
+    <div class="kcard">
+      <div class="big">18<small> / 20</small></div>
+      <div class="lbl">用 OWL 寫知識庫的框架數；6 個用 Prolog（有些兩者並用）。OWL 是語意網的標準語言（本站依表 6 計算，§2）</div>
+    </div>
+    <div class="kcard c3">
+      <div class="big">7<small> / 20</small></div>
+      <div class="lbl">論文附上本體論連結（GitHub 或知識庫網站）的框架只有 7 個；其餘 13 個論文明說原始檔未公開，只能從論文描述去理解（本站依原文逐條計算，§15）</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">一句話總結</span>
+    把「世界、機器人自己、任務」的知識寫成本體論，機器人就能在執行中推理出沒人寫死的應對方式，也能解釋自己的決定。現有框架大多把本體論用在<strong>理解環境和規劃動作</strong>；作者認為對可靠運作很關鍵、但現有框架較少做到的，是<strong>執行中的監控與協調</strong>、<strong>機器人對自身工程設計的認識</strong>（零件怎麼接、壞了有什麼替代），以及<strong>使用者期待的表現標準</strong>。
+  </div>
+
+  <div class="callout blue">
+    <span class="tag">怎麼讀這頁</span>
+    沒碰過本體論的讀者，先看 §1–§4 的先備知識（論文本身假設讀者已經懂，所以只簡單帶過；這部分多是本站補充）。只想看結論，看 §6 的能力矩陣、§11 的應變模式比較和 §12 的作者結論。§14 示範怎麼用這套標準語意定義一個料理感知的 benchmark；§16 列出我們對回原文時發現的不一致之處。
+  </div>
+</section>
+
+<!-- ─────────── §1 ─────────── -->
+<section id="ontology">
+  <h2><span class="num">§1</span>先備知識：本體論是什麼？</h2>
+  <p class="sec-sub">對應原文 §1、§4.2：知識表示與推理（KR&amp;R）、類別、個體、屬性、繼承</p>
+
+  <p>「本體論」（ontology）原本是哲學名詞，在電腦科學裡意思很實際：<strong>一份機器讀得懂的「概念說明書」</strong>，寫清楚某個領域裡有哪些東西、它們之間有什麼關係。它有三種基本元素：</p>
+  <ul>
+    <li><strong>類別</strong>（class）：一群東西的名稱，例如「生產區」「杯子」「感測器」。</li>
+    <li><strong>個體</strong>（individual／instance）：真實存在的某一個東西，例如「assembly_01 這塊組裝區」。</li>
+    <li><strong>屬性與關係</strong>（property）：描述類別或個體的特徵，例如「機器人可進入」「位於」「是…的一部分」。類別之間還能有上下位關係：「組裝區<em>是一種</em>生產區」。</li>
+  </ul>
+  <p>重點在於「推理」：只要寫下少數規則，<strong>推理器</strong>（reasoner）就能自動推出沒有人直接寫下的事實，並檢查知識有沒有自相矛盾。這個研究領域叫「知識表示與推理」（KR&amp;R）<a class="cite" href="#r-Shapiro2003">Shapiro 2003</a>。論文用一座工廠的區域當例子（原圖 2）：</p>
+
+  <figure class="narrow"><a href="figs/fig2.webp"><img src="figs/fig2.webp" loading="lazy" alt="論文原圖 2：製造工廠區域的簡單本體論。ManufacturingPlant 下有 ProductionZone、Office、Control Room；ProductionZone 有屬性 robot_accesible，子類別 Assembly；個體 production_01 與 assembly_01"></a><figcaption><b>原圖 2</b>一個工廠區域的小本體論。淺藍是類別、深藍是屬性、灰色是個體。生產區（ProductionZone）帶有「機器人可進入」這個屬性（原圖拼成 robot_accesible），組裝區（Assembly）是它的子類別。 <span class="cr">Aguado 等 2024，Front. Robot. AI，CC BY；未修改</span></figcaption></figure>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 300" role="img" aria-labelledby="A-t A-d">
+<title id="A-t">從本體論到決策：四步走完一次推理</title>
+<desc id="A-d">以論文圖 2 的工廠例子：寫下類別與屬性、放入個體、推理器靠繼承推出新事實、路徑規劃只使用可進入的區域，並能回答為什麼不走辦公室。</desc>
+<defs><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<rect x="20" y="40" width="196" height="200" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="34" y="68" class="hd">① 寫下概念</text>
+<text x="34" y="100" text-anchor="start" class="sm">類別：生產區、組裝區、</text><text x="34" y="124" text-anchor="start" class="sm">辦公室、控制室</text><text x="34" y="148" text-anchor="start" class="sm">組裝區 是一種 生產區</text><text x="34" y="172" text-anchor="start" class="sm">生產區 → 機器人可進入</text>
+<line x1="219" y1="140" x2="243" y2="140" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aB)"/>
+<rect x="247" y="40" width="196" height="200" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="261" y="68" class="hd">② 放入個體</text>
+<text x="261" y="100" text-anchor="start" class="sm">production_01 是 生產區</text><text x="261" y="124" text-anchor="start" class="sm">assembly_01 是 組裝區</text><text x="261" y="148" text-anchor="start" class="sm">office_01 是 辦公室</text>
+<line x1="446" y1="140" x2="470" y2="140" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aB)"/>
+<rect x="474" y="40" width="196" height="200" rx="10" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="488" y="68" class="hd">③ 推理器推論</text>
+<text x="488" y="100" text-anchor="start" class="sm">assembly_01 是 組裝區</text><text x="488" y="124" text-anchor="start" class="sm">→ 也是 生產區（繼承）</text><text x="488" y="148" text-anchor="start" class="sm">→ 機器人可進入</text><text x="488" y="172" text-anchor="start" class="sm">（沒有人直接寫這一條）</text>
+<line x1="673" y1="140" x2="697" y2="140" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aB)"/>
+<rect x="701" y="40" width="196" height="200" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="715" y="68" class="hd">④ 用在決策</text>
+<text x="715" y="100" text-anchor="start" class="sm">只走推得出「可進入」</text><text x="715" y="122" text-anchor="start" class="sm">的區域：</text><text x="715" y="144" text-anchor="start" class="sm">production_01</text><text x="715" y="166" text-anchor="start" class="sm">assembly_01</text><text x="715" y="188" text-anchor="start" class="sm">辦公室推不出可進入，</text><text x="715" y="210" text-anchor="start" class="sm">所以不走（白名單）</text>
+<text x="20" y="266" class="ann2">③ 是推理器自動做的：新增一個組裝區時，不必再手動告訴機器人它能不能進去。</text>
+<text x="20" y="286" class="ann2">④ 是決策層的保守規則（白名單）。OWL 推理器本身不會推出「辦公室禁止進入」，只會說「不知道」（見 §2）。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 A</b>本站依原圖 2 的例子繪製。沒有人寫下「assembly_01 機器人可進入」，是推理器從「組裝區是一種生產區」和「生產區機器人可進入」推出來的。論文說沒有這個屬性的辦公室和控制室「被視為禁區」；嚴格說這是決策層的保守規則：OWL 推理器對辦公室能不能進入只會回答「不知道」，要推出「禁止」得另外寫明（這正是 §2 的開放世界問題）。</figcaption>
+  </figure>
+
+  <p>這樣做有三個好處，也是論文在引言中強調的：</p>
+  <ul>
+    <li><strong>適應</strong>：程式設計者無法預先想到所有狀況；知識寫成規則，機器人可以在現場推出該怎麼做。</li>
+    <li><strong>可解釋</strong>：人可以直接查詢知識庫，問機器人「為什麼不穿過辦公室」。</li>
+    <li><strong>可重用</strong>：同一份「什麼是感測器、什麼是夾爪」的知識，可以給不同機器人、不同任務共用。</li>
+  </ul>
+  <p>和它相對的是一般的<strong>程序式</strong>寫法：把每個行為用程式語言一步步寫死。實務上，成功的系統通常兩者混用：用宣告式知識描述「是什麼」，用程序式程式碼處理「怎麼做得快」<a class="cite" href="#r-Russell2021">Russell 2021</a>。</p>
+</section>
+
+<!-- ─────────── §2 ─────────── -->
+<section id="languages">
+  <h2><span class="num">§2</span>兩種寫法：Prolog 與 OWL，封閉世界與開放世界</h2>
+  <p class="sec-sub">對應原文 §2.1：本體論的語言、推理器與工具</p>
+
+  <p>機器人本體論最常用兩種語言。<strong>Prolog</strong> 是一種邏輯程式語言，把知識寫成事實和規則，直接拿來查詢。<strong>OWL</strong>（Web Ontology Language）不是程式語言，而是 W3C 制定的一族知識表示語言 <a class="cite" href="#r-W3C2012">W3C 2012</a>，是語意網的基石；它的數學基礎是<strong>描述邏輯</strong>（description logic）：只取一階邏輯中「保證推得完」的部分，換取推理器一定能在有限時間內給出答案；需要更快時，還可以改用 OWL 2 的 EL、QL、RL 等精簡版本。</p>
+  <p>兩者最關鍵的差別，是對「不知道的事」怎麼處理：</p>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 330" role="img" aria-labelledby="B-t B-d">
+<title id="B-t">封閉世界與開放世界：同一個問題，兩種答案</title>
+<desc id="B-d">知識庫裡只記錄了刀子在抽屜裡。問「櫃子裡有刀嗎？」Prolog 採封閉世界假設，查不到就回答否；OWL 採開放世界假設，沒有記錄就回答不知道，除非另外宣告櫃子是空的。</desc>
+<defs><marker id="aA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<rect x="310" y="34" width="280" height="96" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="450" y="60" text-anchor="middle" class="sm">知識庫裡只有一條紀錄：</text><text x="450" y="82" text-anchor="middle" class="sm">「刀子_01 在 抽屜_02 裡」</text>
+<text x="450" y="114" text-anchor="middle" class="ann">問：櫃子_01 裡有刀嗎？</text>
+<rect x="20" y="168" width="410" height="150" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="36" y="194" class="hd">Prolog：封閉世界</text>
+<text x="414" y="194" text-anchor="end" class="ret" style="fill:#d95f2b">答：沒有（false）</text>
+<text x="36" y="222" text-anchor="start" class="sm">查不到的事實一律當成假的</text><text x="36" y="242" text-anchor="start" class="sm">（negation as failure）</text>
+<text x="36" y="274" text-anchor="start" class="tk2">好處：答案明確、推理快</text><text x="36" y="292" text-anchor="start" class="tk2">風險：知識不完整時會「自信地答錯」</text>
+<rect x="470" y="168" width="410" height="150" rx="10" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="486" y="194" class="hd">OWL：開放世界</text>
+<text x="864" y="194" text-anchor="end" class="ret" style="fill:#3987e5">答：不知道</text>
+<text x="486" y="222" text-anchor="start" class="sm">沒寫下來的事，不等於不存在</text><text x="486" y="242" text-anchor="start" class="sm">要回答「沒有」，得先宣告櫃子是空的</text>
+<text x="486" y="274" text-anchor="start" class="tk2">好處：不會把「沒看過」當成「不存在」</text><text x="486" y="292" text-anchor="start" class="tk2">代價：常常推不出結論，要補更多公理</text>
+<path d="M380,130 L225,166" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#aA)"/>
+<path d="M520,130 L675,166" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#aA)"/>
+</svg>
+    </div>
+    <figcaption><b>圖 B</b>本站繪製。封閉世界假設：知識庫沒寫的就是假的（Prolog 的預設）。開放世界假設：沒寫的只是不知道（OWL 的預設）。對機器人來說，前者適合「我掌握全部資訊」的封閉環境，後者比較誠實，但常常需要補充公理才能推出結論。</figcaption>
+  </figure>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th></th><th>Prolog</th><th>OWL</th></tr></thead>
+    <tbody>
+      <tr><td>性質</td><td>邏輯程式語言</td><td>知識表示語言家族（可存成 RDF、XML 等格式）</td></tr>
+      <tr><td>邏輯基礎</td><td>Horn 子句（「若 A 且 B，則 C」形式的規則）加上「失敗即否定」</td><td>描述邏輯；OWL 2 DL 可判定（OWL 2 Full 不可判定）</td></tr>
+      <tr><td>世界假設</td><td>封閉世界：查不到＝假</td><td>開放世界：查不到＝不知道</td></tr>
+      <tr><td>常見工具</td><td>SWI-Prolog、GNU Prolog；ROS 介面 rosprolog</td><td>編輯器 Protégé <a class="cite" href="#r-Musen2015">Musen 2015</a>；Java 的 OWLAPI、Jena，Python 的 Owlready <a class="cite" href="#r-Lamy2017">Lamy 2017</a>；推理器 FaCT++、Pellet、HermiT</td></tr>
+      <tr><td>20 個框架中使用數</td><td class="num">6（本站依表 6 計算）</td><td class="num">18（有些兩者並用）</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Prolog 也能拿來查詢 OWL 寫的知識，KnowRob 就是這樣做的（§7）。另有兩個框架直接用規劃語言 PDDL 搭配 OWL。</p>
+  <p class="note">名詞小抄：一階邏輯＝可以說「所有 X 都…」「存在某個 X…」的邏輯；可判定＝推理器保證在有限時間內答出是或否；公理＝寫進知識庫、當作前提的規則。Prolog 用的 Horn 子句邏輯並不保證推得完（Prolog 本身是圖靈完備的），這是它和 OWL 的另一個差別。</p>
+</section>
+
+<!-- ─────────── §3 ─────────── -->
+<section id="layers">
+  <h2><span class="num">§3</span>本體論的三個層次：上層、領域、應用</h2>
+  <p class="sec-sub">對應原文 §2.2：SUMO、DOLCE／DUL、BFO、Cyc；IEEE CORA 與 1872.2；OASys；SOMA</p>
+
+  <p>本體論可依抽象程度分三層 <a class="cite" href="#r-Guarino1998">Guarino 1998</a>，實際上是一條連續光譜，越往下越具體：</p>
+  <ul>
+    <li><strong>上層（基礎）本體論</strong>：定義最一般的概念，例如物件、事件、性質、狀態，以及「部分–整體」「參與」等關係。代表有 SUMO（號稱最大的開源形式本體論；它的語言 SUO-KIF 允許部分高階邏輯的寫法，但大多數公理是一階的）<a class="cite" href="#r-Niles2001">Niles 2001</a>、DOLCE（想捕捉自然語言和人類常識背後的基本範疇）<a class="cite" href="#r-Gangemi2002">Gangemi 2002</a>；<a class="cite" href="#r-Mascardi2006">Mascardi 2006</a> 及其簡化版 DUL、BFO <a class="cite" href="#r-Arp2015">Arp 2015</a>，以及 Cyc 這個長期常識知識工程計畫 <a class="cite" href="#r-Lenat1995">Lenat 1995</a>。</li>
+    <li><strong>領域本體論</strong>：一個學科內大家約定好的詞彙。機器人領域最重要的是 IEEE 的標準：
+      <ul>
+        <li><strong>CORA</strong>（機器人與自動化核心本體論，收錄於 IEEE 1872-2015）<a class="cite" href="#r-Prestes2013">Prestes 2013</a>；<a class="cite" href="#r-IEEE2015">IEEE 1872-2015</a>：以 SUMO 為基礎，定義機器人零件、機器人、複合機器人、機器人系統四個主要概念（「零件」在形式化上是一種角色，見 §14），另有 CORAX、RPARTS（零件與角色，如夾爪、感測器）、POS（位置與方向）等子本體論。</li>
+        <li><strong>IEEE 1872.2</strong>（自主機器人本體論 AuR）<a class="cite" href="#r-IEEE2022">IEEE 1872.2</a>：在 CORA 之上，明確定義讓機器人具備自主能力所需的軟硬體元件，涵蓋空中、地面、水面、水下、太空機器人。IEEE 工作組另外成立的三個子工作組（自主機器人、工業、醫療）中，只有自主機器人這組實際運作。</li>
+        <li><strong>任務表示</strong>：同一個 IEEE 工作組還成立了任務表示子工作組，要做一個把任務從目標一路拆到子目標的中層本體論 <a class="cite" href="#r-Balakirsky2017">Balakirsky 2017</a>，成果就是 2024 年出版的 IEEE 1872.1（§13）。</li>
+        <li>另有 <strong>OASys</strong>（自主系統本體論，強調工程流程）<a class="cite" href="#r-BermejoAlonso2010">Bermejo-Alonso 2010</a> 和 <strong>SOMA</strong>（日常活動的物理與社會脈絡，基於 DUL；搭配 NEEMs 這種帶語意標註的執行紀錄使用）<a class="cite" href="#r-Bessler2021">Beßler 2021</a>。</li>
+      </ul>
+    </li>
+    <li><strong>應用本體論</strong>：特定機器人在特定環境做特定任務所需的定義，本篇比較的 20 個框架大多屬於這一層。</li>
+  </ul>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 500" role="img" aria-labelledby="C-t C-d">
+<title id="C-t">機器人本體論的家族樹</title>
+<desc id="C-d">上層本體論（SUMO、DOLCE 與 DUL、Cyc，以及處理機率的 PR-OWL）定義最一般的概念；領域本體論（IEEE 1872 的 CORA、1872.2 自主機器人本體論、OASys、SOMA）定義機器人領域的詞彙；應用框架再往下延伸。實線依論文表 6 與第 2 節，虛線是較鬆的關聯。</desc>
+<defs><marker id="aC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<text x="20" y="32" class="hd">上層本體論</text><text x="120" y="32" class="tk2">世界最一般的概念（PR-OWL 是處理機率的擴充）</text>
+<text x="20" y="160" class="hd">領域本體論</text><text x="120" y="160" class="tk2">機器人領域的共同詞彙：機器人、零件、任務、自主</text>
+<text x="20" y="292" class="hd">應用框架</text><text x="120" y="292" class="tk2"></text>
+<rect x="40" y="50" width="96" height="36" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="88" y="73" text-anchor="middle" class="sm">SUMO</text>
+<rect x="175" y="50" width="96" height="36" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="223" y="73" text-anchor="middle" class="sm">DOLCE</text>
+<rect x="320" y="50" width="166" height="36" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="403" y="73" text-anchor="middle" class="sm">DUL（DOLCE 簡化版）</text>
+<rect x="540" y="50" width="118" height="36" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="599" y="73" text-anchor="middle" class="sm">Cyc／OpenCyc</text>
+<rect x="700" y="50" width="128" height="36" rx="8" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="764" y="73" text-anchor="middle" class="sm">PR-OWL（機率）</text>
+<rect x="40" y="178" width="196" height="36" rx="8" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="138" y="201" text-anchor="middle" class="sm">CORA（IEEE 1872-2015）</text>
+<rect x="270" y="178" width="144" height="36" rx="8" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="342" y="201" text-anchor="middle" class="sm">IEEE 1872.2 AuR</text>
+<rect x="450" y="178" width="96" height="36" rx="8" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="498" y="201" text-anchor="middle" class="sm">OASys</text>
+<rect x="600" y="178" width="110" height="36" rx="8" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="655" y="201" text-anchor="middle" class="sm">SOMA＋NEEMs</text>
+<rect x="20" y="310" width="108" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="74" y="333" text-anchor="middle" class="sm">汽車線束插銷</text>
+<rect x="170" y="310" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="218" y="333" text-anchor="middle" class="sm">PMK</text>
+<rect x="320" y="310" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="368" y="333" text-anchor="middle" class="sm">TOMASys</text>
+<rect x="470" y="310" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="518" y="333" text-anchor="middle" class="sm">KnowRob</text>
+<rect x="760" y="310" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="808" y="333" text-anchor="middle" class="sm">SWARMs</text>
+<rect x="20" y="382" width="122" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="81" y="405" text-anchor="middle" class="sm">自適應製造代理</text>
+<rect x="170" y="382" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="218" y="405" text-anchor="middle" class="sm">OMRKF</text>
+<rect x="320" y="382" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="368" y="405" text-anchor="middle" class="sm">OUR-K</text>
+<rect x="470" y="382" width="104" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="522" y="405" text-anchor="middle" class="sm">FailRecOnt</text>
+<rect x="620" y="382" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="668" y="405" text-anchor="middle" class="sm">OCRA</text>
+<rect x="760" y="382" width="96" height="36" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="808" y="405" text-anchor="middle" class="sm">ISRO</text>
+<path d="M271,68 L317,68" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M88,86 L88,175" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M236,196 L267,196" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M138,214 L74,307" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M168,214 L208,307" fill="none" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aC)"/>
+<path d="M342,214 L228,307" fill="none" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aC)"/>
+<path d="M498,214 L368,307" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M403,86 L403,140 L444,140 L444,328 L467,328" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M444,328 L444,400 L467,400" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M444,140 L655,140 L655,175" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M655,140 L730,140 L730,400 L719,400" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M566,328 L668,328 L668,379" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M640,214 L560,307" fill="none" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aC)"/>
+<text x="625" y="262" text-anchor="end" class="tk2">共用 NEEMs</text>
+<path d="M98,214 L98,228 L454,228 L454,391 L467,391" fill="none" stroke="#8b949e" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aC)"/>
+<path d="M599,86 L599,100 L745,100 L745,400 L757,400" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M780,86 L780,307" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M266,400 L317,400" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<path d="M223,86 L223,120 L10,120 L10,400 L17,400" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aC)"/>
+<text x="20" y="450" class="ann2">實線＝論文寫明的「建立在…之上」；虛線＝較鬆的關聯（見圖說）。表 6 中另有 10 個框架沒有列出上層本體論。</text>
+<text x="20" y="470" class="ann2">PMK：表 6 寫它建在 1872.2 上；PMK 原論文說的是依 IEEE 1872 標準，加上自主機器人架構本體論 ROA（見 §16）。</text>
+<text x="20" y="490" class="ann2">ISRO–OpenCyc 依表 6；正文另說 ORO 以 OpenCyc 為基礎，表 6 卻沒有列出（見 §16）。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 C</b>本站依論文表 6（各框架的上層本體論）與原文 §2.2 繪製。實線是論文寫明的「建立在…之上」。虛線是較鬆的關聯：SOMA 與 KnowRob 都使用 NEEMs 執行紀錄（原文 §2.2.1、§5.1.1）；FailRecOnt 除了 DUL，也取用 CORA 與 SUMO 的部分概念（原文 §5.1.3，圖中以虛線從 CORA 拉出）；PMK 的兩條虛線見 §16。為了避免連線穿過其他方框，部分連線繞行。</figcaption>
+  </figure>
+
+  <div class="callout purple">
+    <span class="tag">作者對 CORA 的批評</span>
+    CORA 要照顧整個社群，所以只寫概念的<strong>必要條件</strong>，不寫充分條件，實際使用時得再針對子領域特化 <a class="cite" href="#r-Fiorini2017">Fiorini 2017</a>。（必要條件：凡是機器人，一定是裝置也是代理人；充分條件：符合哪些條件，就能判定「這是機器人」。只有必要條件時，推理器能檢查已知的機器人，卻不能自動把新東西歸類為機器人。）作者也說它的語言表達力很有限（大致只用到 OWL-Lite），只能做簡單的分類查詢；而且雖然以 SUMO 為基礎，卻重新定義了許多 SUMO 本來就有的詞，也沒有沿用 SUMO 的邏輯公式，等於只重用了分類樹。<br><span class="tk2">本站補充：這段批評比較適用於 CORA 的 OWL 版本；標準本身是用 SUO-KIF 寫的，保留了較多公理，社群的 OWL 移植版也自承是簡化版。</span>
+  </div>
+</section>
+
+<!-- ─────────── §4 ─────────── -->
+<section id="capabilities">
+  <h2><span class="num">§4</span>「可靠」與「自主」：論文用來比較的八種能力</h2>
+  <p class="sec-sub">對應原文 §2、§2.3、§3：可信賴性的定義、自主的定義、Langley 的九項能力與論文的分類</p>
+
+  <p><strong>可信賴性</strong>（dependability，也有人譯作可依賴性）指系統能以一定的保證程度提供預期服務，包含可用性、可靠性（reliability）、安全性與資訊安全 <a class="cite" href="#r-SEBoK2023">SEBoK 2023</a>；<a class="cite" href="#r-Avizienis2004">Avižienis 2004</a>。它比單純的「不故障」更廣，還包括容錯、從錯誤中恢復、維持服務水準。傳統做法有故障樹、失效模式與影響分析（FMEA）、安全論證等。作者特別說明：這篇不是要分析機器人的可信賴性本身，而是看本體論能怎麼<strong>幫忙提高</strong>可信賴性。本頁標題的「可靠」是口語說法，指的就是這個比較廣的概念。</p>
+  <p><strong>自主</strong>的定義很多。一種貼近機器人的說法是：機器人能在沒有外部控制的情況下，感知環境、依環境規劃並行動，朝向某個任務目標的程度 <a class="cite" href="#r-Beer2014">Beer 2014</a>。作者自己的實驗室則把自主看成<strong>系統、任務、情境三者之間的關係</strong> <a class="cite" href="#r-Sanz2000">Sanz 2000</a>：同一台機器人換了任務或環境，自主程度就不同。</p>
+  <p>論文以認知架構研究整理出的能力清單 <a class="cite" href="#r-Langley2009">Langley 2009</a> 為基礎，把自主機器人需要的處理過程分成下面幾類，後面所有比較都用這把尺：</p>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 470" role="img" aria-labelledby="D-t D-d">
+<title id="D-t">自主機器人的八種能力，圍繞同一個知識庫</title>
+<desc id="D-d">中央是本體論知識庫。外圈依序是感知與分類、推理、決策與規劃、執行、預測與監控，形成感知–決策–行動的迴圈；溝通與協調連到其他機器人與人，互動與設計提供工程知識，學習把經驗寫回知識庫。</desc>
+<defs><marker id="aD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<ellipse cx="450" cy="238" rx="112" ry="62" fill="#1c2c45" stroke="#3987e5" stroke-width="2"/>
+<text x="450" y="230" text-anchor="middle" class="hd">本體論知識庫</text><text x="450" y="254" text-anchor="middle" class="hd">概念＋事實＋規則</text>
+<rect x="15" y="66" width="210" height="52" rx="12" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="120" y="89" text-anchor="middle" class="hd">感知與分類</text>
+<text x="120" y="109" text-anchor="middle" class="tk2">感測 → 把讀數變成「這是一個杯子」</text>
+<rect x="345" y="34" width="210" height="52" rx="12" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="450" y="57" text-anchor="middle" class="hd">推理</text>
+<text x="450" y="77" text-anchor="middle" class="tk2">推出沒寫下的事實、刪掉過時的</text>
+<rect x="675" y="66" width="210" height="52" rx="12" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="780" y="89" text-anchor="middle" class="hd">決策與規劃</text>
+<text x="780" y="109" text-anchor="middle" class="tk2">短期：怎麼繞過障礙；長期：任務步驟</text>
+<rect x="675" y="358" width="210" height="52" rx="12" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="780" y="381" text-anchor="middle" class="hd">執行</text>
+<text x="780" y="401" text-anchor="middle" class="tk2">反應式＋深思式；控制器落實到致動器</text>
+<rect x="15" y="358" width="210" height="52" rx="12" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="120" y="381" text-anchor="middle" class="hd">預測與監控</text>
+<text x="120" y="401" text-anchor="middle" class="tk2">比對「預期 vs 實際」，發現異常</text>
+<line x1="225" y1="92" x2="345" y2="66" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aD)"/>
+<line x1="555" y1="66" x2="675" y2="92" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aD)"/>
+<line x1="780" y1="118" x2="780" y2="358" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aD)"/>
+<line x1="675" y1="384" x2="225" y2="384" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aD)"/>
+<line x1="120" y1="358" x2="120" y2="118" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aD)"/>
+<line x1="120" y1="118" x2="368" y2="202" stroke="#3987e5" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="450" y1="86" x2="450" y2="192" stroke="#3987e5" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="780" y1="118" x2="532" y2="202" stroke="#3987e5" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="780" y1="358" x2="532" y2="274" stroke="#3987e5" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="120" y1="358" x2="368" y2="274" stroke="#3987e5" stroke-width="1" stroke-dasharray="3 4"/>
+<rect x="355" y="308" width="190" height="44" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="450" y="328" text-anchor="middle" class="sm">溝通與協調</text>
+<text x="450" y="345" text-anchor="middle" class="tk2">和其他機器人、人交換知識</text>
+<rect x="155" y="216" width="190" height="44" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="250" y="236" text-anchor="middle" class="sm">互動與設計</text>
+<text x="250" y="253" text-anchor="middle" class="tk2">元件怎麼接、設計的替代方案</text>
+<rect x="555" y="216" width="190" height="44" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="650" y="236" text-anchor="middle" class="sm">學習</text>
+<text x="650" y="253" text-anchor="middle" class="tk2">記住 → 反思 → 歸納，寫回知識庫</text>
+<text x="20" y="452" class="ann2">橘框：感知–決策–行動主迴圈；綠虛框：跨越迴圈的能力；藍虛線：每一步都讀寫同一個知識庫。分類依論文第 3 節（源自 Langley 等 2009）。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 D</b>本站依論文 §3 繪製。論文 §3 列了十個小節（感知與分類、決策與規劃各自分開寫），比較表則合併成八欄：感知與分類、決策與規劃、預測與監控、推理、執行、溝通與協調、互動與設計、學習。</figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li><strong>感知與分類</strong>：感測器讀到的是數字；分類把它們抽象成「一個朝我靠近的移動障礙物」或「這種礦石」這類概念，才能拿來推理。</li>
+    <li><strong>決策與規劃</strong>：兩者時間尺度不同。<em>決策</em>是短期的，例如稍微偏離路徑繞過障礙再回來，計畫本身不變；<em>規劃</em>是長期的，找出從起始狀態到目標的一整串動作，需要知道每個動作的前置條件與效果。作者主張把規劃需要的資訊分成環境、機器人、目標三種模型，強調機器人對自身狀態的了解。</li>
+    <li><strong>預測與監控</strong>：有了內部模型，機器人能預測動作的結果，執行時比對「預期 vs 實際」；不一致時通知操作者或自行調整。例如卡住了先換方向，不行再求救。</li>
+    <li><strong>推理</strong>：從既有知識推出新結論，也要刪掉過時的信念。機器人會改變環境，知識必須跟著更新；刪掉一個信念時，還得連帶撤回由它推出的結論，這要靠「真值維護」（truth maintenance）。</li>
+    <li><strong>執行</strong>：反應式與深思式要並存。巡邏機器人靠近人時要立刻減速（反應），但也要照航點走完整個區域（深思）。最後由開迴路或閉迴路控制器把指令落實到馬達上。</li>
+    <li><strong>溝通與協調</strong>：多個機器人或人一起工作時，需要一套中立、共享的概念才能交換知識。例如多機巡邏要分享位置和路徑；探勘礦坑時讓輪式機器人做大部分工作，進不去的地方換腿式機器人。</li>
+    <li><strong>互動與設計</strong>：分析自主能力時常被忽略的一項。機器人若知道自己的元件怎麼互相連接、設計時有哪些替代方案，壞掉時就能退一步理解失敗來源。例如有好幾種工具的機械手臂，最適合的工具壞了，可以改用次佳的工具完成任務 <a class="cite" href="#r-Hernandez2018">Hernández 2018</a>；<a class="cite" href="#r-Brachman2002">Brachman 2002</a>。</li>
+    <li><strong>學習</strong>：分成三步：記住（存下過去的執行）、反思（從紀錄找出規律）、歸納（把結論推廣到未來）。</li>
+  </ol>
+</section>
+
+<!-- ─────────── §5 ─────────── -->
+<section id="method">
+  <h2><span class="num">§5</span>怎麼篩出這 32 篇</h2>
+  <p class="sec-sub">對應原文 §4、§4.1–4.3：搜尋字串、引用門檻、納入條件、PRISMA 流程、相關綜述、讀者設定</p>
+
+  <p>作者在 2022 年搜尋 Scopus 和 Web of Science，標題、摘要或關鍵字必須同時有「ontology」和「robot」，再加上至少一個和<strong>選擇與安排動作</strong>（autonomous、planning、behavior）或<strong>應付意外</strong>（fault、adapt）有關的詞。為了減少偏差，篩選由兩個人交叉進行，對各框架的分析由五位作者共同確認。</p>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 300" role="img" aria-labelledby="E-t E-d">
+<title id="E-t">從 1,034 筆搜尋結果到 20 個框架</title>
+<desc id="E-d">兩個資料庫共 1,034 筆，去重後 695 篇，依年份與引用數篩到 351 篇，讀內容後剩 26 篇，再從相關綜述補 6 篇，共 32 篇，歸納成 20 個框架，分屬操作、導航、社交、工業四個領域。</desc>
+<rect x="30" y="22" width="840" height="32" rx="6" fill="#3987e5" fill-opacity="0.22" stroke="#3987e5"/>
+<text x="42" y="43" class="ret">1,034<tspan class="sm"> 筆搜尋結果</tspan></text>
+<text x="858" y="43" text-anchor="end" class="tk2">WoS 497＋Scopus 537</text>
+<rect x="85" y="62" width="731" height="32" rx="6" fill="#3987e5" fill-opacity="0.32" stroke="#3987e5"/>
+<text x="97" y="83" class="ret">695<tspan class="sm"> 篇（去重後）</tspan></text>
+<text x="803" y="83" text-anchor="end" class="tk2">刪除 339 筆重複</text>
+<rect x="139" y="102" width="622" height="32" rx="6" fill="#3987e5" fill-opacity="0.42" stroke="#3987e5"/>
+<text x="151" y="123" class="ret">351<tspan class="sm"> 篇</tspan></text>
+<text x="749" y="123" text-anchor="end" class="tk2">依年份＋引用數篩選</text>
+<rect x="194" y="142" width="512" height="32" rx="6" fill="#3987e5" fill-opacity="0.52" stroke="#3987e5"/>
+<text x="206" y="163" class="ret">26<tspan class="sm"> 篇</tspan></text>
+<text x="694" y="163" text-anchor="end" class="tk2">讀內容：要提出或擴充本體論，且用來選擇、調整或規劃動作</text>
+<rect x="248" y="182" width="403" height="32" rx="6" fill="#3987e5" fill-opacity="0.62" stroke="#3987e5"/>
+<text x="260" y="203" class="ret">32<tspan class="sm"> 篇</tspan></text>
+<text x="640" y="203" text-anchor="end" class="tk2">＋相關綜述補入 6 篇</text>
+<rect x="303" y="222" width="294" height="32" rx="6" fill="#d95f2b" fill-opacity="0.72" stroke="#d95f2b"/>
+<text x="315" y="243" class="ret">20<tspan class="sm"> 個框架</tspan></text>
+<text x="585" y="243" text-anchor="end" class="tk2">同一框架的多篇論文合併</text>
+<rect x="30" y="268" width="164" height="24" rx="5" fill="#1c2330" stroke="#8b949e"/>
+<text x="114" y="285" text-anchor="middle" class="sm">操作 4</text>
+<rect x="198" y="268" width="332" height="24" rx="5" fill="#1c2330" stroke="#8b949e"/>
+<text x="366" y="285" text-anchor="middle" class="sm">導航 8</text>
+<rect x="534" y="268" width="206" height="24" rx="5" fill="#1c2330" stroke="#8b949e"/>
+<text x="639" y="285" text-anchor="middle" class="sm">社交 5</text>
+<rect x="744" y="268" width="122" height="24" rx="5" fill="#1c2330" stroke="#8b949e"/>
+<text x="807" y="285" text-anchor="middle" class="sm">工業 3</text>
+</svg>
+    </div>
+    <figcaption><b>圖 E</b>本站依論文 §4 與原圖 1 的數字繪製。最後一層的 20 個框架是本站依表 1–5 的欄位計數。</figcaption>
+  </figure>
+
+  <p>引用數門檻依年份放寬：2010 年以前要 20 次以上引用；2010–2015 年要 5 次以上；2015–2018 年要 2 次以上；2018 年起全部納入。讀內容時，只留下「提出或擴充本體論，<strong>而且</strong>用它來選擇、調整或規劃動作」的論文；只用本體論做模擬、對話、感知或協作、卻不影響機器人動作的，都排除了。</p>
+
+  <figure class="mid"><a href="figs/fig1.webp"><img src="figs/fig1.webp" loading="lazy" alt="論文原圖 1：PRISMA 流程圖。資料庫搜尋 Web of Science 497 筆、Scopus 537 筆，去除重複 339 筆，篩選 695 筆，依年份與引用數排除 344 筆，評估 351 筆，排除三類共 351 筆，由資料庫納入 26 筆；另從相關綜述找到 22 筆，15 筆重複，評估 7 筆，排除 1 筆，納入 6 筆"></a><figcaption><b>原圖 1</b>PRISMA 流程圖（改編自 Page 等 2021）。注意左下「排除」框的三個數字相加是 351，和納入 26 篇對不起來（見 §16）。 <span class="cr">Aguado 等 2024，Front. Robot. AI，CC BY；未修改</span></figcaption></figure>
+
+  <p>和既有綜述相比，作者說自己的不同在於：不只看機器人怎麼表示動作和環境，也看<strong>工程設計知識</strong>（元件、介面、設計需求、替代方案），並以「是否符合使用者期待的表現」來比較。最接近的前作是 Olivares-Alarcos 等 2019 年對五個主要專案的分析 <a class="cite" href="#r-OlivaresAlarcos2019">Olivares-Alarcos 2019</a>，它和 IEEE 1872.2 的制定關係密切；其他如同步定位與建圖（SLAM）的本體論 <a class="cite" href="#r-CornejoLupa2020">Cornejo-Lupa 2020</a>、路徑規劃與任務規劃的知識表示 <a class="cite" href="#r-Gayathri2018">Gayathri 2018</a>；<a class="cite" href="#r-Gayathri2019">Gayathri 2019</a>、物件與地圖的本體論比較 <a class="cite" href="#r-Manzoor2021">Manzoor 2021</a> 則範圍較窄。</p>
+  <p>作者也劃了兩條界線：第一，<strong>不討論擴充性、運算成本與效率</strong>，因為多數論文沒有公開本體論原始檔，只能比較概念；第二，目標讀者是<strong>已經懂本體論基礎</strong>的研究者與工程師，入門內容請看 Staab 與 Studer 的手冊 <a class="cite" href="#r-Staab2009">Staab 2009</a> 或 Russell 與 Norvig 的教科書第 10 章 <a class="cite" href="#r-Russell2021">Russell 2021</a>。</p>
+</section>
+
+<!-- ─────────── §6 ─────────── -->
+<section id="matrix">
+  <h2><span class="num">§6</span>總覽：20 個框架把本體論用在哪裡</h2>
+  <p class="sec-sub">本站整理：把論文表 1–5 合成一張 20 × 8 的矩陣</p>
+
+  <p>論文依應用領域分四張表比較。我們把它們合成一張圖，一眼就能看出整個領域的重心和缺口：</p>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 676" role="img" aria-labelledby="F-t F-d">
+<title id="F-t">20 個框架 × 8 種能力：誰用本體論做了什麼</title>
+<desc id="F-d">依論文表 1 到表 5 整理。藍色方格表示該框架用本體論支援這項能力，空格表示沒有。推理 20 個全有，決策與規劃 19 個，感知與分類 15 個，溝通與協調 11 個，執行 10 個，預測與監控與互動與設計各 7 個，學習只有 3 個。</desc>
+<text x="233.0" y="46" text-anchor="middle" class="sm">感知</text><text x="233.0" y="64" text-anchor="middle" class="sm">與分類</text>
+<text x="233.0" y="82" text-anchor="middle" class="tk2">P/C</text>
+<text x="299.0" y="46" text-anchor="middle" class="sm">決策</text><text x="299.0" y="64" text-anchor="middle" class="sm">與規劃</text>
+<text x="299.0" y="82" text-anchor="middle" class="tk2">DM/P</text>
+<text x="365.0" y="46" text-anchor="middle" class="sm">預測</text><text x="365.0" y="64" text-anchor="middle" class="sm">與監控</text>
+<text x="365.0" y="82" text-anchor="middle" class="tk2">P/M</text>
+<text x="431.0" y="46" text-anchor="middle" class="sm">推理</text><text x="431.0" y="64" text-anchor="middle" class="sm"></text>
+<text x="431.0" y="82" text-anchor="middle" class="tk2">R</text>
+<text x="497.0" y="46" text-anchor="middle" class="sm">執行</text><text x="497.0" y="64" text-anchor="middle" class="sm"></text>
+<text x="497.0" y="82" text-anchor="middle" class="tk2">E</text>
+<text x="563.0" y="46" text-anchor="middle" class="sm">溝通</text><text x="563.0" y="64" text-anchor="middle" class="sm">與協調</text>
+<text x="563.0" y="82" text-anchor="middle" class="tk2">C/C</text>
+<text x="629.0" y="46" text-anchor="middle" class="sm">互動</text><text x="629.0" y="64" text-anchor="middle" class="sm">與設計</text>
+<text x="629.0" y="82" text-anchor="middle" class="tk2">I/D</text>
+<text x="695.0" y="46" text-anchor="middle" class="sm">學習</text><text x="695.0" y="64" text-anchor="middle" class="sm"></text>
+<text x="695.0" y="82" text-anchor="middle" class="tk2">L</text>
+<line x1="20" x2="728" y1="91" y2="91" stroke="#8b949e" stroke-width="1"/>
+<text x="740" y="108" class="tk">操作</text>
+<text x="190" y="108" text-anchor="end" class="lab">KnowRob</text>
+<rect x="204" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜感知與分類：Integrate data types and object recognition</title></rect>
+<rect x="270" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜決策與規劃：Action parametrization for successful manipulation</title></rect>
+<rect x="336" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜預測與監控：Predict the most appropriate parameters. Monitoring objects in the environment</title></rect>
+<rect x="402" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜推理：Hybrid, symbolic reasoning for sensor and action data</title></rect>
+<rect x="468" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜執行：Match undetermined instructions and actions</title></rect>
+<rect x="534" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜溝通與協調：Web exchange of information</title></rect>
+<rect x="600" y="95" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="95" width="58" height="18" rx="4" fill="#3987e5"><title>KnowRob｜學習：Use previous descriptions of events, objects, time, and low-level control data</title></rect>
+<text x="798" y="108" class="val">7/8</text>
+<text x="190" y="132" text-anchor="end" class="lab">PMK</text>
+<rect x="204" y="119" width="58" height="18" rx="4" fill="#3987e5"><title>PMK｜感知與分類：Dynamically select the most appropriate sensor</title></rect>
+<rect x="270" y="119" width="58" height="18" rx="4" fill="#3987e5"><title>PMK｜決策與規劃：Task and motion planning feasibility</title></rect>
+<rect x="336" y="119" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="119" width="58" height="18" rx="4" fill="#3987e5"><title>PMK｜推理：Integration of task and motion planning with the perception module</title></rect>
+<rect x="468" y="119" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="119" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="119" width="58" height="18" rx="4" fill="#3987e5"><title>PMK｜互動與設計：Information about which part of an object is interactable, constraints</title></rect>
+<rect x="666" y="119" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="132" class="val">4/8</text>
+<text x="190" y="156" text-anchor="end" class="lab">FailRecOnt</text>
+<rect x="204" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜感知與分類：Action sensing to detect abnormal events</title></rect>
+<rect x="270" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜決策與規劃：How to sense an action and check if a configuration is collision-free</title></rect>
+<rect x="336" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜預測與監控：Failure detection and identification of failed recovery attempts</title></rect>
+<rect x="402" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜推理：How the perception of actions should be formalized</title></rect>
+<rect x="468" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜執行：Symbolic-level actions without geometric considerations</title></rect>
+<rect x="534" y="143" width="58" height="18" rx="4" fill="#3987e5"><title>FailRecOnt｜溝通與協調：Communication failures between multiple agents</title></rect>
+<rect x="600" y="143" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="143" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="156" class="val">6/8</text>
+<text x="190" y="180" text-anchor="end" class="lab">PLM</text>
+<rect x="204" y="167" width="58" height="18" rx="4" fill="#3987e5"><title>PLM｜感知與分類：Identify the most suitable part of an object for grasping</title></rect>
+<rect x="270" y="167" width="58" height="18" rx="4" fill="#3987e5"><title>PLM｜決策與規劃：Translate low-level visual perception into effective grasp planning</title></rect>
+<rect x="336" y="167" width="58" height="18" rx="4" fill="#3987e5"><title>PLM｜預測與監控：Task prediction to select among alternatives</title></rect>
+<rect x="402" y="167" width="58" height="18" rx="4" fill="#3987e5"><title>PLM｜推理：Select the best grasping task based on object affordances</title></rect>
+<rect x="468" y="167" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="167" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="167" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="167" width="58" height="18" rx="4" fill="#3987e5"><title>PLM｜學習：Categorize visual shape features</title></rect>
+<text x="798" y="180" class="val">5/8</text>
+<line x1="20" x2="728" y1="187" y2="187" stroke="#8b949e" stroke-width="1"/>
+<text x="740" y="204" class="tk">導航</text>
+<text x="190" y="204" text-anchor="end" class="lab">TOMASys</text>
+<rect x="204" y="191" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="270" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜決策與規劃：Adjust parameters and configurations to address mission contingencies</title></rect>
+<rect x="336" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜預測與監控：Failure models to detect faulty components and goals not achieved</title></rect>
+<rect x="402" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜推理：Propagate failures to system level, identify affected functionalities and available alternatives</title></rect>
+<rect x="468" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜執行：MAPE-K loop to evaluate mission status</title></rect>
+<rect x="534" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜溝通與協調：Component coordination</title></rect>
+<rect x="600" y="191" width="58" height="18" rx="4" fill="#3987e5"><title>TOMASys｜互動與設計：Use of metamodels to bridge the gap between design and operation</title></rect>
+<rect x="666" y="191" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="204" class="val">6/8</text>
+<text x="190" y="228" text-anchor="end" class="lab">OMRKF</text>
+<rect x="204" y="215" width="58" height="18" rx="4" fill="#3987e5"><title>OMRKF｜感知與分類：Lower-lever perception features such as numerical descriptors</title></rect>
+<rect x="270" y="215" width="58" height="18" rx="4" fill="#3987e5"><title>OMRKF｜決策與規劃：Calculus planner to accomplish goals and subgoals</title></rect>
+<rect x="336" y="215" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="215" width="58" height="18" rx="4" fill="#3987e5"><title>OMRKF｜推理：Geometrical relationships between objects</title></rect>
+<rect x="468" y="215" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="215" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="215" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="215" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="228" class="val">3/8</text>
+<text x="190" y="252" text-anchor="end" class="lab">SWARMs</text>
+<rect x="204" y="239" width="58" height="18" rx="4" fill="#3987e5"><title>SWARMs｜感知與分類：Represent underwater environment properties and sensors</title></rect>
+<rect x="270" y="239" width="58" height="18" rx="4" fill="#3987e5"><title>SWARMs｜決策與規劃：Task-level planning and low-level planning to generate waypoints, actions, etc.</title></rect>
+<rect x="336" y="239" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="239" width="58" height="18" rx="4" fill="#3987e5"><title>SWARMs｜推理：Hybrid context reasoner: rule-based reasoning and probabilistic annotations</title></rect>
+<rect x="468" y="239" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="239" width="58" height="18" rx="4" fill="#3987e5"><title>SWARMs｜溝通與協調：Robots share tasks, operations, and actions</title></rect>
+<rect x="600" y="239" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="239" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="252" class="val">4/8</text>
+<text x="190" y="276" text-anchor="end" class="lab">RTPO</text>
+<rect x="204" y="263" width="58" height="18" rx="4" fill="#3987e5"><title>RTPO｜感知與分類：Specification of measurable aspects of the environment</title></rect>
+<rect x="270" y="263" width="58" height="18" rx="4" fill="#3987e5"><title>RTPO｜決策與規劃：Generate and use domains and problem files to generate plans</title></rect>
+<rect x="336" y="263" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="263" width="58" height="18" rx="4" fill="#3987e5"><title>RTPO｜推理：Evaluation of real-time performance in reasoning with 52,000 elements of indoor environments</title></rect>
+<rect x="468" y="263" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="263" width="58" height="18" rx="4" fill="#3987e5"><title>RTPO｜溝通與協調：Knowledge sharing between three robots and two humans</title></rect>
+<rect x="600" y="263" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="263" width="58" height="18" rx="4" fill="#3987e5"><title>RTPO｜學習：Update and add plans generated by the task planning algorithm back into the ontology</title></rect>
+<text x="798" y="276" class="val">5/8</text>
+<text x="190" y="300" text-anchor="end" class="lab">行星探測車</text>
+<rect x="204" y="287" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="270" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜決策與規劃：Precalculated solutions for likely changes, combined with deliberative techniques</title></rect>
+<rect x="336" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜預測與監控：Monitor resources and state checks to trigger replanning</title></rect>
+<rect x="402" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜推理：Configure SW elements, update world state, and decide on replanning</title></rect>
+<rect x="468" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜執行：MAPE-K loop for reconfiguration</title></rect>
+<rect x="534" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜溝通與協調：Communication requirements between modules</title></rect>
+<rect x="600" y="287" width="58" height="18" rx="4" fill="#3987e5"><title>行星探測車｜互動與設計：Explicit service capacities</title></rect>
+<rect x="666" y="287" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="300" class="val">6/8</text>
+<text x="190" y="324" text-anchor="end" class="lab">城市搜救</text>
+<rect x="204" y="311" width="58" height="18" rx="4" fill="#3987e5"><title>城市搜救｜感知與分類：Pre-processed information from sensors and other intelligent agents</title></rect>
+<rect x="270" y="311" width="58" height="18" rx="4" fill="#3987e5"><title>城市搜救｜決策與規劃：Management of a global map with shared events and real-time tracking of agent locations</title></rect>
+<rect x="336" y="311" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="311" width="58" height="18" rx="4" fill="#3987e5"><title>城市搜救｜推理：Store and distribute information among agents</title></rect>
+<rect x="468" y="311" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="311" width="58" height="18" rx="4" fill="#3987e5"><title>城市搜救｜溝通與協調：Multirobot cooperation, global map, and selection of suitable candidates for each task</title></rect>
+<rect x="600" y="311" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="311" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="324" class="val">4/8</text>
+<text x="190" y="348" text-anchor="end" class="lab">自駕車換道</text>
+<rect x="204" y="335" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="270" y="335" width="58" height="18" rx="4" fill="#3987e5"><title>自駕車換道｜決策與規劃：Evaluate the safety of the vehicle’s surroundings with statistical indicators</title></rect>
+<rect x="336" y="335" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="335" width="58" height="18" rx="4" fill="#3987e5"><title>自駕車換道｜推理：Apply rules derived from traffic regulations and driving experiences</title></rect>
+<rect x="468" y="335" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="335" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="335" width="58" height="18" rx="4" fill="#3987e5"><title>自駕車換道｜互動與設計：Addresses requirements such as legality by incorporating traffic rules and reasonableness</title></rect>
+<rect x="666" y="335" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="348" class="val">3/8</text>
+<text x="190" y="372" text-anchor="end" class="lab">搜救任務</text>
+<rect x="204" y="359" width="58" height="18" rx="4" fill="#3987e5"><title>搜救任務｜感知與分類：Semantic map for recognizing and localizing objects</title></rect>
+<rect x="270" y="359" width="58" height="18" rx="4" fill="#3987e5"><title>搜救任務｜決策與規劃：Definition of tasks and identification of requisite actions and their properties</title></rect>
+<rect x="336" y="359" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="359" width="58" height="18" rx="4" fill="#3987e5"><title>搜救任務｜推理：Evaluate the suitability of the task for the current state</title></rect>
+<rect x="468" y="359" width="58" height="18" rx="4" fill="#3987e5"><title>搜救任務｜執行：Query task definition to retrieve the corresponding atomic action sequence</title></rect>
+<rect x="534" y="359" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="359" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="359" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="372" class="val">4/8</text>
+<line x1="20" x2="728" y1="379" y2="379" stroke="#8b949e" stroke-width="1"/>
+<text x="740" y="396" class="tk">社交</text>
+<text x="190" y="396" text-anchor="end" class="lab">OUR-K</text>
+<rect x="204" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜感知與分類：Same approach as OMRKF</title></rect>
+<rect x="270" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜決策與規劃：Abductive event calculus planner for hierarchical abstraction</title></rect>
+<rect x="336" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜預測與監控：Navigation monitoring and missing object recognition tasks</title></rect>
+<rect x="402" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜推理：Bidirectional links between low and high levels to fill in missing information</title></rect>
+<rect x="468" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜執行：Action knowledge is coupled with all other concepts of the knowledge of models and features</title></rect>
+<rect x="534" y="383" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="383" width="58" height="18" rx="4" fill="#3987e5"><title>OUR-K｜互動與設計：Dynamic interaction, runtime controller adaptation</title></rect>
+<rect x="666" y="383" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="396" class="val">6/8</text>
+<text x="190" y="420" text-anchor="end" class="lab">ORO</text>
+<rect x="204" y="407" width="58" height="18" rx="4" fill="#3987e5"><title>ORO｜感知與分類：Use common ancestors or the best discriminant to categorize</title></rect>
+<rect x="270" y="407" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="336" y="407" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="407" width="58" height="18" rx="4" fill="#3987e5"><title>ORO｜推理：Ontological reasoning combined with external modules triggered when an event occurs</title></rect>
+<rect x="468" y="407" width="58" height="18" rx="4" fill="#3987e5"><title>ORO｜執行：Query-based integrated CRAM to automatically update the ontology</title></rect>
+<rect x="534" y="407" width="58" height="18" rx="4" fill="#3987e5"><title>ORO｜溝通與協調：Intelligent blackboard for knowledge sharing among agents</title></rect>
+<rect x="600" y="407" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="407" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="420" class="val">4/8</text>
+<text x="190" y="444" text-anchor="end" class="lab">OCRA</text>
+<rect x="204" y="431" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="270" y="431" width="58" height="18" rx="4" fill="#3987e5"><title>OCRA｜決策與規劃：Dynamic plan adaptation during runtime</title></rect>
+<rect x="336" y="431" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="431" width="58" height="18" rx="4" fill="#3987e5"><title>OCRA｜推理：Answering competency questions for collaboration, plans, goals, and adaptations</title></rect>
+<rect x="468" y="431" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="431" width="58" height="18" rx="4" fill="#3987e5"><title>OCRA｜溝通與協調：Collaboration with humans, explainability</title></rect>
+<rect x="600" y="431" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="431" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="444" class="val">3/8</text>
+<text x="190" y="468" text-anchor="end" class="lab">ISRO</text>
+<rect x="204" y="455" width="58" height="18" rx="4" fill="#3987e5"><title>ISRO｜感知與分類：Sensor information to recognize the user involved</title></rect>
+<rect x="270" y="455" width="58" height="18" rx="4" fill="#3987e5"><title>ISRO｜決策與規劃：Path planning, semantic maps</title></rect>
+<rect x="336" y="455" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="455" width="58" height="18" rx="4" fill="#3987e5"><title>ISRO｜推理：Infer spatial and temporal information and user characterization</title></rect>
+<rect x="468" y="455" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="455" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="455" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="455" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="468" class="val">3/8</text>
+<text x="190" y="492" text-anchor="end" class="lab">服務機器人</text>
+<rect x="204" y="479" width="58" height="18" rx="4" fill="#3987e5"><title>服務機器人｜感知與分類：Abstract planning information</title></rect>
+<rect x="270" y="479" width="58" height="18" rx="4" fill="#3987e5"><title>服務機器人｜決策與規劃：Recursive back-trace searching</title></rect>
+<rect x="336" y="479" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="479" width="58" height="18" rx="4" fill="#3987e5"><title>服務機器人｜推理：Information about spatial objects</title></rect>
+<rect x="468" y="479" width="58" height="18" rx="4" fill="#3987e5"><title>服務機器人｜執行：Central controller to propagate the action to planner, user interface, and lower levels</title></rect>
+<rect x="534" y="479" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="479" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="479" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="492" class="val">4/8</text>
+<line x1="20" x2="728" y1="499" y2="499" stroke="#8b949e" stroke-width="1"/>
+<text x="740" y="516" class="tk">工業</text>
+<text x="190" y="516" text-anchor="end" class="lab">ROSETTA</text>
+<rect x="204" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜感知與分類：Object recognition linking perception data with geometric features</title></rect>
+<rect x="270" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜決策與規劃：Transform an assembly graph into a sequence of operations with preconditions and postconditions to create a task-state machine</title></rect>
+<rect x="336" y="503" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜推理：Retrieve information about tools, sensors, objects, object properties, etc.</title></rect>
+<rect x="468" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜執行：State machines to execute skills</title></rect>
+<rect x="534" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜溝通與協調：Communication between robot and external production environment entities and infrastructure for intercomponent communication</title></rect>
+<rect x="600" y="503" width="58" height="18" rx="4" fill="#3987e5"><title>ROSETTA｜互動與設計：Design models to establish and verify the manufacturing process, tailoring requirements to parameters</title></rect>
+<rect x="666" y="503" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="516" class="val">6/8</text>
+<text x="190" y="540" text-anchor="end" class="lab">汽車線束插銷</text>
+<rect x="204" y="527" width="58" height="18" rx="4" fill="#3987e5"><title>汽車線束插銷｜感知與分類：Vision to inspect robot operations and proximity, position, and fiber optic sensors</title></rect>
+<rect x="270" y="527" width="58" height="18" rx="4" fill="#3987e5"><title>汽車線束插銷｜決策與規劃：Replanning process that modifies production orders when an error calculus task detects them</title></rect>
+<rect x="336" y="527" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="402" y="527" width="58" height="18" rx="4" fill="#3987e5"><title>汽車線束插銷｜推理：Reasoning to acquire valuable data for production and maintenance at the factory level</title></rect>
+<rect x="468" y="527" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="534" y="527" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="600" y="527" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="666" y="527" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="540" class="val">3/8</text>
+<text x="190" y="564" text-anchor="end" class="lab">自適應製造代理</text>
+<rect x="204" y="551" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<rect x="270" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜決策與規劃：Generate a timeline-based planning model with atomic operations</title></rect>
+<rect x="336" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜預測與監控：Compare action outcomes with respect to the expected status of the system and the environment</title></rect>
+<rect x="402" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜推理：Low-level reasoning for local context and high-level reasoning for the transportation machine’s functional capabilities</title></rect>
+<rect x="468" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜執行：Reconfiguration phase is activated in case of failure or when new capabilities are added</title></rect>
+<rect x="534" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜溝通與協調：Commands for sending and receiving interactions with other entities</title></rect>
+<rect x="600" y="551" width="58" height="18" rx="4" fill="#3987e5"><title>自適應製造代理｜互動與設計：Model engineering and management activities</title></rect>
+<rect x="666" y="551" width="58" height="18" rx="4" fill="none" stroke="#30363d"/>
+<text x="798" y="564" class="val">6/8</text>
+<text x="190" y="598" text-anchor="end" class="hd">20 個中有幾個</text>
+<rect x="210" y="604.5" width="46" height="37.5" rx="3" fill="#3987e5"/>
+<text x="233.0" y="600.5" text-anchor="middle" class="val">15</text>
+<rect x="276" y="594.5" width="46" height="47.5" rx="3" fill="#3987e5"/>
+<text x="299.0" y="590.5" text-anchor="middle" class="val">19</text>
+<rect x="342" y="624.5" width="46" height="17.5" rx="3" fill="#d95f2b"/>
+<text x="365.0" y="620.5" text-anchor="middle" class="val">7</text>
+<rect x="408" y="592.0" width="46" height="50.0" rx="3" fill="#3987e5"/>
+<text x="431.0" y="588.0" text-anchor="middle" class="val">20</text>
+<rect x="474" y="617.0" width="46" height="25.0" rx="3" fill="#3987e5"/>
+<text x="497.0" y="613.0" text-anchor="middle" class="val">10</text>
+<rect x="540" y="614.5" width="46" height="27.5" rx="3" fill="#3987e5"/>
+<text x="563.0" y="610.5" text-anchor="middle" class="val">11</text>
+<rect x="606" y="624.5" width="46" height="17.5" rx="3" fill="#d95f2b"/>
+<text x="629.0" y="620.5" text-anchor="middle" class="val">7</text>
+<rect x="672" y="634.5" width="46" height="7.5" rx="3" fill="#d95f2b"/>
+<text x="695.0" y="630.5" text-anchor="middle" class="val">3</text>
+<text x="20" y="668" class="ann2">藍＝有用本體論支援；橘色長條＝覆蓋率最低的三項。OCRA 的「學習」原表寫「列為未來工作」，這裡算作沒有。滑鼠移到方格上可看原表描述。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 F</b>本站依論文表 1–5 整理：原表中有描述的格子算「有」，寫「-」的算「沒有」。這是論文作者的判讀，不代表各框架原論文的完整能力。每一格的原文描述見下方展開表。</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>人人都做的</strong>：推理（20/20）和決策與規劃（19/20）。這部分是篩選條件造成的：論文要求納入的框架都要用本體論來選擇、調整或規劃動作。</li>
+    <li><strong>多數有做的</strong>：感知與分類（15/20）。多數框架用本體論做「情境評估」，把環境資訊整理成可以拿來做決策的形式。</li>
+    <li><strong>明顯不足的</strong>：預測與監控（7/20）、互動與設計（7/20）、學習（3/20）。監控需要一個在執行中持續運作的知識庫，還要深入理解機器人自己；互動與設計需要把工程知識放進知識庫，多數框架沒有這樣做。</li>
+    <li><strong>最「全面」的</strong>：KnowRob 涵蓋 7 項，只缺互動與設計；FailRecOnt、TOMASys、行星探測車、OUR-K、ROSETTA、自適應製造代理各涵蓋 6 項。</li>
+  </ul>
+
+  <p><strong>矩陣沒畫進來的兩個面向（原文 §5.5、表 6）。</strong>規劃器方面，PDDL 是最常用的任務規劃語言，多數框架把幾何或抓取規劃器和任務規劃器搭配使用。時間方面，多數框架只靠「動作的先後順序」；只有 KnowRob、OCRA 和自適應製造代理用時間區間表示動作發生的期間，OMRKF、OUR-K 把時間放進情境知識，行星探測車和 ISRO 則有時間概念。換句話說，20 個框架中只有 3 個能直接表達「這個階段從幾點到幾點」（§14 會用到）。</p>
+
+  <details>
+    <summary>展開：20 × 8 每一格的原表描述（欄名譯為中文，格內保留原表英文）</summary>
+    <div class="inner">
+<div class="tablewrap"><table class="tight wide"><thead><tr><th>框架</th><th>感知與分類</th><th>決策與規劃</th><th>預測與監控</th><th>推理</th><th>執行</th><th>溝通與協調</th><th>互動與設計</th><th>學習</th></tr></thead><tbody>
+<tr><td><b>KnowRob</b><br><span class="tk2">操作</span></td><td>Integrate data types and object recognition</td><td>Action parametrization for successful manipulation</td><td>Predict the most appropriate parameters. Monitoring objects in the environment</td><td>Hybrid, symbolic reasoning for sensor and action data</td><td>Match undetermined instructions and actions</td><td>Web exchange of information</td><td>-</td><td>Use previous descriptions of events, objects, time, and low-level control data</td></tr>
+<tr><td><b>PMK</b><br><span class="tk2">操作</span></td><td>Dynamically select the most appropriate sensor</td><td>Task and motion planning feasibility</td><td>-</td><td>Integration of task and motion planning with the perception module</td><td>-</td><td>-</td><td>Information about which part of an object is interactable, constraints</td><td>-</td></tr>
+<tr><td><b>FailRecOnt</b><br><span class="tk2">操作</span></td><td>Action sensing to detect abnormal events</td><td>How to sense an action and check if a configuration is collision-free</td><td>Failure detection and identification of failed recovery attempts</td><td>How the perception of actions should be formalized</td><td>Symbolic-level actions without geometric considerations</td><td>Communication failures between multiple agents</td><td>-</td><td>-</td></tr>
+<tr><td><b>PLM</b><br><span class="tk2">操作</span></td><td>Identify the most suitable part of an object for grasping</td><td>Translate low-level visual perception into effective grasp planning</td><td>Task prediction to select among alternatives</td><td>Select the best grasping task based on object affordances</td><td>-</td><td>-</td><td>-</td><td>Categorize visual shape features</td></tr>
+<tr><td><b>TOMASys</b><br><span class="tk2">導航</span></td><td>-</td><td>Adjust parameters and configurations to address mission contingencies</td><td>Failure models to detect faulty components and goals not achieved</td><td>Propagate failures to system level, identify affected functionalities and available alternatives</td><td>MAPE-K loop to evaluate mission status</td><td>Component coordination</td><td>Use of metamodels to bridge the gap between design and operation</td><td>-</td></tr>
+<tr><td><b>OMRKF</b><br><span class="tk2">導航</span></td><td>Lower-lever perception features such as numerical descriptors</td><td>Calculus planner to accomplish goals and subgoals</td><td>-</td><td>Geometrical relationships between objects</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td><b>SWARMs</b><br><span class="tk2">導航</span></td><td>Represent underwater environment properties and sensors</td><td>Task-level planning and low-level planning to generate waypoints, actions, etc.</td><td>-</td><td>Hybrid context reasoner: rule-based reasoning and probabilistic annotations</td><td>-</td><td>Robots share tasks, operations, and actions</td><td>-</td><td>-</td></tr>
+<tr><td><b>RTPO</b><br><span class="tk2">導航</span></td><td>Specification of measurable aspects of the environment</td><td>Generate and use domains and problem files to generate plans</td><td>-</td><td>Evaluation of real-time performance in reasoning with 52,000 elements of indoor environments</td><td>-</td><td>Knowledge sharing between three robots and two humans</td><td>-</td><td>Update and add plans generated by the task planning algorithm back into the ontology</td></tr>
+<tr><td><b>行星探測車</b><br><span class="tk2">導航</span></td><td>-</td><td>Precalculated solutions for likely changes, combined with deliberative techniques</td><td>Monitor resources and state checks to trigger replanning</td><td>Configure SW elements, update world state, and decide on replanning</td><td>MAPE-K loop for reconfiguration</td><td>Communication requirements between modules</td><td>Explicit service capacities</td><td>-</td></tr>
+<tr><td><b>城市搜救</b><br><span class="tk2">導航</span></td><td>Pre-processed information from sensors and other intelligent agents</td><td>Management of a global map with shared events and real-time tracking of agent locations</td><td>-</td><td>Store and distribute information among agents</td><td>-</td><td>Multirobot cooperation, global map, and selection of suitable candidates for each task</td><td>-</td><td>-</td></tr>
+<tr><td><b>自駕車換道</b><br><span class="tk2">導航</span></td><td>-</td><td>Evaluate the safety of the vehicle’s surroundings with statistical indicators</td><td>-</td><td>Apply rules derived from traffic regulations and driving experiences</td><td>-</td><td>-</td><td>Addresses requirements such as legality by incorporating traffic rules and reasonableness</td><td>-</td></tr>
+<tr><td><b>搜救任務</b><br><span class="tk2">導航</span></td><td>Semantic map for recognizing and localizing objects</td><td>Definition of tasks and identification of requisite actions and their properties</td><td>-</td><td>Evaluate the suitability of the task for the current state</td><td>Query task definition to retrieve the corresponding atomic action sequence</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td><b>OUR-K</b><br><span class="tk2">社交</span></td><td>Same approach as OMRKF</td><td>Abductive event calculus planner for hierarchical abstraction</td><td>Navigation monitoring and missing object recognition tasks</td><td>Bidirectional links between low and high levels to fill in missing information</td><td>Action knowledge is coupled with all other concepts of the knowledge of models and features</td><td>-</td><td>Dynamic interaction, runtime controller adaptation</td><td>-</td></tr>
+<tr><td><b>ORO</b><br><span class="tk2">社交</span></td><td>Use common ancestors or the best discriminant to categorize</td><td>-</td><td>-</td><td>Ontological reasoning combined with external modules triggered when an event occurs</td><td>Query-based integrated CRAM to automatically update the ontology</td><td>Intelligent blackboard for knowledge sharing among agents</td><td>-</td><td>-</td></tr>
+<tr><td><b>OCRA</b><br><span class="tk2">社交</span></td><td>-</td><td>Dynamic plan adaptation during runtime</td><td>-</td><td>Answering competency questions for collaboration, plans, goals, and adaptations</td><td>-</td><td>Collaboration with humans, explainability</td><td>-</td><td>Envisioned as future work</td></tr>
+<tr><td><b>ISRO</b><br><span class="tk2">社交</span></td><td>Sensor information to recognize the user involved</td><td>Path planning, semantic maps</td><td>-</td><td>Infer spatial and temporal information and user characterization</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td><b>服務機器人</b><br><span class="tk2">社交</span></td><td>Abstract planning information</td><td>Recursive back-trace searching</td><td>-</td><td>Information about spatial objects</td><td>Central controller to propagate the action to planner, user interface, and lower levels</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td><b>ROSETTA</b><br><span class="tk2">工業</span></td><td>Object recognition linking perception data with geometric features</td><td>Transform an assembly graph into a sequence of operations with preconditions and postconditions to create a task-state machine</td><td>-</td><td>Retrieve information about tools, sensors, objects, object properties, etc.</td><td>State machines to execute skills</td><td>Communication between robot and external production environment entities and infrastructure for intercomponent communication</td><td>Design models to establish and verify the manufacturing process, tailoring requirements to parameters</td><td>-</td></tr>
+<tr><td><b>汽車線束插銷</b><br><span class="tk2">工業</span></td><td>Vision to inspect robot operations and proximity, position, and fiber optic sensors</td><td>Replanning process that modifies production orders when an error calculus task detects them</td><td>-</td><td>Reasoning to acquire valuable data for production and maintenance at the factory level</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td><b>自適應製造代理</b><br><span class="tk2">工業</span></td><td>-</td><td>Generate a timeline-based planning model with atomic operations</td><td>Compare action outcomes with respect to the expected status of the system and the environment</td><td>Low-level reasoning for local context and high-level reasoning for the transportation machine’s functional capabilities</td><td>Reconfiguration phase is activated in case of failure or when new capabilities are added</td><td>Commands for sending and receiving interactions with other entities</td><td>Model engineering and management activities</td><td>-</td></tr>
+</tbody></table></div>
+    </div>
+  </details>
+</section>
+
+<!-- ─────────── §7 ─────────── -->
+<section id="manipulation">
+  <h2><span class="num">§7</span>操作領域：讓手臂知道「怎麼抓、抓哪裡、失敗了怎麼辦」</h2>
+  <p class="sec-sub">對應原文 §5.1、表 1：KnowRob（含 RoboEarth）、PMK、FailRecOnt、PLM；多數是居家應用</p>
+
+  <p>「操作」指控制機械手臂和夾爪與實體物件互動。居家環境物件種類多、擺放隨機，正好是「程式寫不完」的地方；這份綜述收錄的操作類框架也大多是居家應用。</p>
+  <p class="note">每張框架卡片上方的標籤：藍框＝綜述認定這個框架用本體論支援該能力（依圖 F）。</p>
+
+  <div class="fw">
+    <h4>KnowRob 與 RoboEarth<small>操作 · 最完整、影響最大</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2 on">學習</span></div>
+    <p>KnowRob 是一套知識庫加處理系統，專做複雜的操作任務 <a class="cite" href="#r-Tenorth2009">Tenorth &amp; Beetz 2009</a>；<a class="cite" href="#r-Tenorth2013">Tenorth &amp; Beetz 2013</a>。第二代 KnowRob 2.0 的主要目標，是把人給的模糊指令變成具體的動作參數 <a class="cite" href="#r-Beetz2018">Beetz 2018</a>：例如要機器人「拿起杯子把裡面的東西倒掉」，知識庫會找出「倒」這個動作需要先「抓住來源容器」，再查詢預抓姿態、抓取姿態、施力大小。它用一個<strong>混合推理核心</strong>結合四種知識庫（圖 G）。</p>
+    <p>它的本體論涵蓋機器人的身體部件、連接方式、感測與動作能力、任務與行為，物件則有部件、功能與擺放狀態，還有時間關係。早期建在 Cyc 上，但 Cyc 一直是專有的、公開版 OpenCyc 也已停止提供，後來改用 DUL。KnowRob 用 Prolog 當查詢與寫入介面，但真正的感知、導航、操作動作寫在<strong>計畫</strong>裡，由 CRAM（Cognitive Robot Abstract Machine，KnowRob 團隊的計畫執行工具）執行 <a class="cite" href="#r-Beetz2010">Beetz 2010</a>。</p>
+    <p><strong>RoboEarth</strong> 是 KnowRob 的延伸：一個讓任何連網機器人上傳、分享、重用資料的雲端平台 <a class="cite" href="#r-Waibel2011">Waibel 2011</a>，內容包括語意地圖、物件模型和「動作食譜」（action recipes）。執行食譜前先確認自己有沒有需要的技能；做不到時，就從雲端下載補充資訊 <a class="cite" href="#r-Tenorth2012">Tenorth 2012</a>；<a class="cite" href="#r-Riazuelo2015">Riazuelo 2015</a>。</p>
+    <p class="ex">論文點出的限制：監控只針對環境中的物件，沒有監控機器人自己；知識庫可能重複或不一致，所以推理核心會產生多個假說，再做合理性與一致性檢查，選出最可能的參數。學習方面，KnowRob 把執行紀錄存成帶語意標註的 NEEMs，可上傳到 openEASE 平台供分析 <a class="cite" href="#r-Beetz2015">Beetz 2015</a>，是 20 個框架裡學習機制最完整的。</p>
+  </div>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 380" role="img" aria-labelledby="G-t G-d">
+<title id="G-t">KnowRob 2.0：把模糊指令變成具體動作參數</title>
+<desc id="G-d">使用者說「把杯子裡的東西倒掉」。混合推理核心有四個知識庫：內在世界、虛擬、邏輯、情節記憶。CRAM 執行計畫並把結果寫回；執行紀錄存成 NEEMs，可上傳到 openEASE 供學習。</desc>
+<defs><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<rect x="20" y="40" width="200" height="70" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="120" y="66" text-anchor="middle" class="sm">模糊指令</text><text x="120" y="88" text-anchor="middle" class="sm">「把杯子裡的東西倒掉」</text>
+<rect x="680" y="40" width="200" height="70" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="780" y="66" text-anchor="middle" class="sm">具體參數</text><text x="780" y="88" text-anchor="middle" class="sm">抓哪裡、預抓姿態、施力</text>
+<rect x="250" y="30" width="400" height="230" rx="10" fill="#1c2c45" stroke="#3987e5" stroke-width="1.6"/>
+<text x="450" y="56" text-anchor="middle" class="hd">混合推理核心（hybrid reasoning kernel）</text>
+<rect x="270" y="72" width="170" height="74" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="355" y="102" text-anchor="middle" class="sm">內在世界 KB</text><text x="355" y="124" text-anchor="middle" class="tk2">物件的 CAD／網格＋物理模擬</text>
+<rect x="460" y="72" width="170" height="74" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="545" y="102" text-anchor="middle" class="sm">虛擬 KB</text><text x="545" y="124" text-anchor="middle" class="tk2">依需求從控制系統資料算出</text>
+<rect x="270" y="160" width="170" height="74" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="355" y="190" text-anchor="middle" class="sm">邏輯 KB</text><text x="355" y="212" text-anchor="middle" class="tk2">符號化的感測與動作＋公理</text>
+<rect x="460" y="160" width="170" height="74" rx="8" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="545" y="190" text-anchor="middle" class="sm">情節記憶 KB</text><text x="545" y="212" text-anchor="middle" class="tk2">過去的執行經驗（NEEMs）</text>
+<line x1="222" y1="75" x2="247" y2="75" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aG)"/>
+<line x1="652" y1="75" x2="677" y2="75" stroke="#8b949e" stroke-width="1.6" marker-end="url(#aG)"/>
+<rect x="250" y="290" width="250" height="60" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="375" y="314" text-anchor="middle" class="sm">CRAM 執行計畫</text><text x="375" y="334" text-anchor="middle" class="sm">把感知與動作結果寫回知識庫</text>
+<rect x="560" y="290" width="320" height="60" rx="10" fill="#1c2330" stroke="#7ee787" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="720" y="314" text-anchor="middle" class="sm">NEEMs → openEASE</text><text x="720" y="334" text-anchor="middle" class="sm">情節記憶上傳、分享、分析</text>
+<path d="M375,288 V262" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aG)"/>
+<path d="M502,320 H557" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#aG)"/>
+<text x="20" y="372" class="ann2">論文的比較只聚焦在「邏輯 KB」這種符號推理；其他三種 KB 是 KnowRob 2.0 的特色（Beetz 等 2018）。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 G</b>本站依論文 §5.1.1 對 KnowRob 2.0 的描述繪製 <a class="cite" href="#r-Beetz2018">Beetz 2018</a>。</figcaption>
+  </figure>
+
+  <div class="fw">
+    <h4>PMK：感知與操作知識<small>操作 · 給任務與運動規劃用的語意</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>PMK 的目標是替「任務與運動規劃」（TAMP）補上語意資訊 <a class="cite" href="#r-Diab2019">Diab 2019</a>。規劃器不只要知道「把杯子放到桌上」，還要知道物件的幾何限制、哪一面可以抓、手臂搆不搆得到、會不會撞到東西。PMK 的本體論分三層（通用的後設本體論、領域綱要、個體資料），內容分成特徵、工作空間、物件、行動者、感測器、情境推理、動作七類。</p>
+    <p class="ex">兩個有意思的設計：一是把感測器分組成「等效的感測策略」（例如 RFID 和 2D 相機都能定位物件），讓系統依當下情況挑最合適的感測器；二是推出操作限制，例如摩擦、滑動、最大施力，空間關係（裡面、左、右），以及「可以從握把抓」「可以從瓶身推」這類可供性。</p>
+  </div>
+
+  <div class="fw">
+    <h4>FailRecOnt：失敗詮釋與復原<small>操作 · 把「出錯」本身寫進本體論</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>多數框架描述的是「事情該怎麼進行」；FailRecOnt 專門描述「事情怎麼出錯」<a class="cite" href="#r-Diab2020">Diab 2020</a>；<a class="cite" href="#r-Diab2021">Diab 2021</a>。它把失敗表示成「沒有實現的情境」，再記錄失敗的成因機制、發生位置、時間和功能面的影響，讓推理器依失敗的種類、原因、是否波及其他活動，挑出對應的復原策略來修補計畫。</p>
+    <p class="ex">系統分三層：規劃與執行層、知識層、負責感知與碰撞檢查的低層輔助層。測試任務是依顏色把物件放進托盤：遇到盒子是關著的、或被翻倒，也能處理後繼續執行。它也涵蓋多代理人之間的<strong>通訊失敗</strong>。FailRecOnt 和 KnowRob 有共同作者，並以 PMK 當系統模型。</p>
+  </div>
+
+  <div class="fw">
+    <h4>PLM：機率邏輯模組<small>操作 · 抓杯子該抓哪裡</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2 on">學習</span></div>
+    <p>PLM 結合語意推理與幾何推理來規劃抓取 <a class="cite" href="#r-Antanas2019">Antanas 2019</a>。它有三個本體論：物件（杯子、鐵鎚，以及「廚房容器」「工具」這類功能上的大類）、任務（例如「拿起放到右邊」「倒進去」）、以及物件–任務的可供性（考慮兩指夾爪的能力和成功機率）。</p>
+    <p class="ex">流程是：先用視覺把物件分成上、中、下、握把等部位；再用機率邏輯推出「這個任務最可能成功的抓取部位」，大幅縮小夾爪最終姿態的搜尋空間；最後交給以形狀為基礎的低層規劃器產生軌跡。學到的知識可以轉移到同一類別的新物件。</p>
+  </div>
+</section>
+
+<!-- ─────────── §8 ─────────── -->
+<section id="navigation">
+  <h2><span class="num">§8</span>導航領域：從水下礦區到外星地表</h2>
+  <p class="sec-sub">對應原文 §5.2、表 2–3：TOMASys、OMRKF、SWARMs、RTPO、行星探測車、城市搜救、自駕車、搜救任務</p>
+
+  <p>導航領域處理的是導引、導航與控制（GNC）：用視覺和感測器融合做感知與定位，再做建圖、路徑規劃與避障。這一領域收錄的框架最多（8 個），應用也最分散。</p>
+
+  <div class="fw">
+    <h4>TOMASys：用設計知識在執行中自我重構<small>導航 · 作者實驗室自己的框架</small></h4>
+    <div><span class="tag2">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>TOMASys 是一個<strong>元模型</strong>（metamodel），描述自主系統的功能知識 <a class="cite" href="#r-Hernandez2018">Hernández 2018</a>。它有兩個面向：「目的論」面記錄設計者的意圖（這個元件是為了達成什麼功能），「本體論」面描述系統的結構和行為（這裡的「本體論」是 TOMASys 自己的用語，指描述結構與行為的那一面）。核心概念是功能、目標、元件、配置；它刻意不描述環境裡的物件或地圖。</p>
+    <p>核心是<strong>元控制器</strong>：一般控制器讓元件的輸出貼近設定值；元控制器則在「系統功能」這一層再加一個閉迴路，當功能偏離任務需求時觸發重新配置（圖 H）。它照 MAPE-K 迴圈運作（監控、分析、規劃、執行，加上共享知識）<a class="cite" href="#r-IBM2005">IBM 2005</a>，用描述邏輯推理器把元件故障往上傳到系統層，找出受影響的功能和可用的替代方案，必要時甚至放寬任務目標。</p>
+    <p class="ex">實際應用包括水下礦區探勘機器人 <a class="cite" href="#r-Aguado2021">Aguado 2021</a> 和在大學校園巡邏的移動機器人（MROS）<a class="cite" href="#r-Bozhinoski2022">Bozhinoski 2022</a>。要注意：這是綜述作者實驗室自己的框架，論文結論也偏向它的路線（§12）。</p>
+  </div>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 420" role="img" aria-labelledby="H-t H-d">
+<title id="H-t">TOMASys 的元控制：在功能層再加一個閉迴路</title>
+<desc id="H-d">下層是一般控制器，讓元件輸出貼近設定值。上層的元控制器監看功能是否達成任務需求，依 MAPE-K 迴圈：監控、分析、規劃、執行，靠本體論推理找出受影響的功能與替代配置，然後重新配置系統。</desc>
+<defs><marker id="aH" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<text x="20" y="26" class="hd">上層：元控制器（metacontroller）— 管「功能有沒有達成」</text>
+<rect x="30" y="40" width="195" height="64" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="127" y="66" text-anchor="middle" class="hd">M 監控</text><text x="127" y="88" text-anchor="middle" class="tk2">觀察器回報元件狀態</text>
+<rect x="245" y="40" width="195" height="64" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="342" y="66" text-anchor="middle" class="hd">A 分析</text><text x="342" y="88" text-anchor="middle" class="tk2">推理：失效往上傳到功能</text>
+<rect x="460" y="40" width="195" height="64" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="557" y="66" text-anchor="middle" class="hd">P 規劃</text><text x="557" y="88" text-anchor="middle" class="tk2">找能提供同功能的替代配置</text>
+<rect x="675" y="40" width="195" height="64" rx="10" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="772" y="66" text-anchor="middle" class="hd">E 執行</text><text x="772" y="88" text-anchor="middle" class="tk2">切換元件、參數或放寬目標</text>
+<line x1="227" y1="72" x2="243" y2="72" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aH)"/>
+<line x1="442" y1="72" x2="458" y2="72" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aH)"/>
+<line x1="657" y1="72" x2="673" y2="72" stroke="#d95f2b" stroke-width="1.6" marker-end="url(#aH)"/>
+<rect x="300" y="128" width="300" height="52" rx="10" fill="#1c2c45" stroke="#3987e5" stroke-width="1.6"/>
+<text x="450" y="150" text-anchor="middle" class="sm">K：本體論（TOMASys 元模型）</text><text x="450" y="170" text-anchor="middle" class="sm">功能、目標、元件、配置</text>
+<line x1="127" y1="106" x2="321" y2="128" stroke="#3987e5" stroke-dasharray="3 3"/>
+<line x1="342" y1="106" x2="407" y2="128" stroke="#3987e5" stroke-dasharray="3 3"/>
+<line x1="557" y1="106" x2="493" y2="128" stroke="#3987e5" stroke-dasharray="3 3"/>
+<line x1="772" y1="106" x2="579" y2="128" stroke="#3987e5" stroke-dasharray="3 3"/>
+<text x="20" y="226" class="hd">下層：一般控制器 — 管「輸出有沒有貼近設定值」</text>
+<rect x="60" y="242" width="220" height="50" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="170" y="272" text-anchor="middle" class="sm">導航元件 A</text>
+<rect x="300" y="242" width="220" height="50" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="410" y="272" text-anchor="middle" class="sm">定位元件（相機）</text>
+<rect x="560" y="242" width="220" height="50" rx="10" fill="#1c2330" stroke="#8b949e" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="670" y="272" text-anchor="middle" class="sm">定位元件（光達）</text>
+<text x="512" y="236" text-anchor="end" class="ret" style="fill:#d95f2b">✕ 故障</text>
+<path d="M410,240 V196 H127 V109" fill="none" stroke="#8b949e" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#aH)"/>
+<text x="140" y="190" class="tk2">觀察器回報</text>
+<path d="M772,106 V214 H670 V240" fill="none" stroke="#7ee787" stroke-width="1.8" marker-end="url(#aH)"/>
+<text x="780" y="232" class="sm" style="fill:#7ee787">改用光達</text>
+<rect x="20" y="316" width="860" height="88" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.6"/>
+<text x="36" y="342" text-anchor="start" class="sm">例子（本站示意）：巡邏機器人的相機壞了。分析步驟從本體論查到「定位」這項功能受影響、哪些元件也能提供定位；</text><text x="36" y="364" text-anchor="start" class="sm">規劃步驟挑出光達定位這組替代配置；執行步驟切換過去。任務繼續，只是精度可能較差。如果沒有任何替代方案，</text><text x="36" y="386" text-anchor="start" class="sm">元控制器可以放寬任務目標，或通知人。論文提到的實際應用：水下礦區探勘機器人、在校園巡邏的移動機器人。</text>
+</svg>
+    </div>
+    <figcaption><b>圖 H</b>本站依論文 §5.2.1 繪製；相機換光達的例子是本站為了說明而設計的，不是論文中的實驗。</figcaption>
+  </figure>
+
+  <figure class=""><a href="figs/fig3.webp"><img src="figs/fig3.webp" loading="lazy" alt="論文原圖 3：以元件、能力、任務目標、價值為核心的機器人本體論類別關係圖，包含 Stakeholder、Value、Metric、Capability、Component、Interface、Constraint、Goal、Status 等類別，以及 MineWorker、MineExploiter、MineralDetector、MineralProductivity 等礦業相關子類別"></a><figcaption><b>原圖 3</b>作者正在發展的本體論，基本概念見 <a class="cite" href="#r-Aguado2024">Aguado 2024（範疇論）</a>：把元件、能力、任務目標和利害關係人的價值連起來。例如某個元件壞了，可以查到哪個元件能提供同樣的能力、需要哪些介面、哪些指標會受影響、該通知哪些利害關係人。類別名稱（礦工、礦物偵測器等）看起來來自論文經費聲明中的 ROBOMINERS 礦業計畫（本站推測；後續實作見 §13）。點圖可開啟原尺寸。 <span class="cr">Aguado 等 2024，Front. Robot. AI，CC BY；未修改</span></figcaption></figure>
+
+  <div class="fw">
+    <h4>OMRKF：多層機器人知識框架<small>導航</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>OMRKF 想把高層知識和感知資料接起來 <a class="cite" href="#r-Suh2007">Suh 2007</a>。它的知識分成感知、活動、模型、情境四類，每類再分高、中、低三個層級；每個層級又有三層本體論（後設本體論、綱要、個體）。低層感知直接存影像處理演算法（例如 SIFT）算出的數值描述子。</p>
+    <p class="ex">規劃用事件演算（event calculus，一種描述事件如何改變狀態的邏輯）：知識不夠時，把目標遞迴拆成子目標，直到「前往」「轉向」「擷取特徵」這類原子功能；送貨任務就是這樣一步步拆出來的。推理用「左與右」「上與下」互為相反這類公理和 Horn 規則補出新事實。</p>
+  </div>
+
+  <div class="fw">
+    <h4>SWARMs：水下多機器人的共同語言<small>導航 · 處理不確定性</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>海洋與水下任務的資料來源五花八門，SWARMs 用一個核心本體論串起任務與規劃、載具、環境、通訊與網路、應用五個領域本體論，讓不同機器人有共同的理解 <a class="cite" href="#r-Li2017">Li 2017</a>。它用機率本體論 PR-OWL 和多實體貝氏網路（MEBN）<a class="cite" href="#r-Laskey2008">Laskey 2008</a> 標註不確定性，做「規則推理＋機率推理」的混合推理。</p>
+    <p class="ex">例子：根據化學汙染的機率分布，推出某片海域的緊急程度。規劃分兩層：使用者在高層描述要做什麼，不必指定每台載具的動作；各機器人在低層自己產生航點與動作。</p>
+  </div>
+
+  <div class="fw">
+    <h4>RTPO：機器人任務規劃本體論<small>導航 · 會把規劃結果存回去</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2 on">學習</span></div>
+    <p>RTPO 分成機器人、環境、任務三個本體論 <a class="cite" href="#r-Sun2019b">Sun 2019b</a>，從知識庫產生類似 PDDL 的領域檔與問題檔來規劃，比對每個原子動作的前置條件與效果，從起始狀態推到目標狀態。</p>
+    <p class="ex">兩個特點：規劃出的結果會<strong>存回本體論</strong>，下次遇到同樣任務直接取用，這是 20 個框架中少數算得上「學習」的設計；作者測試了 52,000 個個體規模下的即時推理效能，但沒有說明這對規劃過程有什麼影響。</p>
+  </div>
+
+  <div class="fw">
+    <h4>行星探測車的自我重構 GNC<small>導航 · 安全模式＋重新規劃</small></h4>
+    <div><span class="tag2">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>外星探測車離地球太遠，出問題時沒辦法等人遙控。這個架構讓探測車在執行中自己重新配置任務目標、軟體架構、軟體元件和硬體控制 <a class="cite" href="#r-Burroughes2016">Burroughes 2016</a>。本體論的角色，是記錄每個軟體服務能做什麼、表現如何（例如某種定位方法對感測器雜訊有多耐受），讓系統有依據挑選替代方案。為了管理複雜度，本體論拆成多個模組。</p>
+    <p class="ex">它的應變流程可以想成「先停、再想、再走」：監控發現不對勁就進入<strong>安全模式</strong>；常見狀況直接套用預先算好的反應，沒有現成解法才啟動比較慢的深思式規劃（PDDL），訂出新目標後再恢復正常運作（§11 比較了這種做法）。一個具體的取捨：在感測器雜訊大的地形，寧可選對雜訊容忍度高、但不是最精確的定位方法。監控本身也要花運算資源，所以每個子系統要監控得多細，也可以調整。</p>
+  </div>
+
+  <div class="fw">
+    <h4>城市搜救的協作情境感知<small>導航 · 通訊中斷也不漏資訊</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>城市搜救（USAR）任務中，多台機器人和人共用一個描述代理人與能力、任務情境、隊伍的本體論 <a class="cite" href="#r-Chandra2016">Chandra 2016</a>，知識庫記錄位置、溫度、能見度、煙霧、電量、任務，以及偵測到的受困者或火源。</p>
+    <p class="ex">最實用的設計是<strong>對通訊中斷的韌性</strong>：每台機器人偵測到的事件都先記在本地知識庫並分享給全隊；失聯時把「尚未處理的事件」排成清單，恢復連線後再補送。它也支援新隊員加入、暫時離隊再歸隊，以及替行動不便的隊友補位。</p>
+  </div>
+
+  <div class="fw">
+    <h4>自駕車的情境評估與換道決策<small>導航 · 交通規則寫成知識</small></h4>
+    <div><span class="tag2">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>知識庫描述車輛可行駛的方向、靜態與動態障礙物、道路特性（高速公路或市區道路），以及接近路口、過橋、迴轉等情境 <a class="cite" href="#r-Huang2019">Huang 2019</a>。系統把車子周圍分成幾個區域，依有沒有障礙物判斷每區安全與否（再用和速度相關的統計指標補充），安全就維持車道，否則換道。</p>
+    <p class="ex">規則來自交通法規和駕駛經驗。它還考慮兩個面向：「合法性」（換道要守交通規則）和「合理性」（接近路口時查全域路徑，確認下一段要走哪條車道），避免為了局部最佳而偏離整體路線。</p>
+  </div>
+
+  <div class="fw">
+    <h4>搜救任務的高階決策<small>導航</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>搜救本體論由實體、環境、任務三個子本體論組成 <a class="cite" href="#r-Sun2019a">Sun 2019a</a>：實體涵蓋地面、水下、空中機器人；任務定義充電、搜尋、救援、辨識四種典型任務，並把原子動作描述成對環境狀態的影響。</p>
+    <p class="ex">感知方面用語意地圖辨識與定位物件，以貝氏推理提高受困者定位的精度，並掃描 QR code 取得心跳、血壓等生命徵象。決策前先評估任務是否適合當下狀態；遇到以前規劃過的任務，直接取出對應的原子動作序列。</p>
+  </div>
+</section>
+
+<!-- ─────────── §9 ─────────── -->
+<section id="social">
+  <h2><span class="num">§9</span>社交與服務領域：和人一起工作</h2>
+  <p class="sec-sub">對應原文 §5.3、表 4：OUR-K、ORO、OCRA、ISRO、服務機器人</p>
+
+  <p>社交機器人要在家庭、醫院、教育、公共場所裡和人互動。除了技術上做得到，還得讓互動自然、直覺、可被社會接受。</p>
+
+  <div class="fw">
+    <h4>OUR-K：統一的服務機器人知識<small>社交 · OMRKF 的後繼者</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>OUR-K 沿用 OMRKF 的分層概念，把知識分成特徵、物件、空間、情境、動作五類，應用到居家服務機器人 <a class="cite" href="#r-Lim2011">Lim 2011</a>。它的長處是<strong>資訊不完整也能執行任務</strong>：低層資料和高層知識之間有雙向連結，可以互相補齊缺漏。高層任務（例如送東西）會拆成「前往目標空間」「找物件」等中層子任務，再拆成「前往」「辨識物件」等基本行為。</p>
+    <p class="ex">Diab 等人後來替它加上以物理為基礎的操作本體論，新增「行動者」類別描述機器人的工作限制，讓規劃器能處理操作時的力學互動 <a class="cite" href="#r-Diab2018">Diab 2018</a>；測試任務是端一罐飲料。</p>
+  </div>
+
+  <div class="fw">
+    <h4>ORO：人機互動的常識本體論<small>社交 · 每個人一個心智模型</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>ORO 是一個知識處理框架加一套常識本體論（以 OpenCyc 為基礎，和第一版 KnowRob 共用大部分概念），專為語意豐富的人機互動設計 <a class="cite" href="#r-Lemaignan2010">Lemaignan 2010</a>。它像一塊<strong>智慧黑板</strong>：各個模組都能把知識推上去或拉下來。</p>
+    <p class="ex">三個有意思的設計：記憶分成長期、短期等不同記憶區（memory profile），每區有自己的保存期限，到期的事實就自動刪除；遇到新的人，就替對方另建一個心智模型，所以能同時保存彼此不一致的世界觀；還能做「辨別」，例如使用者說「拿那個瓶子」而桌上有兩個瓶子時，找出最能區分兩者的特徵。它透過 CRAM 在物件進出視野時自動更新知識。</p>
+  </div>
+
+  <div class="fw">
+    <h4>OCRA：協作與計畫調整<small>社交 · 能回答「你在跟誰合作、計畫怎麼改」</small></h4>
+    <div><span class="tag2">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>OCRA 建在 KnowRob 和 DUL 之上，專門表示人機協作情境中的知識，以支援計畫調整 <a class="cite" href="#r-OlivaresAlarcos2022">Olivares-Alarcos 2022</a>。它用一階邏輯定義概念，讓機器人回答一連串「驗收問題」（competency questions，本體論設計時就訂好、它必須答得出來的問題）：現在有哪些協作在進行、目前的計畫和目標是什麼、有哪些代理人參與、計畫調整前後有什麼不同。</p>
+    <p class="ex">測試任務是人和機器人一起把東西放進托盤的格子：機器人原本要放某一格，發現那格已經放了，就改放另一個空格，並能透過本體論解釋這次調整。綜述作者認為它最大的價值，是明確表示了協作的需求，包括安全考量和風險量測。學習只列為未來工作。</p>
+  </div>
+
+  <div class="fw">
+    <h4>ISRO：醫院接待機器人<small>社交</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>ISRO 讓一台接待機器人在醫院裡辨識來訪者，帶他們到正確的科別 <a class="cite" href="#r-Chang2020">Chang 2020</a>。本體論的作用，是把「這個人是誰、要去哪裡」和「機器人能做什麼、該怎麼走」連起來：知識分成使用者、機器人、感知與環境、動作四塊，彼此用空間和時間關係串接。</p>
+    <p class="ex">它辨識來訪者的臉、性別、年齡和表情，再用語意空間知識（哪些空間彼此相連）規劃帶路路徑，轉成拓撲航點後帶病人到正確的科別；路徑會存進知識庫，和其他機器人分享。它的決策架構採用 BDI（信念–欲望–意圖）代理人模型 <a class="cite" href="#r-Huber1999">Huber 1999</a>。</p>
+  </div>
+
+  <div class="fw">
+    <h4>服務機器人的自動任務規劃<small>社交 · 「桌子旁邊」到底是哪裡</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>這個框架讓 Care-O-bot 服務機器人去拿牛奶盒 <a class="cite" href="#r-Ji2012">Ji 2012</a>。本體論描述環境和機器人的基本動作，動作用經典規劃器 STRIPS 的格式描述（前置條件、後置條件、輸入、結果），再用自訂的遞迴回溯搜尋找出動作順序。</p>
+    <p class="ex">原作者特別強調<strong>符號接地</strong>：規劃說「移到桌子旁邊」，執行時必須確定「旁邊」是哪個座標。推理也用在找東西：牛奶是易腐食品，所以可能在桌上，也可能在冰箱裡，系統會估計各個位置的可能性。</p>
+  </div>
+</section>
+
+<!-- ─────────── §10 ─────────── -->
+<section id="industrial">
+  <h2><span class="num">§10</span>工業領域：組裝、插銷、回收產線</h2>
+  <p class="sec-sub">對應原文 §5.4、表 5：ROSETTA、汽車線束插銷、自適應製造代理</p>
+
+  <p>工業機器人追求效率和精度。本體論在這裡的用途是提高彈性、減少維護、強化控制與檢查。</p>
+
+  <div class="fw">
+    <h4>ROSETTA：製造技能本體論<small>工業 · 從組裝樹自動產生狀態機</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>ROSETTA 源自 SIARAS、RoSta、ROSETTA 等歐盟計畫，核心是機器人裝置和它們的<strong>技能</strong> <a class="cite" href="#r-Stenmark2015">Stenmark 2015</a>。它透過「知識整合框架」（KIF，和同名的邏輯語法無關）提供服務：使用者用組裝樹指定子目標的先後順序，框架安排動作與有限資源下的排程，再從技能描述產生執行用的狀態機。</p>
+    <p class="ex">後續研究用 ROSETTA 加上描述幾何形狀的 BREP 本體論 <a class="cite" href="#r-Perzylo2015">Perzylo 2015</a>，控制電子產品組裝和托盤輸送系統，並從本體論自動產生 PDDL 規劃檔 <a class="cite" href="#r-Hoebert2021">Hoebert 2021</a>；<a class="cite" href="#r-Merdan2019">Merdan 2019</a>。研究者也提醒：後設層（meta-level）概念缺乏標準化，讓整合既有本體論變得困難，也限制了擴充性。</p>
+  </div>
+
+  <div class="fw">
+    <h4>汽車線束接線盒插銷<small>工業 · 視覺檢查＋優先修復</small></h4>
+    <div><span class="tag2 on">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2">預測與監控</span><span class="tag2 on">推理</span><span class="tag2">執行</span><span class="tag2">溝通與協調</span><span class="tag2">互動與設計</span><span class="tag2">學習</span></div>
+    <p>任務是把最多 56 個小密封銷插進汽車線束的接線盒 <a class="cite" href="#r-Bernardo2018">Bernardo 2018</a>。知識庫建在 CORA 上，描述機器人、機器視覺系統和任務。視覺系統檢查每個密封銷有沒有插好；有問題時，立刻插入一個優先任務去補插，完成後回到原本的生產順序。</p>
+    <p class="ex">原作者稱這是「重新規劃」，綜述作者則認為它比較像「預先規劃好的修復」，因為做完就回到原計畫。</p>
+  </div>
+
+  <div class="fw">
+    <h4>自適應製造代理<small>工業 · 把工程與管理活動也寫進知識</small></h4>
+    <div><span class="tag2">感知與分類</span><span class="tag2 on">決策與規劃</span><span class="tag2 on">預測與監控</span><span class="tag2 on">推理</span><span class="tag2 on">執行</span><span class="tag2 on">溝通與協調</span><span class="tag2 on">互動與設計</span><span class="tag2">學習</span></div>
+    <p>產線上的輸送模組會故障、也會加裝新設備，每次變動都重寫控制邏輯並不實際。這個研究擴充 DOLCE，讓代理人自己從知識推出「我現在能做什麼」，並在一座回收印刷電路板的可重構試驗工廠中驗證 <a class="cite" href="#r-Borgo2019">Borgo 2019</a>。系統由上而下分成規劃動作、執行與監控、實際機電設備三層。</p>
+    <p class="ex">它的「知識型控制迴圈」（KBCL）會動態表示輸送模組的能力、內部狀態和周遭情況，推出目前可用的功能；故障或新增能力時進入重新配置階段，更新知識庫後再跑下一輪。規劃採時間線模型，開始與結束時間可以彈性調整。它和其他框架最大的不同，是連<strong>工程與管理活動</strong>都建模了，包括功能分解、實際與期望狀態的差距、要做哪些改變。</p>
+  </div>
+</section>
+
+<!-- ─────────── §11 ─────────── -->
+<section id="recovery">
+  <h2><span class="num">§11</span>出狀況時怎麼辦：七種應變模式比較</h2>
+  <p class="sec-sub">本站整理：論文說「在故障下維持運作」是多個框架的目標，但沒有把它們的做法並排比較</p>
+
+  <p>論文指出，重新規劃是好幾個框架的重點，目標是在故障發生時讓任務繼續。我們把散在各節的做法整理成一張表，可以看出「應變」其實有好幾種層次：</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>框架</th><th>觸發條件</th><th>本體論提供什麼</th><th>應變方式</th><th>改變的層級</th></tr></thead>
+    <tbody>
+      <tr><td>汽車線束插銷</td><td>視覺檢查發現插錯</td><td>任務序列、感測器與致動器的用途</td><td>插入優先補插任務，做完回到原順序</td><td>動作（計畫不變）</td></tr>
+      <tr><td>OCRA</td><td>環境和預期不同（格子已放）</td><td>協作、計畫、目標、調整觸發條件</td><td>改做另一個等價步驟，並解釋原因</td><td>計畫步驟</td></tr>
+      <tr><td>FailRecOnt</td><td>監控偵測到動作失敗</td><td>失敗的種類、成因、位置、時間、影響</td><td>依失敗類型挑復原策略，修補計畫</td><td>計畫</td></tr>
+      <tr><td>RTPO／搜救任務</td><td>新任務或環境變化</td><td>動作的前置條件與效果、過去的計畫</td><td>重新規劃，或取用存好的計畫</td><td>計畫</td></tr>
+      <tr><td>行星探測車</td><td>監控發現不希望的狀態變化</td><td>軟硬體功能、服務能力、安全準則</td><td>進安全模式 → 預先算好的反應或重新規劃</td><td>軟體配置＋任務目標</td></tr>
+      <tr><td>自適應製造代理</td><td>執行失敗或新增能力</td><td>元件、協作者、內外部情境、功能</td><td>知識型控制迴圈：重新配置後重新規劃</td><td>系統配置＋計畫</td></tr>
+      <tr><td>TOMASys</td><td>元件故障，或任務需求沒達成</td><td>功能、目標、元件、配置的工程知識</td><td>元控制：換元件或參數，必要時放寬目標</td><td>系統架構＋任務目標</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>從上往下，應變的「深度」越來越大：最淺的是在既有計畫裡插一個修復動作；中間是修改計畫；最深的是<strong>改變機器人自己的配置</strong>，甚至調整任務目標。後者需要本體論裡有機器人自己的工程設計知識，這正是作者認為多數框架欠缺的部分（§12）。城市搜救框架則處理另一種狀況：通訊中斷時把事件排隊，恢復後補送（§8）。</p>
+</section>
+
+<!-- ─────────── §12 ─────────── -->
+<section id="conclusion">
+  <h2><span class="num">§12</span>作者的結論與研究方向</h2>
+  <p class="sec-sub">對應原文 §5.5、§6、§7</p>
+
+  <p>綜合比較後，作者的整體判斷是：本體論對機器人自主是有價值的資產，這些框架讓「任務層級的可信賴性」往前推進了一步，但還有幾個沒解決的問題。</p>
+
+  <h3>一、各做各的，很少重用</h3>
+  <p>不同的本體論方法很少互相重用，框架之間也缺乏互通性。KnowRob 是文件最完整、影響最大的專案，ORO、FailRecOnt、OCRA 都受它影響。但本體論要收斂很難：既有「垂直」的差異（抽象層級），也有「水平」的差異（應用領域）。作者認為還是必須努力整合，因為機器人從來不是孤立的，而是「系統中的系統」的一部分 <a class="cite" href="#r-Sanz2021">Sanz 2021</a>。</p>
+
+  <h3>二、未來的平台要有三個特性</h3>
+  <ul>
+    <li><strong>可解釋性</strong>：大多數框架有查詢介面，至少能做到淺層的解釋，但要看使用者（通常是操作員）能不能看懂。需要更貼近一般人理解方式的本體論。</li>
+    <li><strong>可重用性</strong>：宣告式知識天生容易重用，但要真正重用，概念必須先統一，在異質系統中尤其困難。</li>
+    <li><strong>擴充性</strong>：只有少數框架處理過（RTPO 的大規模推理、KnowRob）。面對複雜的系統中的系統、地理或時間跨度大的任務、多機器人或人機團隊的知識協作時，擴充性仍是問題。</li>
+  </ul>
+  <p>現有工具像 CRAM 和 rosprolog 是好的開始，但它們是為 KnowRob 環境量身打造的，作者也提到這些工具有時文件不足、維護不佳。</p>
+
+  <h3>三、最該補的：監控、協調，以及工程知識</h3>
+  <p>作者的觀察是：多數研究集中在分類、決策和規劃；但對穩定可靠的運作而言，<strong>監控與協調</strong>才是關鍵，而它們很難做成可重用的實作，因為應用、情境、參與者的變化太大。作者提出的方向是：用<strong>明確的工程模型</strong>來支撐這些過程，把設計階段的知識（元件、互動、設計需求、替代方案）和執行中的資訊結合起來，用於決策與自我調整。這在 TOMASys、ROSETTA、行星探測車和自適應製造代理中已部分實現。</p>
+
+  <div class="verdict">
+    <div class="tag">作者最後的一個重點</div>
+    <p>任務與目標的規格裡，通常<strong>缺少「使用者期待的表現」</strong>。但信任來自「可靠地交出使用者期待的結果」，所以這類資訊必須寫進知識裡，例如使用者的主觀感受、要求的安全等級，或是「耗電超過多少這個任務就不划算」的門檻。作者認為，機器人在可信賴性、效率和效能上，離使用者和擁有者的期待還很遠。</p>
+  </div>
+</section>
+
+<!-- ─────────── §13 ─────────── -->
+<section id="after">
+  <h2><span class="num">§13</span>這篇之後：2024–2026 的發展</h2>
+  <p class="sec-sub">本站補充：查到 2026-11 為止的後續研究與標準狀態；DOI 經 Crossref、arXiv 編號經 arXiv、標準狀態經 standards.ieee.org 核對</p>
+  <p>這篇綜述的搜尋做在 2022 年，正好錯過了大型語言模型（LLM）進入機器人領域的那一波。2024 年之後最明顯的變化是：<strong>LLM 沒有取代本體論，兩者開始分工</strong>。LLM 負責自然語言、常識和「填寫」知識；本體論負責一致性檢查、推理，以及可以驗證的約束。綜述裡的三條主要譜系（UPC 的 PMK／FailRecOnt、IRI 的 OCRA、不來梅的 KnowRob）都各自長出了 LLM 版本。</p>
+
+  <h3>一、本體論 × 大型語言模型</h3>
+  <ul>
+    <li><strong>本體論替 LLM 規劃器補脈絡</strong>：Onto-LLM-TAMP 先用本體論推理擴充使用者的指令，再交給 LLM 做任務與運動規劃，用來修正像「疊放物件時目標先後順序」這類語意錯誤，在模擬與實機上都驗證過 <a class="cite" href="#r-UdDin2026">Ud Din 2026</a>。作者之一正是 PMK 和 FailRecOnt 的共同作者。</li>
+    <li><strong>LLM 填本體論、本體論產生 PDDL</strong>：LLM 從使用者的描述中抽出物件、屬性與關係，寫進 OWL 本體論；推理器推出類別歸屬後，再自動產生 PDDL 規劃問題，並直接拿綜述收錄的 PMK 做比較 <a class="cite" href="#r-Molina2025">Molina 2025</a>。發表場合是可靠系統（DSN）的研討會，正好呼應綜述的「可信賴性」主軸。</li>
+    <li><strong>用本體論檢查 LLM 計畫的安全性</strong>：VIRF 讓一個以 OWL 安全本體論為基礎的推理模組當「邏輯家教」，不只擋下不安全的計畫，還告訴 LLM 錯在哪裡、讓它修正。在模擬的居家安全任務中，危險動作率為 0%，但仍只是模擬，安全公理也需要人類專家審核 <a class="cite" href="#r-Wu2026">Wu 2026（VIRF）</a>。</li>
+    <li><strong>本體論保證正確、LLM 負責講人話</strong>：OCRA 團隊把本體論用在機器人計畫的對比式解釋（「為什麼這樣做，而不是那樣做」）<a class="cite" href="#r-OlivaresAlarcos2026">Olivares-Alarcos 2026</a>，並嘗試讓 LLM 把本體論推出的解釋改寫得更好懂。</li>
+    <li><strong>服務機器人的模糊指令</strong>：把本體論和 LLM 的常識結合，處理「幫我拿個東西來」這類模糊請求，目標是減少幻覺和追問次數 <a class="cite" href="#r-Nakajima2024">Nakajima 2024</a>。</li>
+    <li><strong>料理動作的可執行知識圖譜</strong>：KnowRob 團隊從超過一百萬份食譜中分析動作動詞，對應到切、倒、攪拌、準備、取放、烹煮與冷卻六類「動作核心」，直接比對能涵蓋 76.5% 的動詞，其餘交給 LLM 補上 <a class="cite" href="#r-Kumpel2025">Kümpel 2025</a>。這和 §14 的料理 benchmark 直接相關。</li>
+  </ul>
+
+  <h3>二、綜述涵蓋的標準與系統，後來怎麼了</h3>
+  <ul>
+    <li><strong>IEEE 1872.1-2024（機器人任務表示）已正式出版</strong>：2024-02-15 核准、2024-06-18 出版，比綜述上線早約三週，所以沒被收錄 <a class="cite" href="#r-IEEE2024">IEEE 1872.1-2024</a>。綜述 §2.2.1 提到的「任務表示子工作組要產出中層任務本體論」，就是這份標準。</li>
+    <li><strong>CORA 正在改版</strong>：IEEE 1872-2015 的官方頁面現在標示為「Inactive-Reserved」，取代它的 P1872 改版專案已在 2025-09-10 核准 <a class="cite" href="#r-IEEEP1872">IEEE P1872</a>。新版內容還沒公開，無法判斷是否回應了綜述對 CORA 表達力的批評。</li>
+    <li><strong>多機器人推理的新標準進行中</strong>：P1872.3 延伸 1872.2 的自主機器人本體論，涵蓋多機器人、可供性與機器學習 <a class="cite" href="#r-IEEEP18723">IEEE P1872.3</a>，正是綜述 §12 點名的「多機器人與人機團隊的擴充性」問題。1872.2-2021 本身仍是有效標準。</li>
+    <li><strong>KnowRob v2.0.0</strong>（2024-09）：核心大部分改用 C++ 重寫，推理器和儲存元件改成可插拔，新增 Python API；Prolog 仍支援，但變成可替換的元件之一，ROS 整合也拆到獨立的 repo <a class="cite" href="#r-KnowRobV2">KnowRob v2.0.0</a>。這正好回應綜述批評的「工具綁定 KnowRob、維護不佳」。</li>
+    <li><strong>CRAM 2.0 與 Python 化</strong>：CRAM 2.0 架構論文在 2025 年發表 <a class="cite" href="#r-Beetz2025">Beetz 2025（CRAM 2.0）</a>；原本以 Common Lisp 為主的程式庫已封存，改到以 Python 為主的新 repo。作者在 2026 年的回顧中也承認，由上而下、任務驅動的做法需要更多以互動為中心的方法來補足 <a class="cite" href="#r-Beetz2026">Beetz 2026</a>。</li>
+    <li><strong>本體論重用</strong>：一篇由 1872.2 與 P1872.3 工作組主席參與的回顧，公開了 LOV4IoT-Robotics 本體論目錄，示範半自動地蒐集和重用機器人領域知識 <a class="cite" href="#r-Gyrard2026">Gyrard 2026</a>。</li>
+  </ul>
+
+  <h3>三、作者群自己的後續</h3>
+  <ul>
+    <li><strong>博士論文</strong>：第一作者 Aguado 的博士論文在綜述上線前幾天核准，用模型式系統工程、知識表示與範疇論，建立以「能力、元件、目標、價值」為核心的元模型，交給元控制器在執行中使用 <a class="cite" href="#r-AguadoThesis2024">Aguado 2024（博士論文）</a>。原圖 3 就是這套元模型的本體論版本。</li>
+    <li><strong>ROBOMINERS 實作</strong>：五位作者原班人馬在 2025 年發表了這套框架在採礦機器人上的實作：執行中依設計階段的工程知識<strong>即時計算</strong>重組策略，示範了感測器失效、施力不足、通訊中斷三種情況 <a class="cite" href="#r-Aguado2025">Aguado 2025</a>。這是綜述 §12 結論的直接落實。</li>
+    <li><strong>TOMASys 譜系的自我批評</strong>：TOMASys 的作者之一後來在 TU Delft 發展 ROSA，同時處理任務與軟體架構的自我調適，並指出 TOMASys 沒有表示「系統功能」和「機器人動作」之間的關係；ROSA 也因為表達力的考量，從 OWL 改用 TypeDB <a class="cite" href="#r-RezendeSilva2025">Rezende Silva 2025（ROSA）</a>。</li>
+  </ul>
+
+  <h3>四、2024 年之後被提出的批評</h3>
+  <ul>
+    <li><strong>符號方法要很多先驗知識</strong>：同一本期刊的專題社論指出，符號方法需要大量關於領域和機器人的先驗知識，處理精細的物理互動時成本很高；但純資料驅動的基礎模型又不透明、在新情境中可能給出任意的回答，所以兩者需要結合 <a class="cite" href="#r-Meli2025">Meli 2025</a>。</li>
+    <li><strong>OWL 的表達力不夠</strong>：自我調適需要多元關係、關係之間的關係等結構，OWL 只能用迂迴的方式（reification）表達，讓模型難懂也難重用 <a class="cite" href="#r-RezendeSilva2025">Rezende Silva 2025（ROSA）</a>。</li>
+    <li><strong>和一般軟體工程的「阻抗不匹配」</strong>：連 KnowRob 團隊自己都指出，開發者得同時維護本體論和一般程式碼兩套不共用工具的系統，於是提出把知識直接寫成物件導向程式的做法（預印本）<a class="cite" href="#r-Bassiouny2026">Bassiouny 2026（KRROOD）</a>。</li>
+    <li><strong>混合系統多半還是概念驗證</strong>：上面提到的本體論＋LLM 研究，大多只在模擬或單一情境中評估，很少有實機、長時間、多機器人的驗證，和綜述對擴充性的擔憂一致。</li>
+  </ul>
+</section>
+
+<!-- ─────────── §14 ─────────── -->
+<section id="benchmark">
+  <h2><span class="num">§14</span>動手做：用標準語意定義一個料理感知 benchmark</h2>
+  <p class="sec-sub">本站示範，不是論文內容：以「辨識炒飯的料理階段」與「判斷盛盤是否完成」為例</p>
+
+  <p>綜述在結論中呼籲各家本體論收斂、統一（§12）。本站據此建議：定義 benchmark 時，沿用 IEEE 1872 系列（CORA 描述機器人，1872.1 描述任務）與 SUMO 這類既有的標準語意，不要每個專案發明自己的一套詞（雖然綜述本身對 CORA 也有批評，見 §3）。套到 benchmark 上，好處很具體：如果測試資料的標籤寫成「第 7 步的鍋子畫面」，換了食譜、換了機器人、換了相機就不能用；如果寫成「Cooking 過程中的某個子過程、由某個感測部件觀察到的某種性質」，就能跨系統比較、累積。代價是要先做一次概念對齊，而且（本頁 §3 提過）CORA 只給必要條件，到了應用層一定要自己特化。</p>
+
+  <h3>第一步：分清楚 CORA 管什麼、不管什麼</h3>
+  <p>CORA 描述的是<strong>機器人這一側</strong>：什麼是機器人、零件、機器人系統、機器人環境，以及位置與方向（POS）。在社群維護的 IEEE1872-owl 移植版中，Robot 是 SUMO 的 Agent 的子類別，也是 Device 的子類別（標準的公理 7.1.1–7.1.2；這只是必要條件，不是完整定義）。§3 說 CORA 的主要概念之一是「機器人零件」；在形式化上，零件是一種<strong>角色</strong>：任何裝置只要透過 robotPart 關係接到機器人上，就是機器人零件，再由 RPARTS 指定它扮演感測、致動、通訊或處理哪一種角色，所以 OWL 檔裡沒有獨立的零件類別。另外，CORA 的 OWL 檔沿用舊版 SUMO 的名稱 Agent，目前的 SUMO 改稱 AutonomousAgent，同樣位於 Object 之下。</p>
+  <p>CORA <strong>不描述</strong>食物、烹調過程、熟度這些「世界這一側」的東西。這部分可以找 SUMO 本身（Merge.kif）、它的中層本體論 MILO 和食物領域檔 Food.kif（本站直接查原始檔確認）：Cooking 是一種有意圖的製作過程（Making）；<strong>Frying（炒、炸）是 Cooking 的一種，同時也是 Heating</strong>；盛盤可以視為 Putting（一種 Transfer），下油是 Pouring；鍋是 PotOrPan（一種 Container），盤子是 Dish（一種 Holder）；炒飯可以對應 CookedDish（一種 PreparedFood）；熟度可以用 Food.kif 的 CookedAttribute／RawAttribute，顏色、油光這類質性特徵也是 Attribute。</p>
+  <p class="note">注意有兩個 SUMO：CORA 的 OWL 檔附帶的是一份約 50 個類別的舊版 SUMO 快照，裡面沒有 Cooking、Dish、Food；世界側用的是目前的 SUMO。實作時要記下兩邊各用哪個版本與命名空間，必要時寫對齊公理（例如舊版 Agent 對應新版 AutonomousAgent）。</p>
+
+  <figure class="dark">
+    <div class="svgwrap">
+<svg viewBox="0 0 900 660" role="img" aria-labelledby="I-t I-d">
+<title id="I-t">把料理感知 benchmark 掛到標準語意上</title>
+<desc id="I-d">左邊是機器人這一側，用 CORA：Robot 是 Agent 也是 Device 的子類別；裝在機器人上的相機和手臂以 robotPart 關係掛上，扮演感測或致動角色。右邊是世界這一側，用 SUMO：Cooking 是一種有意圖的製作過程，Frying 是 Cooking 的一種，盛盤可視為 Putting，鍋是 Container、盤是 Holder，炒飯可視為 CookedDish，顏色與熟度是 Attribute。底部是論文第 3.1 節的感知五要素，對應 benchmark 的一筆紀錄。</desc>
+<defs><marker id="aI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/></marker></defs>
+<text x="20" y="22" class="hd">SUMO 上層（兩側共用）</text>
+<rect x="380" y="30" width="92" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="426.0" y="50" text-anchor="middle" class="sm">Entity</text>
+<rect x="250" y="82" width="92" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="296.0" y="102" text-anchor="middle" class="sm">Physical</text>
+<rect x="560" y="82" width="92" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="606.0" y="102" text-anchor="middle" class="sm">Abstract</text>
+<line x1="296" y1="80" x2="426" y2="63" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="606" y1="80" x2="426" y2="63" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<rect x="120" y="134" width="92" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="166.0" y="154" text-anchor="middle" class="sm">Object</text>
+<rect x="470" y="134" width="92" height="30" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="516.0" y="154" text-anchor="middle" class="sm">Process</text>
+<line x1="166" y1="132" x2="296" y2="115" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="516" y1="132" x2="296" y2="115" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<text x="20" y="206" class="hd halo" style="fill:#3987e5">機器人側：CORA（IEEE 1872-2015）</text>
+<rect x="20" y="218" width="92" height="44" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="66.0" y="238" text-anchor="middle" class="sm">Agent</text>
+<text x="66.0" y="255" text-anchor="middle" class="tk2">代理人</text>
+<rect x="128" y="218" width="92" height="44" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="174.0" y="238" text-anchor="middle" class="sm">Device</text>
+<text x="174.0" y="255" text-anchor="middle" class="tk2">裝置</text>
+<line x1="66" y1="216" x2="166" y2="167" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="174" y1="216" x2="166" y2="167" stroke="#8b949e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#aI)"/>
+<rect x="55" y="290" width="152.5" height="44" rx="7" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="131.25" y="310" text-anchor="middle" class="sm">Robot</text>
+<text x="131.25" y="327" text-anchor="middle" class="tk2">是 Agent 也是 Device</text>
+<line x1="131" y1="288" x2="66" y2="265" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="131" y1="288" x2="174" y2="265" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<rect x="20" y="368" width="132" height="44" rx="7" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="86.0" y="388" text-anchor="middle" class="sm">機上相機</text>
+<text x="86.0" y="405" text-anchor="middle" class="tk2">robotSensingPart</text>
+<rect x="160" y="368" width="146" height="44" rx="7" fill="#1c2330" stroke="#3987e5" stroke-width="1.6"/>
+<text x="233.0" y="388" text-anchor="middle" class="sm">手臂、鏟</text>
+<text x="233.0" y="405" text-anchor="middle" class="tk2">robotActuatingPart</text>
+<line x1="86" y1="366" x2="131" y2="336" stroke="#3987e5" stroke-width="1.3" stroke-dasharray="2 3"/>
+<line x1="233" y1="366" x2="131" y2="336" stroke="#3987e5" stroke-width="1.3" stroke-dasharray="2 3"/>
+<text x="216" y="328" class="tk2">robotPart 關係</text>
+<text x="20" y="432" class="tk2">固定在工作站上的相機不是機器人零件，</text><text x="20" y="448" class="tk2">而是機器人系統（RoboticSystem）裡的一個 Device</text>
+<text x="350" y="206" class="hd halo" style="fill:#d95f2b">世界側：SUMO（含 MILO 中層與 Food 領域檔）</text>
+<rect x="330" y="218" width="92" height="44" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="376.0" y="238" text-anchor="middle" class="sm">Making</text>
+<text x="376.0" y="255" text-anchor="middle" class="tk2">有意圖的製作</text>
+<rect x="480" y="218" width="92" height="44" rx="7" fill="#1c2330" stroke="#8b949e" stroke-width="1.6"/>
+<text x="526.0" y="238" text-anchor="middle" class="sm">Transfer</text>
+<text x="526.0" y="255" text-anchor="middle" class="tk2">移轉</text>
+<line x1="376" y1="216" x2="516" y2="167" stroke="#8b949e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#aI)"/>
+<line x1="526" y1="216" x2="516" y2="167" stroke="#8b949e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#aI)"/>
+<rect x="330" y="290" width="120" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="390.0" y="310" text-anchor="middle" class="sm">Cooking</text>
+<text x="390.0" y="327" text-anchor="middle" class="tk2">整道料理</text>
+<rect x="465" y="290" width="100" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="515.0" y="310" text-anchor="middle" class="sm">Putting</text>
+<text x="515.0" y="327" text-anchor="middle" class="tk2">盛盤</text>
+<rect x="575" y="290" width="100" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="625.0" y="310" text-anchor="middle" class="sm">Pouring</text>
+<text x="625.0" y="327" text-anchor="middle" class="tk2">下油</text>
+<line x1="390" y1="288" x2="376" y2="265" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="515" y1="288" x2="526" y2="265" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<line x1="625" y1="288" x2="526" y2="265" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<rect x="330" y="362" width="120" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="390.0" y="382" text-anchor="middle" class="sm">Frying</text>
+<text x="390.0" y="399" text-anchor="middle" class="tk2">炒（也是 Heating）</text>
+<line x1="390" y1="360" x2="390" y2="337" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<text x="465" y="374" class="tk2">料理階段＝Cooking 的 subProcess；</text><text x="465" y="390" class="tk2">先後順序要另外寫明</text>
+<rect x="700" y="134" width="180" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="790.0" y="154" text-anchor="middle" class="sm">Attribute</text>
+<text x="790.0" y="171" text-anchor="middle" class="tk2">顏色、油光、熟度</text>
+<line x1="790" y1="132" x2="606" y2="115" stroke="#8b949e" stroke-width="1.3" marker-end="url(#aI)"/>
+<text x="720" y="206" class="tk2">物件（都在 Object 之下）</text>
+<rect x="700" y="218" width="180" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="790.0" y="238" text-anchor="middle" class="sm">CookedDish</text>
+<text x="790.0" y="255" text-anchor="middle" class="tk2">炒飯（⊑ PreparedFood）</text>
+<rect x="700" y="290" width="180" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="790.0" y="310" text-anchor="middle" class="sm">PotOrPan</text>
+<text x="790.0" y="327" text-anchor="middle" class="tk2">鍋（Container）</text>
+<rect x="700" y="362" width="180" height="44" rx="7" fill="#1c2330" stroke="#d95f2b" stroke-width="1.6"/>
+<text x="790.0" y="382" text-anchor="middle" class="sm">Dish</text>
+<text x="790.0" y="399" text-anchor="middle" class="tk2">盤（Holder）</text>
+<text x="20" y="489" class="ann2">實線箭頭＝子類別指向父類別；虛線箭頭＝中間省略了若干層。⊑ 讀作「是…的一種」。</text>
+<text x="20" y="470" class="ann2">Agent 是 CORA 檔沿用的舊版 SUMO 名稱，新版 SUMO 稱 AutonomousAgent。</text>
+<rect x="20" y="500" width="860" height="150" rx="10" fill="#16241b" stroke="#7ee787" stroke-width="1.6"/>
+<text x="36" y="524" class="hd" style="fill:#7ee787">一筆 benchmark 紀錄＝一個「感知」（論文 §3.1 的五要素）</text>
+<rect x="36" y="540" width="156" height="92" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="114" y="566" text-anchor="middle" class="sm">感測器</text>
+<text x="114" y="590" text-anchor="middle" class="tk2">機上相機 → 感測部件</text>
+<text x="114" y="612" text-anchor="middle" class="tk2">固定相機 → 系統內裝置</text>
+<rect x="204" y="540" width="156" height="92" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="282" y="566" text-anchor="middle" class="sm">被感知的性質</text>
+<text x="282" y="590" text-anchor="middle" class="tk2">顏色、熟度 → Attribute</text>
+<text x="282" y="612" text-anchor="middle" class="tk2">體積、重量 → 量測值</text>
+<rect x="372" y="540" width="156" height="92" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="450" y="566" text-anchor="middle" class="sm">感知範圍</text>
+<text x="450" y="590" text-anchor="middle" class="tk2">鍋內、盤內 ROI</text>
+<text x="450" y="612" text-anchor="middle" class="tk2">→ 空間區域</text>
+<rect x="540" y="540" width="156" height="92" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="618" y="566" text-anchor="middle" class="sm">感知者</text>
+<text x="618" y="590" text-anchor="middle" class="tk2">執行模型的機器人或系統</text>
+<text x="618" y="612" text-anchor="middle" class="tk2">模型版本記為屬性</text>
+<rect x="708" y="540" width="156" height="92" rx="8" fill="#1c2330" stroke="#7ee787" stroke-width="1.6"/>
+<text x="786" y="566" text-anchor="middle" class="sm">感知結果</text>
+<text x="786" y="590" text-anchor="middle" class="tk2">階段＋信心＋時間戳記</text>
+<text x="786" y="612" text-anchor="middle" class="tk2">↔ 標準答案</text>
+</svg>
+    </div>
+    <figcaption><b>圖 I</b>本站繪製。類別關係依 IEEE1872-owl 專案的 CORA／sumo-cora OWL 檔，以及 SUMO 的 Merge.kif、Mid-level-ontology.kif 與 Food.kif；底部五格對應論文 §3.1 對感知的定義。中文說明（「整道料理」「盛盤」等）是本站為了舉例加上的對應，不是標準的一部分。</figcaption>
+  </figure>
+
+  <h3>第二步：把每一筆測試資料寫成一個「感知」</h3>
+  <p>論文 §3.1 把感知拆成五個要素，正好可以當 benchmark 的資料欄位：<strong>感測器</strong>（哪一台相機；裝在機器人上的是扮演感測角色的零件，固定在工作站的則是機器人系統裡的一個裝置）、<strong>被感知的性質</strong>（顏色、油光、熟度這類質性特徵是 Attribute；體積、重量、溫度這類數值在 SUMO 裡是用 measure 關係掛上的量測值，要附單位）、<strong>感知範圍</strong>（鍋內或盤內的區域）、<strong>感知者</strong>（執行模型的機器人或系統；模型名稱與版本記成它的屬性）、<strong>感知結果</strong>（階段標籤、信心值、時間戳記，拿來和標準答案比對）。這樣一來，換相機或換模型時，只是換掉其中一欄，其他欄的意義不變。</p>
+
+  <h3>第三步：料理階段是「過程」，盛盤是「有前後條件的任務」</h3>
+  <ul>
+    <li><strong>料理階段</strong>：把整道料理當成一個 Cooking 過程，每個階段是它的子過程（SUMO 的 subProcess 關係），各有起訖時間。要注意 subProcess 本身不保證先後順序，也不保證階段彼此不重疊、剛好鋪滿整段過程，這些要另外寫明（例如用 SUMO 的 meetsTemporally 表示「上一階段結束時，下一階段剛好開始」）。評分建議分三層：每格畫面的分類正確率；動作分割領域常用的片段層級指標（Edit 分數、F1@k），用來抓「切得太碎」；以及在容許誤差 ±τ 秒內的交界 F1、交界的平均偏移，和線上偵測的延遲（提早觸發、延遲觸發分開算）。最後一項直接關係到「什麼時候該進下一步」。</li>
+    <li><strong>盛盤</strong>：用規劃的語言描述成「前置條件」和「後置條件」（§4、§8 的 RTPO 和搜救任務都這樣做）。前置：食物在鍋內、盤子在指定位置；後置：食物在盤內、盤外沒有灑出、移轉量達到門檻。感知要做的是<strong>驗證後置條件</strong>，這屬於論文認為對可靠運作很關鍵、但較少框架做到的「預測與監控」（圖 F：7/20）。要注意「盤外沒有灑出」是否定條件：在開放世界下，沒記錄灑出不等於沒灑出（§2），所以感知要明確輸出數值（例如灑出面積＝0），檢查也要用封閉世界的方式做（見下方實務建議）。</li>
+    <li><strong>可觀察的判準要自己定</strong>：標準只告訴你「熟度是一種性質」，不會告訴你「粒粒分明」怎麼量。每個標籤都要附上可觀察、可量測的定義，例如「看不到液態油」「米粒之間有可見的間隙」。這一步就是原文 §2.2.1 說的「要依子領域特化」。</li>
+  </ul>
+
+  <div class="callout purple">
+    <span class="tag">標準不夠用的地方，就是要自己特化的地方</span>
+    SUMO 的 Food.kif 有 Frying（炒、炸），但沒有「翻炒」「翻鍋」這種更細的概念；SUMO 的 Stirring（攪拌）同時被歸為「液體運動」，也不貼切。合理的做法是在應用本體論裡定義自己的子類別，例如「翻炒是 Frying 的一種」，再把翻鍋的動作寫成它的子過程。若要讓推理器能<strong>自動判定</strong>某一段是不是翻炒，還得寫出充分條件，例如「凡是包含翻鍋子過程的 Frying，都算翻炒」。這呼應原文 §2.2.1（本頁 §3）的批評：標準只給必要條件，充分條件要由各領域補上。
+  </div>
+
+  <h3>可以直接參考的現成資源（§13）</h3>
+  <ul>
+    <li><strong>任務的定義</strong>：IEEE 1872.1-2024（機器人任務表示）是專門描述任務如何由目標拆成子目標的標準 <a class="cite" href="#r-IEEE2024">IEEE 1872.1-2024</a>，定義「盛盤」這類有前後條件的任務時可以對照。</li>
+    <li><strong>料理動作的詞彙</strong>：KnowRob 團隊把上百萬份食譜的動作動詞歸成切、倒、攪拌、準備、取放、烹煮與冷卻六類「動作核心」<a class="cite" href="#r-Kumpel2025">Kümpel 2025</a>，可以當料理階段標籤的參考詞彙，至少不必從零開始命名。</li>
+    <li><strong>版本要釘住</strong>：CORA 所在的 IEEE 1872-2015 已進入改版（P1872）<a class="cite" href="#r-IEEEP1872">IEEE P1872</a>。benchmark 引用標準概念時，記下所用的本體論版本與 IRI，將來標準更新時才知道要對照哪一版。</li>
+  </ul>
+
+  <h3>實務建議：先做詞彙表，再考慮 OWL</h3>
+  <p>不一定一開始就要寫 OWL。比較務實的順序是：先列一張詞彙表，每個標籤一列，欄位包括「名稱、對應的標準概念（SUMO／CORA 的名稱與版本）、定義、可觀察的判準、範例畫面」；等標籤穩定，再轉成 OWL 讓推理器做分類與一致性檢查。至於「後置條件是不是全部成立、有沒有違規」這種<strong>驗收</strong>，屬於封閉世界的檢查，適合用 SHACL 規則、SPARQL 查詢，或直接在感知紀錄上跑程式規則，而不是交給 OWL 推理器（它在開放世界下只會回答「不知道」）。這樣既保留了標準語意帶來的可擴展性，又不會被知識工程的成本拖住（§15）。</p>
+</section>
+
+<!-- ─────────── §15 ─────────── -->
+<section id="notes">
+  <h2><span class="num">§15</span>重點筆記：給做機器人的人</h2>
+  <p class="sec-sub">本站觀點，不是論文內容</p>
+
+  <ul>
+    <li><strong>本體論最划算的三種場合。</strong>一是需要遵守、而且要能說明的規則，例如禁區、安全距離、交通規則（§1 的工廠例子、§8 的自駕車）；二是元件可以互相替代、要在現場自我重構的系統（TOMASys、行星探測車）；三是多台機器人或人機之間要共享詞彙（SWARMs、城市搜救、ORO）。學習則是這份樣本中最少見的用途（3/20）；但綜述的篩選條件是「用本體論選擇或規劃動作」，所以這個數字反映的是篩選範圍，不足以判斷本體論對學習有沒有幫助。</li>
+    <li><strong>這篇不能告訴你「上線行不行」。</strong>作者明說不評估擴充性、運算成本與效率，而且論文只為 7 個框架附上本體論連結（KnowRob、PMK、FailRecOnt、TOMASys、ORO、OCRA、ROSETTA；其中 ORO 是知識庫網站與 wiki，本站依原文逐條計算），其餘 13 個論文明說原始檔未公開，只能從描述判斷。矩陣裡的「有／沒有」是綜述作者的判讀，不是實測。</li>
+    <li><strong>知識工程的成本是真的。</strong>作者指出重用率低、概念難收斂，工具（CRAM、rosprolog）綁定 KnowRob 生態，且有時文件不足、維護不佳。成本本身不在綜述的範圍內，但本站認為導入前一定要先問：誰來寫、誰來維護這份知識？2024 年後的研究也把手工建構本體論視為主要瓶頸（§13）。</li>
+    <li><strong>留意立場。</strong>綜述作者來自 TOMASys 的實驗室，結論推薦的「明確工程模型」正是他們的研究路線，原圖 3 也是他們正在做的本體論。這不代表結論不對，但讀者應知道這個背景。</li>
+    <li><strong>樣本有時間差。</strong>文獻搜尋在 2022 年完成，而且引用門檻讓早期論文要有一定影響力才會入選；2022 年後大型語言模型帶來的變化，這篇完全沒有涵蓋（見 §13）。</li>
+    <li><strong>「預期表現」值得現在就做。</strong>作者最後提到的「使用者期待的表現標準」（安全等級、能耗門檻、什麼算任務成功），不需要等本體論工具成熟，現在就可以先寫成明確的規格，作為監控與驗收的依據。</li>
+  </ul>
+</section>
+
+<!-- ─────────── §16 ─────────── -->
+<section id="check">
+  <h2><span class="num">§16</span>查證筆記：原文內部的不一致</h2>
+  <p class="sec-sub">本站對回全文與圖表時發現的問題，多數不影響結論，但讀原文時值得注意</p>
+
+  <ul>
+    <li><strong>PRISMA 圖的數字對不起來。</strong>原圖 1 中，評估 351 篇後排除三類共 59＋211＋81＝351 篇，卻又寫由資料庫納入 26 篇（本站計算）。正文說讀內容後「得到 26 篇」，所以排除數加起來應該是 325。</li>
+    <li><strong>DM/P 的例外說法和表格不符。</strong>§5.5 說除了 ORO 和 OCRA 之外都用本體論做決策與規劃，但表 4 中 OCRA 的決策與規劃欄寫的是「執行中動態調整計畫」；依表格，只有 ORO 沒有（圖 F）。</li>
+    <li><strong>學習的描述和表格不符。</strong>§5.5 說 PMK 和 PLM 把學習用在情境評估，但表 1 中 PMK 的學習欄是「-」。同一段把 OCRA 寫成了「CORA」。</li>
+    <li><strong>其他小地方。</strong>原文 §5.5 把 Borgo 等 2019 的製造應用稱為「操作應用」；§5.2 的小結說搜救任務有處理預測與監控，但表 3 該格是「-」；§5.1 的小結說操作領域「只有一半」的框架有做預測與監控，但表 1 的四個框架中有三個；§5.5 說「多數文章」用了案例式學習，但依表格只有 3/20 的框架有學習；§5.1 的小結把「互動與設計」寫成「整合與設計」；§5.2.3 有一處 SWARMs 拼成 SWARMa。</li>
+    <li><strong>表 6 漏列 ORO 的上層本體論。</strong>正文說 ORO 以 OpenCyc 為基礎，但表 6 中 ORO 的上層本體論欄是「-」；表 6 標了 OpenCyc 的 ISRO，正文則完全沒提它的上層本體論。</li>
+    <li><strong>PMK 的上層本體論寫錯版本。</strong>表 6 和原文 §5.1.2 說 PMK（2019 年發表）以 IEEE 1872.2 為基礎，但 1872.2 是 2021 年核准、2022 年發布的標準 <a class="cite" href="#r-IEEE2022">IEEE 1872.2</a>。PMK 原論文的全文說，它依 IEEE 1872 標準（CORA 等）建模，再加上自主機器人架構本體論 ROA <a class="cite" href="#r-Diab2019">Diab 2019</a>（本站讀 PMK 全文確認）。</li>
+    <li><strong>兩條參考文獻的 DOI 有問題。</strong>IBM 2005 的自主運算藍圖白皮書，所附的 DOI 實際指向 White 等人 2004 年的另一篇會議論文〈An architectural approach to autonomic computing〉；ISRO（Chang 等 2020）所附的 DOI 在 Crossref 和 doi.org 都查不到（本站核對）。</li>
+    <li><strong>Prolog 的定位寫得不精確。</strong>原文說 Prolog 以一階邏輯的「可判定」子集為基礎，但 Prolog 用的 Horn 子句邏輯並不可判定，Prolog 本身是圖靈完備的；可判定性是描述邏輯（OWL 2 DL）的賣點。本頁 §2 的表格採用較精確的說法。</li>
+  </ul>
+</section>
+
+<!-- ─────────── §17 ─────────── -->
+<section id="gloss">
+  <h2><span class="num">§17</span>名詞對照</h2>
+  <p class="sec-sub">依主題排列</p>
+  <dl class="gloss">
+    <dt>ontology</dt><dd>本體論：機器讀得懂的概念說明書，定義類別、個體、屬性與關係</dd>
+    <dt>KR&amp;R</dt><dd>知識表示與推理（knowledge representation and reasoning）</dd>
+    <dt>class / individual / property</dt><dd>類別／個體（實例）／屬性與關係</dd>
+    <dt>reasoner</dt><dd>推理器：自動推出隱含事實、檢查一致性的程式，如 HermiT、Pellet</dd>
+    <dt>declarative / procedural</dt><dd>宣告式（描述「是什麼」）／程序式（寫死「怎麼做」）</dd>
+    <dt>closed / open world assumption</dt><dd>封閉世界假設（沒寫＝假）／開放世界假設（沒寫＝不知道）</dd>
+    <dt>description logic (DL)</dt><dd>描述邏輯：OWL 的數學基礎，取一階邏輯中保證推得完的部分</dd>
+    <dt>first-order logic / decidable / axiom</dt><dd>一階邏輯（能說「所有 X 都…」的邏輯）／可判定（推理保證在有限時間內結束）／公理（寫進知識庫、當作前提的規則）</dd>
+    <dt>Horn clause</dt><dd>Horn 子句：「若 A 且 B，則 C」形式的規則，Prolog 的基礎</dd>
+    <dt>OWL-Lite / OWL 2 DL</dt><dd>OWL 中表達力最弱的子集／可判定、最常用的 OWL 2 版本</dd>
+    <dt>upper-level / domain / application ontology</dt><dd>上層（基礎）／領域／應用本體論</dd>
+    <dt>CORA、IEEE 1872.2 AuR</dt><dd>機器人與自動化核心本體論；自主機器人本體論標準</dd>
+    <dt>dependability</dt><dd>可信賴性：以一定保證提供預期服務，含可用性、可靠性（reliability）、安全性、資訊安全</dd>
+    <dt>TAMP</dt><dd>任務與運動規劃（task and motion planning）</dd>
+    <dt>affordance</dt><dd>可供性：物件能被怎麼使用，例如「可以從握把抓」</dd>
+    <dt>PDDL / STRIPS</dt><dd>經典 AI 規劃語言／規劃器，以動作的前置條件與效果描述問題</dd>
+    <dt>MAPE-K</dt><dd>監控、分析、規劃、執行＋共享知識的自我調適迴圈</dd>
+    <dt>metamodel / metacontroller</dt><dd>元模型（描述模型的模型）／元控制器：在系統功能層閉迴路的控制器</dd>
+    <dt>NEEMs</dt><dd>帶語意標註的情節記憶：感測、控制與事件的完整執行紀錄</dd>
+    <dt>competency question</dt><dd>驗收問題：本體論設計時就訂好、它必須答得出來的問題清單</dd>
+    <dt>symbol grounding</dt><dd>符號接地：把抽象符號（「桌子旁邊」）對應到具體座標或感測值</dd>
+    <dt>PRISMA</dt><dd>系統性綜述的標準報告流程與流程圖</dd>
+    <dt>SLAM</dt><dd>同步定位與建圖</dd>
+    <dt>ROS / CRAM</dt><dd>機器人作業系統（常用的機器人中介軟體）／KnowRob 團隊的計畫執行工具</dd>
+    <dt>SHACL / SPARQL</dt><dd>檢查 RDF 資料是否符合規則的語言／查詢 RDF 資料的語言；都適合做封閉世界的驗收</dd>
+  </dl>
+</section>
+
+<!-- ─────────── §18 ─────────── -->
+<section id="refs">
+  <h2><span class="num">§18</span>參考文獻</h2>
+  <p class="sec-sub">本頁引用的 87 篇（多數取自原論文的參考文獻表；DOI 經 Crossref 核對）</p>
+<ol class="refs">
+<li id="r-Aguado2021">Aguado E., Milosevic Z., Hernández C., Sanz R., Garzon M., Bozhinoski D., et al. (2021). Functional self-awareness and metacontrol for underwater robot autonomy. Sensors 21, 1210–1228. <a href="https://doi.org/10.3390/s21041210">doi</a></li>
+<li id="r-Aguado2024">Aguado E., Gómez V., Hernando M., Rossi C., Sanz R. (2024). “Category theory for autonomous robots: the marathon 2 use case,” in Robot 2023: sixth iberian robotics conference. Editors Marques L., Santos C., Lima J. L., Tardioli D., Ferre M. (Cham: Springer Nature Switzerland; ), 39–52.</li>
+<li id="r-AguadoThesis2024">Aguado González E. (2024). Systems that know what they are doing: a model-based formal specification for robust autonomy. PhD thesis, Universidad Politécnica de Madrid. <a href="https://doi.org/10.20868/upm.thesis.81844">doi</a></li>
+<li id="r-Aguado2025">Aguado E., Gomez Lambo V., Hernando M., Rossi C., Sanz R. (2025). Operational model for system dependability: the ROBOMINERS use-case. J. Intell. Robot. Syst. 112(1), 1. <a href="https://doi.org/10.1007/s10846-025-02331-3">doi</a></li>
+<li id="r-Antanas2019">Antanas L., Moreno P., Neumann M., de Figueiredo R. P., Kersting K., Santos-Victor J., et al. (2019). Semantic and geometric reasoning for robotic grasping: a probabilistic logic approach. Aut. Robots 43, 1393–1418. <a href="https://doi.org/10.1007/s10514-018-9784-8">doi</a></li>
+<li id="r-Arp2015">Arp R., Smith B., Spear A. D. (2015) Building ontologies with basic formal ontology. The MIT Press. <a href="https://doi.org/10.7551/mitpress/9780262527811.001.0001">doi</a></li>
+<li id="r-Avizienis2004">Avižienis A., Laprie J.-C., Randell B. (2004). “Dependability and its threats: a taxonomy,” in Building the information society. Editor Jacquart R. (Boston, MA: Springer US; ), 91–120.</li>
+<li id="r-Balakirsky2017">Balakirsky S., Schlenoff C., Fiorini S., Redfield S., Barreto M., Nakawala H., et al. (2017). “Towards a robot task ontology standard,” in Proceedings of the manufacturing science and engineering conference (MSEC) (Los Angeles, CA: US; ).</li>
+<li id="r-Bassiouny2026">Bassiouny A. et al. (2026). Implementing knowledge representation and reasoning with object oriented design (KRROOD). arXiv:2601.14840. <a href="https://arxiv.org/abs/2601.14840">連結</a></li>
+<li id="r-Beer2014">Beer J. M., Fisk A. D., Rogers W. A. (2014). Toward a framework for levels of robot autonomy in human-robot interaction. J. Hum.-Robot Interact. 3, 74–99. <a href="https://doi.org/10.5898/JHRI.3.2.Beer">doi</a></li>
+<li id="r-Beetz2010">Beetz M., Mösenlechner L., Tenorth M. (2010). “CRAM — a Cognitive Robot Abstract Machine for everyday manipulation in human environments,” in 2010 IEEE/RSJ international conference on intelligent robots and systems, 1012–1017. <a href="https://doi.org/10.1109/IROS.2010.5650146">doi</a></li>
+<li id="r-Beetz2015">Beetz M., Tenorth M., Winkler J. (2015). “Open-EASE – a knowledge processing service for robots and robotics/ai researchers,” in IEEE international conference on robotics and automation (ICRA) (seattle, Washington, USA). Finalist for the best cognitive robotics paper award.</li>
+<li id="r-Beetz2018">Beetz M., Beßler D., Haidu A., Pomarlan M., Bozcuoǧlu A. K., Bartels G. (2018). “Know rob 2.0 — a 2nd generation knowledge processing framework for cognition-enabled robotic agents,” in 2018 IEEE international conference on robotics and automation (ICRA), 512–519. <a href="https://doi.org/10.1109/ICRA.2018.8460964">doi</a></li>
+<li id="r-Beetz2025">Beetz M., Kazhoyan G., Vernon D. (2025). Robot manipulation in everyday activities with the CRAM 2.0 cognitive architecture and generalized action plans. Cogn. Syst. Res. 92, 101375. <a href="https://doi.org/10.1016/j.cogsys.2025.101375">doi</a></li>
+<li id="r-Beetz2026">Beetz M., Kümpel M. (2026). From frames to pouring: the CRAM cognitive architecture for everyday robot manipulation. KI – Künstliche Intelligenz. <a href="https://doi.org/10.1007/s13218-026-00917-z">doi</a></li>
+<li id="r-BermejoAlonso2010">Bermejo-Alonso J., Sanz R., Rodríguez M., Hernández C. (2010). “An ontology–based approach for autonomous systems’ description and engineering,” in Knowledge-based and intelligent information and engineering systems. Editors Setchi R., Jordanov I., Howlett R. J., Jain L. C. (Berlin, Heidelberg: Springer Berlin Heidelberg; ), 522–531.</li>
+<li id="r-Bernardo2018">Bernardo R., Farinha R., Gonçalves P. J. S. (2018). “Knowledge and tasks representation for an industrial robotic application,” in Robot 2017: third iberian robotics conference. Editors Ollero A., Sanfeliu A., Montano L., Lau N., Cardeira C. (Cham: Springer International Publishing; ), 441–451.</li>
+<li id="r-Bessler2021">Beßler D., Porzel R., Pomarlan M., Vyas A., Höffner S., Beetz M., et al. (2021). “Foundations of the socio-physical model of activities (SOMA) for autonomous robotic agents,” in Formal ontology in information systems (IOS Press), 159–174.</li>
+<li id="r-Borgo2019">Borgo S., Cesta A., Orlandini A., Umbrico A. (2019). Knowledge-based adaptive agents for manufacturing domains. Eng. Comput. 35, 755–779. <a href="https://doi.org/10.1007/s00366-018-0630-6">doi</a></li>
+<li id="r-Bozhinoski2022">Bozhinoski D., Oviedo M. G., Garcia N. H., Deshpande H., van der Hoorn G., Tjerngren J., et al. (2022). MROS: runtime adaptation for robot control architectures. Adv. Robot. 36, 502–518. <a href="https://doi.org/10.1080/01691864.2022.2039761">doi</a></li>
+<li id="r-Brachman2002">Brachman R. (2002). Systems that know what they’re doing. IEEE Intell. Syst. 17, 67–71. <a href="https://doi.org/10.1109/MIS.2002.1134363">doi</a></li>
+<li id="r-Burroughes2016">Burroughes G., Gao Y. (2016). Ontology-based self-reconfiguring guidance, navigation, and control for planetary rovers. J. Aerosp. Inf. Syst. 13, 316–328. <a href="https://doi.org/10.2514/1.I010378">doi</a></li>
+<li id="r-Chandra2016">Chandra R., Rocha R. P. (2016). “Knowledge-based framework for human-robots collaborative context awareness in usar missions,” in 2016 international conference on autonomous robot systems and competitions (ICARSC), 335–340. <a href="https://doi.org/10.1109/ICARSC.2016.50">doi</a></li>
+<li id="r-Chang2020">Chang D. S., Cho G. H., Choi Y. S. (2020). “Ontology-based knowledge model for human-robot interactive services,” in Proceedings of the 35th annual ACM symposium on applied computing (New York, NY, USA: Association for Computing Machinery; ), 2029–2038.（原論文所附 DOI 10.1145/3341105.3373977 無法解析）</li>
+<li id="r-CornejoLupa2020">Cornejo-Lupa M., Ticona-Herrera R., Cardinale Y., Barrios-Aranibar D. (2020). A survey of ontologies for simultaneous localization and mapping in mobile robots. ACM Comput. Surv. 53, 1–26. <a href="https://doi.org/10.1145/3408316">doi</a></li>
+<li id="r-Diab2018">Diab M., Akbari A., Rosell J. (2018). “An ontology framework for physics-based manipulation planning,” in Robot 2017: third iberian robotics conference. Editors Ollero A., Sanfeliu A., Montano L., Lau N., Cardeira C. (Cham: Springer International Publishing; ), 452–464.</li>
+<li id="r-Diab2019">Diab M., Akbari A., Ud Din M., Rosell J. (2019). PMK—a knowledge processing framework for autonomous robotics perception and manipulation. Sensors 19, 1166. <a href="https://doi.org/10.3390/s19051166">doi</a></li>
+<li id="r-Diab2020">Diab M., Pomarlan M., Beßler D., Akbari A., Rosell J., Bateman J., et al. (2020). “An ontology for failure interpretation in automated planning and execution,” in Robot 2019: fourth iberian robotics conference. Editors Silva M. F., Luís Lima J., Reis L. P., Sanfeliu A., Tardioli D. (Cham: Springer International Publishing; ), 381–390.</li>
+<li id="r-Diab2021">Diab M., Pomarlan M., Borgo S., Beßler D., Rosell J., Bateman J., et al. (2021). “FailRecOnt – An Ontology-Based Framework for Failure Interpretation and Recovery in Planning and Execution,” in Proceedings of the Joint Ontology Workshops co-located with the Bolzano Summer of Knowledge (BOSK 2021), Virtual &amp;amp; Bozen-Bolzano, Italy, September 13–17, 2021, CEUR-WS.org, 2021.</li>
+<li id="r-Fiorini2017">Fiorini S. R., Bermejo-Alonso J., Gonçalves P., Pignaton de Freitas E., Olivares Alarcos A., Olszewska J. I., et al. (2017). A suite of ontologies for robotics and automation [industrial activities]. IEEE Robotics Automation Mag. 24, 8–11. <a href="https://doi.org/10.1109/MRA.2016.2645444">doi</a></li>
+<li id="r-Gangemi2002">Gangemi A., Guarino N., Masolo C., Oltramari A., Oltramari R., Schneider L. (2002). Sweetening ontologies with DOLCE. In Proceedings of the 13th European conference on knowledge engineering and knowledge management (EKAW), 166–181.</li>
+<li id="r-Gayathri2018">Gayathri R., Uma V. (2018). Ontology based knowledge representation technique, domain modeling languages and planners for robotic path planning: a survey. ICT Express 4, 69–74. <a href="https://doi.org/10.1016/j.icte.2018.04.008">doi</a></li>
+<li id="r-Gayathri2019">Gayathri R., Uma V. (2019). A review of description logic-based techniques for robot task planning. Stud. Comput. Intell. 771, 101–107. <a href="https://doi.org/10.1007/978-981-10-8797-4_11">doi</a></li>
+<li id="r-Guarino1998">Guarino N. (1998) Formal ontology in information systems: proceedings of the 1st international conference june 6-8, 1998, trento, Italy. Netherlands: IOS Press.</li>
+<li id="r-Gyrard2026">Gyrard A. et al. (2026). Internet of robotic things evolution, standards and data interoperability best practices for the next generation of artificial intelligence-powered systems. J. Field Robot. 43(2), 1193–1217. <a href="https://doi.org/10.1002/rob.70063">doi</a></li>
+<li id="r-Hernandez2018">Hernández C., Bermejo-Alonso J., Sanz R. (2018). A self-adaptation framework based on functional knowledge for augmented autonomy in robots. Integr. Computer-Aided Eng. 25, 157–172. <a href="https://doi.org/10.3233/ICA-180565">doi</a></li>
+<li id="r-Hoebert2021">Hoebert T., Lepuschitz W., Vincze M., Merdan M. (2021). Knowledge-driven framework for industrial robotic systems. J. Intelligent Manuf. <a href="https://doi.org/10.1007/s10845-021-01826-8">doi</a></li>
+<li id="r-Huang2019">Huang L., Liang H., Yu B., Li B., Zhu H. (2019). “Ontology-based driving scene modeling, situation assessment and decision making for autonomous vehicles,” in 2019 4th asia-pacific conference on intelligent robot systems (ACIRS), 57–62. <a href="https://doi.org/10.1109/ACIRS.2019.8935984">doi</a></li>
+<li id="r-Huber1999">Huber M. J. (1999). “Jam: a bdi-theoretic mobile agent architecture,” in Proceedings of the third annual conference on autonomous agents (New York, NY, USA: Association for Computing Machinery; ), 236–243. <a href="https://doi.org/10.1145/301136.301202">doi</a></li>
+<li id="r-IBM2005">IBM Corporation (2005). An architectural blueprint for autonomic computing. Tech. Rep. White Paper.（原論文所附 DOI 10.1109/ICAC.2004.1301340 實際指向 White 等 2004 的另一篇論文，見 §16）</li>
+<li id="r-IEEE2024">IEEE SA (2024). IEEE Standard for Robot Task Representation (IEEE Std 1872.1-2024). Approved 2024-02-15, published 2024-06-18. <a href="https://standards.ieee.org/ieee/1872.1/6993/">連結</a></li>
+<li id="r-IEEE2015">Ieee S. A. (2015). IEEE standard ontologies for robotics and automation. IEEE Std 1872-2015, 1–60doi. <a href="https://doi.org/10.1109/IEEESTD.2015.7084073">doi</a></li>
+<li id="r-IEEE2022">Ieee S. A. (2022). “IEEE standard for autonomous robotics (AuR) ontology,” in Standard IEEE std 1872 (IEEE; ), 2–2021. <a href="https://doi.org/10.1109/IEEESTD.2022.9774339">doi</a></li>
+<li id="r-IEEEP1872">IEEE SA. P1872 – Draft Standard Ontologies for Robotics and Automation (PAR approved 2025-09-10; supersedes 1872-2015, now Inactive-Reserved). <a href="https://standards.ieee.org/ieee/1872/12250/">連結</a></li>
+<li id="r-IEEEP18723">IEEE SA. P1872.3 – Standard for Ontology Reasoning on Multiple Robots (active PAR; REMAR working group). <a href="https://standards.ieee.org/ieee/1872.3/12592/">連結</a></li>
+<li id="r-Ji2012">Ji Z., Qiu R., Noyvirt A., Soroka A., Packianather M., Setchi R., et al. (2012). “Towards automated task planning for service robots using semantic knowledge representation,” in IEEE 10th international conference on industrial informatics, 1194–1201. <a href="https://doi.org/10.1109/INDIN.2012.6301131">doi</a></li>
+<li id="r-KnowRobV2">KnowRob v2.0.0 release (2024-09-20), GitHub knowrob/knowrob. <a href="https://github.com/knowrob/knowrob/releases">連結</a></li>
+<li id="r-Kumpel2025">Kümpel M. et al. (2025). Everything robots need to know about cooking actions: creating actionable knowledge graphs to support robotic meal preparation. Front. Robot. AI 12, 1682031. <a href="https://doi.org/10.3389/frobt.2025.1682031">doi</a></li>
+<li id="r-Lamy2017">Lamy J.-B. (2017). Owlready: ontology-oriented programming in python with automatic classification and high level constructs for biomedical ontologies. Artif. Intell. Med. 80, 11–28. <a href="https://doi.org/10.1016/j.artmed.2017.07.002">doi</a></li>
+<li id="r-Langley2009">Langley P., Laird J. E., Rogers S. (2009). Cognitive architectures: research issues and challenges. Cognitive Syst. Res. 10, 141–160. <a href="https://doi.org/10.1016/j.cogsys.2006.07.004">doi</a></li>
+<li id="r-Laskey2008">Laskey K. B. (2008). MEBN: a language for first-order Bayesian knowledge bases. Artif. Intell. 172, 140–178. <a href="https://doi.org/10.1016/j.artint.2007.09.006">doi</a></li>
+<li id="r-Lemaignan2010">Lemaignan S., Ros R., Mösenlechner L., Alami R., Beetz M. (2010). “Oro, a knowledge management platform for cognitive architectures in robotics,” in 2010 IEEE/RSJ international conference on intelligent robots and systems, 3548–3553. <a href="https://doi.org/10.1109/IROS.2010.5649547">doi</a></li>
+<li id="r-Lenat1995">Lenat D. B. (1995). Cyc: a large-scale investment in knowledge infrastructure. Commun. ACM 38, 33–38. <a href="https://doi.org/10.1145/219717.219745">doi</a></li>
+<li id="r-Li2017">Li X., Bilbao S., Martín-Wanton T., Bastos J., Rodriguez J. (2017). SWARMs ontology: a common information model for the cooperation of underwater robots. Sensors 17, 569. <a href="https://doi.org/10.3390/s17030569">doi</a></li>
+<li id="r-Lim2011">Lim G. H., Suh I. H., Suh H. (2011). Ontology-based unified robot knowledge for service robots in indoor environments. IEEE Trans. Syst. Man, Cybern. - Part A Syst. Humans 41, 492–509. <a href="https://doi.org/10.1109/TSMCA.2010.2076404">doi</a></li>
+<li id="r-Manzoor2021">Manzoor S., Rocha Y., Joo S.-H., Bae S.-H., Kim E.-J., Joo K.-J., et al. (2021). Ontology-based knowledge representation in robotic systems: a survey oriented toward applications. Appl. Sci. Switz. 11, 4324. <a href="https://doi.org/10.3390/app11104324">doi</a></li>
+<li id="r-Mascardi2006">Mascardi V., Cordì V., Rosso P. (2006) A comparison of upper ontologies (technical report DISI-TR-06-21). Tech. rep., Dipartimento di Informatica e Scienze dell’Informazione (DISI) and Universidad Politécnica de Valencia.</li>
+<li id="r-Meli2025">Meli D., Sridharan M., Perri S., Katzouris N. (2025). Editorial: Merging symbolic and data-driven AI for robot autonomy. Front. Robot. AI 12, 1662674. <a href="https://doi.org/10.3389/frobt.2025.1662674">doi</a></li>
+<li id="r-Merdan2019">Merdan M., Hoebert T., List E., Lepuschitz W. (2019). Knowledge-based cyber-physical systems for assembly automation. Prod. Manuf. Res. 7, 223–254. <a href="https://doi.org/10.1080/21693277.2019.1618746">doi</a></li>
+<li id="r-Molina2025">Molina V., Ruiz-Celada O., Suarez R., Rosell J., Zaplana I. (2025). Robot situation and task awareness using large language models and ontologies. DSN-W 2025, 96–103. <a href="https://doi.org/10.1109/dsn-w65791.2025.00045">doi</a></li>
+<li id="r-Musen2015">Musen M. A. (2015). The protégé project: a look back and a look forward. AI Matters 1, 4–12. <a href="https://doi.org/10.1145/2757001.2757003">doi</a></li>
+<li id="r-Nakajima2024">Nakajima R., Miura J. (2024). Combining ontological knowledge and large language model for user-friendly service robots. IROS 2024. <a href="https://doi.org/10.1109/iros58592.2024.10802273">doi</a></li>
+<li id="r-Niles2001">Niles I., Pease A. (2001). “Toward a standard upper ontology,” in Proceedings of the 2nd international conference on formal ontology in information systems (FOIS-2001). Editors Welty C., Smith B., 2–9.</li>
+<li id="r-OlivaresAlarcos2019">Olivares-Alarcos A., Beßler D., Khamis A., Goncalves P., Habib M., Bermejo-Alonso J., et al. (2019). A review and comparison of ontology-based approaches to robot autonomy. Knowl. Eng. Rev. 34, e29. <a href="https://doi.org/10.1017/S0269888919000237">doi</a></li>
+<li id="r-OlivaresAlarcos2022">Olivares-Alarcos A., Foix S., Borgo S., Alenyà G. (2022). OCRA – an ontology for collaborative robotics and adaptation. Comput. Industry 138, 103627. <a href="https://doi.org/10.1016/j.compind.2022.103627">doi</a></li>
+<li id="r-OlivaresAlarcos2026">Olivares-Alarcos A. et al. (2026). Ontological foundations for contrastive explanatory narration of robot plans. Inf. Sci. 741, 123280. <a href="https://doi.org/10.1016/j.ins.2026.123280">doi</a></li>
+<li id="r-Perzylo2015">Perzylo A., Somani N., Rickert M., Knoll A. (2015). “An ontology for cad data and geometric constraints as a link between product models and semantic robot task descriptions,” in 2015 IEEE/RSJ international conference on intelligent robots and systems (IROS), 4197–4203. <a href="https://doi.org/10.1109/IROS.2015.7353971">doi</a></li>
+<li id="r-Prestes2013">Prestes E., Carbonera J. L., Rama FioriniJorge S. M. V. A., Abel M., Madhavan R., et al. (2013). Towards a core ontology for robotics and automation. Robotics Aut. Syst. 61, 1193–1204. <a href="https://doi.org/10.1016/j.robot.2013.04.005">doi</a></li>
+<li id="r-RezendeSilva2025">Rezende Silva G., Päßler J., Tapia Tarifa S. L., Johnsen E. B., Hernández Corbato C. (2025). ROSA: a knowledge-based solution for robot self-adaptation. Front. Robot. AI 12, 1531743. <a href="https://doi.org/10.3389/frobt.2025.1531743">doi</a></li>
+<li id="r-Riazuelo2015">Riazuelo L., Tenorth M., Di Marco D., Salas M., Gálvez-López D., Mösenlechner L., et al. (2015). Roboearth semantic mapping: a cloud enabled knowledge-based approach. IEEE Trans. Automation Sci. Eng. 12, 432–443. <a href="https://doi.org/10.1109/TASE.2014.2377791">doi</a></li>
+<li id="r-Russell2021">Russell S. J., Norvig P. (2021) Artificial Intelligence: a modern approach. 4 edn. England: Pearson.</li>
+<li id="r-Sanz2000">Sanz R., Matia F., Galan S. (2000). “Fridges, elephants, and the meaning of autonomy and intelligence,” in IEEE international symposium on intelligent control - proceedings (patras, Greece), 217–222. <a href="https://doi.org/10.1109/isic.2000.882926">doi</a></li>
+<li id="r-Sanz2021">Sanz R., Bermejo J., Rodríguez M., Aguado E. (2021). The role of knowledge in cyber-physical systems of systems. TASK Q. 25, 355–373.</li>
+<li id="r-SEBoK2023">SEBoK Editorial Board (2023). The guide to the systems engineering body of knowledge (SEBoK), Available at: www.sebokwiki.org. (Accessed August 2023).</li>
+<li id="r-Shapiro2003">Shapiro S. C. (2003) Encyclopedia of cognitive science. Macmillan Publishers Ltd, 671–680. Knowledge Representation.</li>
+<li id="r-Staab2009">Staab S., Studer R. (2009) Handbook on ontologies. 2nd edn. Incorporated: Springer Publishing Company.</li>
+<li id="r-Stenmark2015">Stenmark M., Malec J. (2015). Knowledge-based instruction of manipulation tasks for industrial robotics. Robotics Computer-Integrated Manuf. Special Issue Knowl. Driven Robotics Manuf. 33, 56–67. <a href="https://doi.org/10.1016/j.rcim.2014.07.004">doi</a></li>
+<li id="r-Suh2007">Suh I. H., Lim G. H., Hwang W., Suh H., Choi J.-H., Park Y.-T. (2007). “Ontology-based multi-layered robot knowledge framework (omrkf) for robot intelligence,” in 2007 IEEE/RSJ international conference on intelligent robots and systems, 429–436. <a href="https://doi.org/10.1109/IROS.2007.4399082">doi</a></li>
+<li id="r-Sun2019b">Sun X., Zhang Y., Chen J. (2019b). RTPO: a domain knowledge base for robot task planning. Electronics 8, 1105. <a href="https://doi.org/10.3390/electronics8101105">doi</a></li>
+<li id="r-Sun2019a">Sun X., Zhang Y., Chen J. (2019a). High-level smart decision making of a robot based on ontology in a search and rescue scenario. Future Internet 11, 230. <a href="https://doi.org/10.3390/fi11110230">doi</a></li>
+<li id="r-Tenorth2009">Tenorth M., Beetz M. (2009). Knowrob — knowledge processing for autonomous personal robots. in 2009 IEEE/RSJ international conference on intelligent robots and systems, 4261–4266. <a href="https://doi.org/10.1109/IROS.2009.5354602">doi</a></li>
+<li id="r-Tenorth2012">Tenorth M., Clifford Perzylo A., Lafrenz R., Beetz M. (2012). “The roboearth language: representing and exchanging knowledge about actions, objects, and environments,” in 2012 IEEE international conference on robotics and automation, 1284–1289. <a href="https://doi.org/10.1109/ICRA.2012.6224812">doi</a></li>
+<li id="r-Tenorth2013">Tenorth M., Beetz M. (2013). Knowrob: a knowledge processing infrastructure for cognition-enabled robots. Int. J. Robotics Res. 32, 566–590. <a href="https://doi.org/10.1177/0278364913481635">doi</a></li>
+<li id="r-UdDin2026">Ud Din M., Rosell J., Akram W., Zaplana I., Roa M. A., Hussain I. (2026). Onto-LLM-TAMP: knowledge-oriented task and motion planning using large language models. Robot. Auton. Syst. 200, 105404. <a href="https://doi.org/10.1016/j.robot.2026.105404">doi</a></li>
+<li id="r-W3C2012">W3C OWL Working Group (2012) OWL 2 web ontology language document overview. World Wide Web Consortium. Tech. rep.</li>
+<li id="r-Waibel2011">Waibel M., Beetz M., Civera J., D’Andrea R., Elfring J., Gálvez-López D., et al. (2011). Roboearth. IEEE Robotics Automation Mag. 18, 69–82. <a href="https://doi.org/10.1109/MRA.2011.941632">doi</a></li>
+<li id="r-Wu2026">Wu F., Zheng X., Qu Y., Wang Z., Feng Z., Li H. (2026). Grounding generative planners in verifiable logic: a hybrid architecture for trustworthy embodied AI. ICLR 2026. arXiv:2602.08373. <a href="https://arxiv.org/abs/2602.08373">連結</a></li>
+</ol>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    論文：<a href="https://doi.org/10.3389/frobt.2024.1377897">A survey of ontology-enabled processes for dependable robot autonomy</a> — Esther Aguado, Virgilio Gomez, Miguel Hernando, Claudio Rossi, Ricardo Sanz, Frontiers in Robotics and AI 11:1377897, 2024（CC BY）<br>
+    本頁：繁中解說（非逐句翻譯）；原圖 1–3 取自 Frontiers 網站，依 CC BY 授權使用、未修改，版權歸原作者；自繪圖 A–H 依論文內容繪製；圖 I 為本站示範，依 SUMO 與 IEEE1872-owl 原始檔繪製 · <a href="../index.html">← 回 Research 首頁</a>
+  </div>
+</footer>
+
+<script src="../assets/readnav.js" defer></script>
+</body>
+</html>
